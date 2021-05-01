@@ -18,9 +18,9 @@ public class Get implements RedisCommand {
         if (type.size() < 2) {
             return new RedisError("invalid set size");
         }
-        String key = type.get(1).str();
-        String v = engine.get(key).orElse(null);
-        return RedisBulkString.valueOf(v);
+        byte[] key = type.get(1).bytes();
+        byte[] bytes = engine.get(key).orElse(null);
+        return RedisBulkString.of(bytes);
     }
 
 

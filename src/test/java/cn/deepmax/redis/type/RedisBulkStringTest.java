@@ -13,7 +13,7 @@ public class RedisBulkStringTest {
 
     @Test
     public void shouldOK() {
-        RedisBulkString string = RedisBulkString.valueOf(null);
+        RedisBulkString string = RedisBulkString.of((String)null);
      
         assertTrue(string.isNil());
         assertTrue(string.isString());
@@ -22,7 +22,7 @@ public class RedisBulkStringTest {
 
     @Test
     public void shouldOK2() {
-        RedisBulkString string = RedisBulkString.valueOf("");
+        RedisBulkString string = RedisBulkString.of("");
 
         assertFalse(string.isNil());
         assertTrue(string.isString());
@@ -31,7 +31,7 @@ public class RedisBulkStringTest {
 
     @Test
     public void shouldOK3() {
-        RedisBulkString string = RedisBulkString.valueOf("ab你好");
+        RedisBulkString string = RedisBulkString.of("ab你好");
 
         assertFalse(string.isNil());
         assertTrue(string.isString());

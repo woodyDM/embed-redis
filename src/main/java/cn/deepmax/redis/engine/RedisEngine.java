@@ -32,12 +32,11 @@ public class RedisEngine {
         this.timeProvider = Objects.requireNonNull(timeProvider);
     }
 
-    public boolean del(String key) {
-        RedisValue value = map.remove(key);
+    public boolean del(byte[] key) {
+        RedisValue value = map.remove(new Key(key));
         return value != null && !value.expired();
     }
-
-
+    
     public void set(byte[] key, byte[] value) {
         map.put(new Key(key), new InRedisString(value, timeProvider));
     }

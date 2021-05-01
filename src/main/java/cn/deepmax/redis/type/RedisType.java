@@ -36,7 +36,7 @@ public interface RedisType {
     default List<RedisType> children() {
         return Collections.emptyList();
     }
-
+    
     default RedisType get(int i) {
         throw new UnsupportedOperationException();
     }
@@ -49,6 +49,10 @@ public interface RedisType {
         throw new UnsupportedOperationException();
     }
 
+    default byte[] bytes() {
+        throw new UnsupportedOperationException();
+    }
+     
     default int size(){
         return children().size();
     }

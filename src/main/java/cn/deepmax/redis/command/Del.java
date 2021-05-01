@@ -24,7 +24,7 @@ public class Del implements RedisCommand{
         }
         int c = 0;
         for (int i = 1; i < type.children().size(); i++) {
-            boolean deleted = engine.del(type.get(i).str());
+            boolean deleted = engine.del(type.get(i).bytes());
             if (deleted) {
                 c++;
             }

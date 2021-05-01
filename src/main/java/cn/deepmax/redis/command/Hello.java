@@ -1,6 +1,5 @@
 package cn.deepmax.redis.command;
 
-import cn.deepmax.redis.BulkString;
 import cn.deepmax.redis.engine.RedisEngine;
 import cn.deepmax.redis.type.RedisArray;
 import cn.deepmax.redis.type.RedisBulkString;
@@ -12,9 +11,9 @@ public class Hello implements RedisCommand{
     @Override
     public RedisType response(RedisEngine engine, RedisType type, ChannelHandlerContext ctx) {
         RedisArray array = new RedisArray();
-        array.add(new RedisBulkString("server"));
-        array.add(new RedisBulkString("redis"));
-        array.add(new RedisBulkString("proto"));
+        array.add(RedisBulkString.of("server"));
+        array.add(RedisBulkString.of("redis"));
+        array.add(RedisBulkString.of("proto"));
         array.add(new RedisInteger(2));
 
         return array;

@@ -24,19 +24,27 @@ public class RedisBulkString extends AbstractRedisType {
         this.nil = true;
     }
 
-    public static RedisBulkString valueOf(String v) {
+    public static RedisBulkString of(String v) {
         return v == null ? NIL : new RedisBulkString(v);
     }
 
-    public RedisBulkString(String v) {
+    public static RedisBulkString of(byte[] v) {
+        return v == null ? NIL : new RedisBulkString(v);
+    } 
+    
+    private RedisBulkString(String v) {
         super(Type.BULK_STRING);
-        this.nil = false;
-        this.bytes = v.getBytes(StandardCharsets.UTF_8);
+        if (v != null) {
+            this.nil = false;
+            this.bytes = v.getBytes(StandardCharsets.UTF_8);
+        }else{
+            this.nil = true;
+        }
     }
 
-    public RedisBulkString(byte[] v) {
+    private RedisBulkString(byte[] v) {
         super(Type.BULK_STRING);
-        this.nil = false;
+        this.nil = v == null;
         this.bytes = v;
     }
 
@@ -54,6 +62,15 @@ public class RedisBulkString extends AbstractRedisType {
     @Override
     public String str() {
         return nil ? null : new String(bytes, StandardCharsets.UTF_8);
+    }
+
+    @Override
+    public byte[] bytes() {
+        if (isNil()) {
+            return null;
+        } else {
+            return bytes;
+        }
     }
 
     @Override

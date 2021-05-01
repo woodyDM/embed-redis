@@ -21,8 +21,8 @@ public class Set implements RedisCommand {
         if (m.size() < 3) {
             return new RedisError("invalid set size");
         }
-        String key = m.get(1).str();
-        String value = m.get(2).str();
+        byte[] key = m.get(1).bytes();
+        byte[] value = m.get(2).bytes();
         engine.set(key,value);
         return new RedisString("OK");
     }

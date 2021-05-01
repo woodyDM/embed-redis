@@ -43,7 +43,7 @@ public class Info implements RedisCommand {
         ByteBuf buf = ctx.alloc().buffer();
         BulkString bulkString = new BulkString(list);
         bulkString.writeTo(buf);
-        return RedisBulkString.valueOf("2");
+        return RedisBulkString.of("2");
     }
 
 

@@ -34,7 +34,7 @@ public class RedisArrayTest {
         array.add(new RedisString("ab你"));
         array.add(new RedisInteger(1000));
         array.add(new RedisError("Err 1"));
-        array.add(new RedisBulkString("abcd"));
+        array.add(  RedisBulkString.of("abcd"));
         
         assertTrue(array.isArray());
         assertFalse(array.isNil());
