@@ -6,6 +6,7 @@ import cn.deepmax.redis.type.RedisError;
 import cn.deepmax.redis.type.RedisString;
 import cn.deepmax.redis.type.RedisType;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 import io.netty.handler.codec.redis.SimpleStringRedisMessage;
@@ -14,15 +15,17 @@ import io.netty.handler.codec.redis.SimpleStringRedisMessage;
  * @author wudi
  * @date 2021/4/30
  */
-public class Set extends AbstractArrayCommand {
+public class Set implements RedisCommand {
     @Override
-    protected RedisType response0(RedisEngine engine, MessageWrapper m, ByteBuf buf) {
+    public RedisType response(RedisEngine engine, RedisType m, ChannelHandlerContext ctx) {
         if (m.size() < 3) {
             return new RedisError("invalid set size");
         }
-        String key = m.getAt(1);
-        String value = m.getAt(2);
+        String key = m.get(1).str();
+        String value = m.get(2).str();
         engine.set(key,value);
         return new RedisString("OK");
     }
+
+
 }

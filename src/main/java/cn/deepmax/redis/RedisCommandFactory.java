@@ -21,6 +21,7 @@ public class RedisCommandFactory {
         add("set", new Set());
         add("get", new Get());
         add("del", new Del());
+        add("hello", new Hello());
     }
 
     private static void add(String key, RedisCommand command) {
@@ -31,7 +32,7 @@ public class RedisCommandFactory {
         if (type.isArray()) {
             RedisType cmd = type.get(0);
             if (cmd.isString()) {
-                String strCmd = cmd.str();
+                String strCmd = cmd.str().toLowerCase();
                 RedisCommand redisCommand = c.get(strCmd);
                 if (redisCommand != null) {
                     return redisCommand;
