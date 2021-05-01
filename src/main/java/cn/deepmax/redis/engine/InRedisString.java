@@ -10,21 +10,21 @@ import java.time.LocalDateTime;
  */
 public class InRedisString implements RedisValue{
     
-    private String s;
+    private byte[] s;
     private TimeProvider provider;
     private LocalDateTime expire;
 
-    public InRedisString(String s, TimeProvider provider ) {
-        this(s, provider, null);
+    public InRedisString(byte[] v, TimeProvider provider ) {
+        this(v, provider, null);
     }
     
-    public InRedisString(String s, TimeProvider provider, LocalDateTime expire) {
-        this.s = s;
+    public InRedisString(byte[] v, TimeProvider provider, LocalDateTime expire) {
+        this.s = v;
         this.provider = provider;
         this.expire = expire;
     }
 
-    public String getS() {
+    public byte[] getS() {
         return s;
     }
 

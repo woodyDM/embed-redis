@@ -3,6 +3,7 @@ package cn.deepmax.redis.engine;
 import cn.deepmax.redis.infra.DefaultTimeProvider;
 import cn.deepmax.redis.infra.TimeProvider;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -21,7 +22,7 @@ public class RedisEngine {
     }
     
     private TimeProvider timeProvider;
-    private final Map<String, RedisValue> map = new ConcurrentHashMap<>();
+    private final Map<Key, RedisValue> map = new ConcurrentHashMap<>();
 
     private RedisEngine() {
         timeProvider = new DefaultTimeProvider();
@@ -37,16 +38,37 @@ public class RedisEngine {
     }
 
 
-    public void set(String key, String value) {
-        map.put(key, new InRedisString(value, timeProvider));
+    public void set(byte[] key, byte[] value) {
+        map.put(new Key(key), new InRedisString(value, timeProvider));
     }
 
-    public Optional<String> get(String key) {
-        RedisValue v = map.get(key);
+    public Optional<byte[]> get(byte[] key) {
+        RedisValue v = map.get(new Key(key));
         if (v != null) {
             return Optional.of(((InRedisString) v).getS());
         }
         return Optional.empty();
+    }
+
+    static class Key{
+        byte[] content;
+
+        Key(byte[] content) {
+            this.content = content;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Key key = (Key) o;
+            return Arrays.equals(content, key.content);
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(content);
+        }
     }
 
 
