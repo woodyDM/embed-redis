@@ -1,9 +1,7 @@
 package cn.deepmax.redis;
 
 import cn.deepmax.redis.command.*;
-import cn.deepmax.redis.message.MessageWrapper;
 import cn.deepmax.redis.type.RedisType;
-import io.netty.handler.codec.redis.ArrayRedisMessage;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,7 +38,7 @@ public class RedisCommandFactory {
             }
         }
 
-        return new UnsupportedErrorCommand();
+        return UnsupportedErrorCommand.INSTANCE;
     }
  
 }

@@ -10,26 +10,22 @@ import io.netty.handler.codec.MessageToByteEncoder;
 
 import java.nio.charset.StandardCharsets;
 
-public class RedisEncoder extends ChannelOutboundHandlerAdapter  {
+public class RedisEncoder extends MessageToByteEncoder<RedisType> {
     @Override
-    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-        RedisType type = (RedisType) msg;
-        try {
-            String content = type.respContent();
-            byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
-            ByteBuf buf = ctx.alloc().ioBuffer(bytes.length);
-            buf.writeBytes(bytes);
+    protected void encode(ChannelHandlerContext ctx, RedisType msg, ByteBuf out) throws Exception {
 
-            ctx.writeAndFlush(buf);
+        try {
+            String content = msg.respContent();
+            byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
+
+            out.writeBytes(bytes);
+
 
         } catch (CodecException e) {
             throw e;
         } catch (Exception e) {
             throw new CodecException(e);
         }
-
     }
-
-
 
 }

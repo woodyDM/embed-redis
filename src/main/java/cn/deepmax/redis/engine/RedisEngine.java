@@ -15,11 +15,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RedisEngine {
 
-    private static final RedisEngine S = new RedisEngine();
-
     public static RedisEngine getInstance() {
         return S;
     }
+
+    private static final RedisEngine S = new RedisEngine();
     
     private TimeProvider timeProvider;
     private final Map<Key, RedisValue> map = new ConcurrentHashMap<>();

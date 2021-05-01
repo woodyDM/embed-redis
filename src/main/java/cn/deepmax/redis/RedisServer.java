@@ -2,7 +2,6 @@ package cn.deepmax.redis;
 
 import cn.deepmax.redis.engine.RedisEngine;
 import cn.deepmax.redis.netty.RedisEncoder;
-import cn.deepmax.redis.netty.RedisEncoder2;
 import cn.deepmax.redis.netty.RedisServerHandler;
 import cn.deepmax.redis.netty.RedisTypeDecoder;
 import io.netty.bootstrap.ServerBootstrap;
@@ -53,7 +52,7 @@ public class RedisServer {
                                 .addLast(new RedisBulkStringAggregator())
                                 .addLast(new RedisArrayAggregator())
                                 .addLast(redisTypeDecoder)
-                                .addLast(new RedisEncoder2())
+                                .addLast(new RedisEncoder())
                                 .addLast(new RedisServerHandler(engine));
 
                     }
