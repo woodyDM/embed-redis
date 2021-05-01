@@ -25,6 +25,11 @@ public class RedisInteger extends AbstractSimpleRedisType<Long> {
     }
 
     @Override
+    public String toString() {
+        return name() + value;
+    }
+
+    @Override
     protected String respPre() {
         return ":";
     }

@@ -1,6 +1,10 @@
 package cn.deepmax.redis;
 
 import cn.deepmax.redis.engine.RedisEngine;
+import cn.deepmax.redis.netty.RedisEncoder;
+import cn.deepmax.redis.netty.RedisEncoder2;
+import cn.deepmax.redis.netty.RedisServerHandler;
+import cn.deepmax.redis.netty.RedisTypeDecoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -12,7 +16,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.redis.RedisArrayAggregator;
 import io.netty.handler.codec.redis.RedisBulkStringAggregator;
 import io.netty.handler.codec.redis.RedisDecoder;
-import io.netty.handler.codec.redis.RedisEncoder;
 
 /**
  * Hello world!
@@ -27,8 +30,9 @@ public class RedisServer {
 
     public static void main(String[] args) {
         new RedisServer(6379).start();
-        
+
     }
+
     public RedisServer(int port) {
         this.port = port;
     }
@@ -36,6 +40,7 @@ public class RedisServer {
     public void start() {
         ServerBootstrap boot = new ServerBootstrap();
         RedisEngine engine = RedisEngine.getInstance();
+        RedisTypeDecoder redisTypeDecoder = new RedisTypeDecoder();
         boss = new NioEventLoopGroup(1);
         workerGroup = new NioEventLoopGroup(4);
         boot.group(boss, workerGroup)
@@ -47,15 +52,17 @@ public class RedisServer {
                                 .addLast(new RedisDecoder())
                                 .addLast(new RedisBulkStringAggregator())
                                 .addLast(new RedisArrayAggregator())
-                                .addLast(new RedisEncoder())
+                                .addLast(redisTypeDecoder)
+                                .addLast(new RedisEncoder2())
                                 .addLast(new RedisServerHandler(engine));
+
                     }
                 });
         ChannelFuture channelFuture = boot.bind(port);
         channelFuture.syncUninterruptibly();
         serverChannel = channelFuture.channel();
-        System.out.println("Redis start at port "+port);
-       
+        System.out.println("Redis start at port " + port);
+
     }
 
     public void stop() {

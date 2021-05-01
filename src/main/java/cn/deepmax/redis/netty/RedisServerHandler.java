@@ -1,7 +1,9 @@
-package cn.deepmax.redis;
+package cn.deepmax.redis.netty;
 
+import cn.deepmax.redis.RedisCommandFactory;
 import cn.deepmax.redis.command.RedisCommand;
 import cn.deepmax.redis.engine.RedisEngine;
+import cn.deepmax.redis.type.RedisType;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.CodecException;
@@ -29,17 +31,15 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        RedisMessage redisMessage = (RedisMessage) msg;
+        RedisType type = (RedisType) msg;
         log.info("[{}]Request", c.getAndIncrement());
-        printRedisMessage(redisMessage);
-        RedisCommand command = RedisCommandFactory.command(redisMessage);
-        RedisMessage response = command.response(this.engine, redisMessage, ctx);
+        printRedisMessage(type);
+        RedisCommand command = RedisCommandFactory.command(type);
+        RedisType response = command.response(this.engine, type, ctx);
         log.info("[{}]Response", r.getAndIncrement());
         printRedisMessage(response);
         ctx.writeAndFlush(response);
-        ReferenceCountUtil.release(redisMessage);
     }
-
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
@@ -53,27 +53,24 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
         System.out.println("Exit channel ");
     }
 
-    private void printRedisMessage(RedisMessage msg) {
-
+    private void printRedisMessage(RedisType msg) {
         doPrint(msg, 0);
     }
 
-    private void doPrint(RedisMessage msg, int depth) {
+    private void doPrint(RedisType msg, int depth) {
         String word = "";
 
         String space = String.join("", Collections.nCopies(depth, " "));
-        if (msg instanceof SimpleStringRedisMessage) {
-            word = ((SimpleStringRedisMessage) msg).content();
-        } else if (msg instanceof ErrorRedisMessage) {
-            word = (((ErrorRedisMessage) msg).content());
-        } else if (msg instanceof IntegerRedisMessage) {
-            word = "" + (((IntegerRedisMessage) msg).value());
-        } else if (msg instanceof FullBulkStringRedisMessage) {
-            word = "" + (getString((FullBulkStringRedisMessage) msg));
-        } else if (msg instanceof ArrayRedisMessage) {
+        if (msg.isString()) {
+            word = msg.str();
+        } else if (msg.isError()) {
+            word = msg.str();
+        } else if (msg.isInteger()) {
+            word = "" + msg.value();
+        }  else if (msg.isArray()) {
             log.info("{}-- [{}] ", space,
                     msg.getClass().getSimpleName());
-            for (RedisMessage child : ((ArrayRedisMessage) msg).children()) {
+            for (RedisType child : msg.children()) {
                 doPrint(child, depth + 1);
             }
             return;
@@ -86,10 +83,4 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
 
     }
 
-    private static String getString(FullBulkStringRedisMessage msg) {
-        if (msg.isNull()) {
-            return "(null)";
-        }
-        return msg.content().toString(CharsetUtil.UTF_8);
-    }
 }

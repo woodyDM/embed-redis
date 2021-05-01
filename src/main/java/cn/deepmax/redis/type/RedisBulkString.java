@@ -34,12 +34,15 @@ public class RedisBulkString extends AbstractRedisType {
         this.bytes = v.getBytes(StandardCharsets.UTF_8);
     }
 
- 
-    
     public RedisBulkString(byte[] v) {
         super(Type.BULK_STRING);
         this.nil = false;
         this.bytes = v;
+    }
+
+    @Override
+    public String toString() {
+        return name() + new String(this.bytes, StandardCharsets.UTF_8);
     }
 
     //todo

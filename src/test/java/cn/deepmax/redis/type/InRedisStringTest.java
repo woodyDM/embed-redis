@@ -9,7 +9,7 @@ import static org.junit.Assert.*;
  * @author wudi
  * @date 2021/5/1
  */
-public class RedisStringTest {
+public class InRedisStringTest {
     
     RedisString string;
 

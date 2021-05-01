@@ -21,6 +21,11 @@ public class RedisString extends AbstractSimpleRedisType<String> {
     }
 
     @Override
+    public String toString() {
+        return name() + (isNil() ? "(nil)" : value);
+    }
+
+    @Override
     protected String respPre() {
         return "+";
     }

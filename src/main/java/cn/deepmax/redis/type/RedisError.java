@@ -23,6 +23,11 @@ public class RedisError extends AbstractSimpleRedisType<String> {
     }
 
     @Override
+    public String toString() {
+        return name() + value;
+    }
+
+    @Override
     protected String respPre() {
         return "-";
     }

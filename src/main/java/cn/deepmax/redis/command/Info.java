@@ -2,10 +2,11 @@ package cn.deepmax.redis.command;
 
 import cn.deepmax.redis.BulkString;
 import cn.deepmax.redis.engine.RedisEngine;
+import cn.deepmax.redis.type.RedisBulkString;
+import cn.deepmax.redis.type.RedisType;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.redis.FullBulkStringRedisMessage;
-import io.netty.handler.codec.redis.RedisMessage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,10 +15,10 @@ import java.util.List;
  * @author wudi
  * @date 2021/4/29
  */
-public class InfoCommand implements RedisCommand {
+public class Info implements RedisCommand {
 
     @Override
-    public RedisMessage response(RedisEngine engine, RedisMessage message, ChannelHandlerContext ctx) {
+    public RedisType response(RedisEngine engine, RedisType type, ChannelHandlerContext ctx) {
         List<String> list = new ArrayList<>();
         list.add("# Server");
         list.add("redis_version:6.2.2");
@@ -42,7 +43,7 @@ public class InfoCommand implements RedisCommand {
         ByteBuf buf = ctx.alloc().buffer();
         BulkString bulkString = new BulkString(list);
         bulkString.writeTo(buf);
-        return new FullBulkStringRedisMessage(buf);
+        return RedisBulkString.valueOf("2");
     }
 
 

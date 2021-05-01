@@ -1,8 +1,8 @@
 package cn.deepmax.redis.command;
 
 import cn.deepmax.redis.engine.RedisEngine;
+import cn.deepmax.redis.type.RedisType;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.redis.RedisMessage;
 
 /**
  * @author wudi
@@ -10,6 +10,6 @@ import io.netty.handler.codec.redis.RedisMessage;
  */
 public interface RedisCommand {
 
-    RedisMessage response(RedisEngine engine, RedisMessage message, ChannelHandlerContext ctx);
+    RedisType response(RedisEngine engine, RedisType type, ChannelHandlerContext ctx);
     
 }

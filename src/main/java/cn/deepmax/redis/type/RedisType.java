@@ -49,9 +49,12 @@ public interface RedisType {
         throw new UnsupportedOperationException();
     }
 
+    default int size(){
+        return children().size();
+    }
+
     Type type();
 
-    
     String respContent();
 
 }

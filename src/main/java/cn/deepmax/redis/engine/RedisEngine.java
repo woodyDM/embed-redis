@@ -38,13 +38,13 @@ public class RedisEngine {
 
 
     public void set(String key, String value) {
-        map.put(key, new RedisString(value, timeProvider));
+        map.put(key, new InRedisString(value, timeProvider));
     }
 
     public Optional<String> get(String key) {
         RedisValue v = map.get(key);
         if (v != null) {
-            return Optional.of(((RedisString) v).getS());
+            return Optional.of(((InRedisString) v).getS());
         }
         return Optional.empty();
     }

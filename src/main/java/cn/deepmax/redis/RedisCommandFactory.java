@@ -2,8 +2,8 @@ package cn.deepmax.redis;
 
 import cn.deepmax.redis.command.*;
 import cn.deepmax.redis.message.MessageWrapper;
+import cn.deepmax.redis.type.RedisType;
 import io.netty.handler.codec.redis.ArrayRedisMessage;
-import io.netty.handler.codec.redis.RedisMessage;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,7 +17,7 @@ public class RedisCommandFactory {
 
     private static final Map<String, RedisCommand> c = new ConcurrentHashMap<>();
     static {
-        add("ping", new PingCommand());
+        add("ping", new Ping());
         add("set", new Set());
         add("get", new Get());
         add("del", new Del());
@@ -27,15 +27,18 @@ public class RedisCommandFactory {
         c.put(key, command);
     }
 
-    public  static RedisCommand command(RedisMessage redisMessage) {
-        if (redisMessage instanceof ArrayRedisMessage) {
-            MessageWrapper m = new MessageWrapper((ArrayRedisMessage) redisMessage);
-            String content = m.getAt(0).toLowerCase();
-            RedisCommand command = c.get(content);
-            if (command != null) {
-                return command;
+    public  static RedisCommand command(RedisType type) {
+        if (type.isArray()) {
+            RedisType cmd = type.get(0);
+            if (cmd.isString()) {
+                String strCmd = cmd.str();
+                RedisCommand redisCommand = c.get(strCmd);
+                if (redisCommand != null) {
+                    return redisCommand;
+                }
             }
         }
+
         return new UnsupportedErrorCommand();
     }
  

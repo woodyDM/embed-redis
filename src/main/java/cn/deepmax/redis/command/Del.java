@@ -2,7 +2,11 @@ package cn.deepmax.redis.command;
 
 import cn.deepmax.redis.engine.RedisEngine;
 import cn.deepmax.redis.message.MessageWrapper;
+import cn.deepmax.redis.type.RedisError;
+import cn.deepmax.redis.type.RedisInteger;
+import cn.deepmax.redis.type.RedisType;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
@@ -11,20 +15,21 @@ import io.netty.handler.codec.redis.RedisMessage;
  * @author wudi
  * @date 2021/4/30
  */
-public class Del extends AbstractArrayCommand {
-
+public class Del implements RedisCommand{
     @Override
-    protected RedisMessage response0(RedisEngine engine, MessageWrapper m, ByteBuf buf) {
-        if (m.size() < 2) {
-            return new ErrorRedisMessage("ERR wrong number of arguments for 'del' command");
+    public RedisType response(RedisEngine engine, RedisType type, ChannelHandlerContext ctx) {
+
+        if (type.children().size() < 2) {
+            return new RedisError("ERR wrong number of arguments for 'del' command");
         }
         int c = 0;
-        for (int i = 1; i < m.size(); i++) {
-            boolean deleted = engine.del(m.getAt(i));
+        for (int i = 1; i < type.children().size(); i++) {
+            boolean deleted = engine.del(type.get(i).str());
             if (deleted) {
                 c++;
             }
         }
-        return new IntegerRedisMessage(c);
+        return new RedisInteger(c);
     }
+
 }
