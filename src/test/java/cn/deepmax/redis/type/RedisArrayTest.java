@@ -2,6 +2,8 @@ package cn.deepmax.redis.type;
 
 import org.junit.Test;
 
+import java.nio.charset.StandardCharsets;
+
 import static org.junit.Assert.*;
 
 /**
@@ -16,7 +18,7 @@ public class RedisArrayTest {
         
         assertTrue(array.isArray());
         assertFalse(array.isNil());
-        assertEquals(array.respContent(),"*0\r\n");
+        assertArrayEquals(array.respContent(),"*0\r\n".getBytes(StandardCharsets.UTF_8));
     }
 
     @Test
@@ -25,7 +27,7 @@ public class RedisArrayTest {
 
         assertTrue(array.isArray());
         assertTrue(array.isNil());
-        assertEquals(array.respContent(),"*-1\r\n");
+        assertArrayEquals(array.respContent(),"*-1\r\n".getBytes(StandardCharsets.UTF_8));
     }
 
     @Test
@@ -39,6 +41,6 @@ public class RedisArrayTest {
         assertTrue(array.isArray());
         assertFalse(array.isNil());
         assertEquals(array.children().size(),4);
-        assertEquals(array.respContent(),"*4\r\n+ab你\r\n:1000\r\n-Err 1\r\n$4\r\nabcd\r\n");
+        assertArrayEquals(array.respContent(),"*4\r\n+ab你\r\n:1000\r\n-Err 1\r\n$4\r\nabcd\r\n".getBytes(StandardCharsets.UTF_8));
     }
 }
