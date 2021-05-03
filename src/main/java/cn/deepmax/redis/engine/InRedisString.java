@@ -8,30 +8,31 @@ import java.time.LocalDateTime;
  * @author wudi
  * @date 2021/4/30
  */
-public class InRedisString implements RedisValue{
-    
+public class InRedisString implements TtlObject {
+
     private byte[] s;
-    private TimeProvider provider;
+
     private LocalDateTime expire;
 
-    public InRedisString(byte[] v, TimeProvider provider ) {
-        this(v, provider, null);
+    public InRedisString(byte[] v) {
+        this(v, null);
     }
-    
-    public InRedisString(byte[] v, TimeProvider provider, LocalDateTime expire) {
+
+    public InRedisString(byte[] v, LocalDateTime expire) {
         this.s = v;
-        this.provider = provider;
+
         this.expire = expire;
+    }
+
+    @Override
+    public LocalDateTime expireTime() {
+        return expire;
     }
 
     public byte[] getS() {
         return s;
     }
 
-    @Override
-    public boolean expired() {
-        return expire!=null && expire.isBefore(provider.now());
-    }
 
     @Override
     public long ttl() {

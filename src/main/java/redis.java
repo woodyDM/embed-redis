@@ -52,7 +52,7 @@ public class redis extends TwoArgFunction {
             String s = a.strvalue().toString();
             String sb = b.strvalue().toString();
             log.info("[{}][{}]", s, sb);
-            engine.set(s.getBytes(), UUID.randomUUID().toString().getBytes());
+        //    engine.set(s.getBytes(), UUID.randomUUID().toString().getBytes());
             String v = "1";
             return LuaValue.valueOf(v);
         }

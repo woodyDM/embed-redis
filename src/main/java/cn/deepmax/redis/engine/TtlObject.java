@@ -1,12 +1,14 @@
 package cn.deepmax.redis.engine;
 
+import java.time.LocalDateTime;
+
 /**
  * @author wudi
  * @date 2021/4/30
  */
-public interface RedisValue {
+public interface TtlObject {
 
-    boolean expired();
+    LocalDateTime expireTime();
 
     long ttl();
 

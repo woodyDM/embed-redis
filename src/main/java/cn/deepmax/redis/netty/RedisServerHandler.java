@@ -1,15 +1,11 @@
 package cn.deepmax.redis.netty;
 
-import cn.deepmax.redis.RedisCommandFactory;
-import cn.deepmax.redis.command.RedisCommand;
+import cn.deepmax.redis.engine.RedisCommand;
 import cn.deepmax.redis.engine.RedisEngine;
 import cn.deepmax.redis.type.RedisType;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.CodecException;
-import io.netty.handler.codec.redis.*;
-import io.netty.util.CharsetUtil;
-import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collections;
@@ -34,8 +30,8 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
         RedisType type = (RedisType) msg;
         log.info("[{}]Request", c.getAndIncrement());
         printRedisMessage(type);
-        RedisCommand command = RedisCommandFactory.command(type);
-        RedisType response = command.response(this.engine, type, ctx);
+        RedisCommand command = engine.getCommand(type);
+        RedisType response = command.response(type, ctx);
         log.info("[{}]Response", r.getAndIncrement());
         printRedisMessage(response);
         ctx.writeAndFlush(response);
@@ -67,7 +63,7 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
             word = msg.str();
         } else if (msg.isInteger()) {
             word = "" + msg.value();
-        }  else if (msg.isArray()) {
+        } else if (msg.isArray()) {
             log.info("{}-- [{}] ", space,
                     msg.getClass().getSimpleName());
             for (RedisType child : msg.children()) {

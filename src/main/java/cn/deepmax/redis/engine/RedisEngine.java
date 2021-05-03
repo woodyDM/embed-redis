@@ -1,12 +1,12 @@
 package cn.deepmax.redis.engine;
 
-import cn.deepmax.redis.infra.DefaultTimeProvider;
 import cn.deepmax.redis.infra.TimeProvider;
+import cn.deepmax.redis.type.RedisError;
+import cn.deepmax.redis.type.RedisType;
+import lombok.NonNull;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -15,59 +15,54 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RedisEngine {
 
+
+    private final Map<String, Module> modules = new ConcurrentHashMap<>();
+    private final Map<String, RedisCommand> commandMap = new ConcurrentHashMap<>();
+    private static final RedisCommand UNSUPPORTED = ((type, ctx) -> new RedisError("unsupported command"));
+
+    public void load(Module module) {
+        List<RedisCommand> commands = module.commands();
+        if (commands != null) {
+            for (RedisCommand command : commands) {
+                String commandName = command.name();
+                Module old = modules.put(commandName, module);
+                commandMap.put(commandName, command);
+                if (old != null) {
+                    throw new IllegalArgumentException("can't load command " + commandName + " at module " + module.moduleName()
+                            + " because command already exist at module " + old.moduleName());
+                }
+            }
+        }
+    }
+
+    public void setTimeProvider(@NonNull TimeProvider timeProvider) {
+        this.modules.values().forEach(m -> m.setTimeProvider(timeProvider));
+    }
+
+    public RedisCommand getCommand(RedisType msg) {
+        if (msg.isArray()) {
+            RedisType cmd = msg.get(0);
+            if (cmd.isString()) {
+                String strCmd = cmd.str().toLowerCase();
+                RedisCommand redisCommand = commandMap.get(strCmd);
+                if (redisCommand != null) {
+                    return redisCommand;
+                }
+            }
+        }
+
+        return UNSUPPORTED;
+    }
+
     public static RedisEngine getInstance() {
         return S;
     }
 
     private static final RedisEngine S = new RedisEngine();
-    
-    private TimeProvider timeProvider;
-    private final Map<Key, RedisValue> map = new ConcurrentHashMap<>();
 
-    private RedisEngine() {
-        timeProvider = new DefaultTimeProvider();
-    }
-
-    public void setTimeProvider(TimeProvider timeProvider) {
-        this.timeProvider = Objects.requireNonNull(timeProvider);
-    }
-
-    public boolean del(byte[] key) {
-        RedisValue value = map.remove(new Key(key));
-        return value != null && !value.expired();
-    }
-    
-    public void set(byte[] key, byte[] value) {
-        map.put(new Key(key), new InRedisString(value, timeProvider));
-    }
-
-    public Optional<byte[]> get(byte[] key) {
-        RedisValue v = map.get(new Key(key));
-        if (v != null) {
-            return Optional.of(((InRedisString) v).getS());
-        }
-        return Optional.empty();
-    }
-
-    static class Key{
-        byte[] content;
-
-        Key(byte[] content) {
-            this.content = content;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Key key = (Key) o;
-            return Arrays.equals(content, key.content);
-        }
-
-        @Override
-        public int hashCode() {
-            return Arrays.hashCode(content);
-        }
+    static {
+        S.load(new StringModule());
+        S.load(new HandShakeModule());
     }
 
 
