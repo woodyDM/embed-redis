@@ -41,8 +41,10 @@ public class RedisTypeDecoder extends MessageToMessageDecoder<RedisMessage> {
     }
 
     private RedisBulkString decodeBulkString(FullBulkStringRedisMessage msg) {
-        String value = msg.content().toString(StandardCharsets.UTF_8);
-        return RedisBulkString.of(value);
+        int size = msg.content().readableBytes();
+        byte[] bytes = new byte[size];
+        msg.content().getBytes(0, bytes);
+        return RedisBulkString.of(bytes);
     }
 
     private RedisError decodeError(ErrorRedisMessage msg) {

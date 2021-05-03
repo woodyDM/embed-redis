@@ -1,5 +1,6 @@
 package cn.deepmax.redis.type;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 
@@ -52,13 +53,13 @@ public interface RedisType {
     default byte[] bytes() {
         throw new UnsupportedOperationException();
     }
-     
+
     default int size(){
         return children().size();
     }
 
     Type type();
 
-    String respContent();
+    byte[] respContent();
 
 }

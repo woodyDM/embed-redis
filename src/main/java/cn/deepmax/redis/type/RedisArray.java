@@ -1,7 +1,11 @@
 package cn.deepmax.redis.type;
 
 import cn.deepmax.redis.Constants;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,11 +23,11 @@ public class RedisArray extends AbstractRedisType {
             return true;
         }
     };
-    
+
     public RedisArray() {
         super(Type.ARRAY);
     }
-    
+
     @Override
     public boolean isArray() {
         return true;
@@ -45,8 +49,8 @@ public class RedisArray extends AbstractRedisType {
     }
 
     @Override
-    public String respContent() {
-        StringBuilder sb = new StringBuilder();
+    public byte[] respContent() {
+        ByteBuilder sb = new ByteBuilder();
         sb.append("*");
         if (isNil()) {
             sb.append("-1");
@@ -59,7 +63,8 @@ public class RedisArray extends AbstractRedisType {
                 sb.append(type.respContent());
             }
         }
-        return sb.toString();
+        return sb.build();
     }
-    
+
+
 }
