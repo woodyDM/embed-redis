@@ -1,6 +1,6 @@
-package cn.deepmax.redis.engine;
+package cn.deepmax.redis.engine.module;
 
-import cn.deepmax.redis.infra.TimeProvider;
+import cn.deepmax.redis.engine.RedisObject;
 
 import java.time.LocalDateTime;
 
@@ -8,17 +8,17 @@ import java.time.LocalDateTime;
  * @author wudi
  * @date 2021/4/30
  */
-public class InRedisString implements TtlObject {
+class RString implements RedisObject {
 
     private byte[] s;
 
     private LocalDateTime expire;
 
-    public InRedisString(byte[] v) {
+    public RString(byte[] v) {
         this(v, null);
     }
 
-    public InRedisString(byte[] v, LocalDateTime expire) {
+    public RString(byte[] v, LocalDateTime expire) {
         this.s = v;
 
         this.expire = expire;

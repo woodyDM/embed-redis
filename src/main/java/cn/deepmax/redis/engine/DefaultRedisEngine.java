@@ -1,5 +1,8 @@
 package cn.deepmax.redis.engine;
 
+import cn.deepmax.redis.engine.module.CommonModule;
+import cn.deepmax.redis.engine.module.HandShakeModule;
+import cn.deepmax.redis.engine.module.StringModule;
 import cn.deepmax.redis.infra.DefaultTimeProvider;
 import cn.deepmax.redis.infra.TimeProvider;
 import lombok.NonNull;
@@ -10,32 +13,52 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-public abstract class BaseTtlModule<E extends TtlObject> extends BaseModule {
-    public BaseTtlModule(String name) {
-        super(name);
+/**
+ * @author wudi
+ * @date 2021/4/30
+ */
+public class DefaultRedisEngine implements RedisEngine {
+
+    private CommandManager commandManager = new CommandManager();
+    private final Map<Key, RedisObject> data = new ConcurrentHashMap<>();
+    protected TimeProvider timeProvider = new DefaultTimeProvider();
+    private static final DefaultRedisEngine S = new DefaultRedisEngine();
+
+    public static DefaultRedisEngine getInstance() {
+        return S;
     }
 
-    protected TimeProvider timeProvider = new DefaultTimeProvider();
-    protected final Map<Key, E> data = new ConcurrentHashMap<>();
+    public CommandManager getCommandManager() {
+        return commandManager;
+    }
 
-    @Override
+    static {
+        S.commandManager.load(new StringModule());
+        S.commandManager.load(new HandShakeModule());
+        S.commandManager.load(new CommonModule());
+    }
+
     public void setTimeProvider(TimeProvider timeProvider) {
         this.timeProvider = Objects.requireNonNull(timeProvider);
     }
 
-    public E set(byte[] key, E newValue) {
+    @Override
+    public RedisObject set(byte[] key, RedisObject newValue) {
         return data.put(new Key(key), newValue);
     }
 
-    public E get(byte[] key) {
+    @Override
+    public RedisObject get(byte[] key) {
         return data.get(new Key(key));
     }
 
-    public E del(byte[] key) {
+    @Override
+    public RedisObject del(byte[] key) {
         return data.remove(new Key(key));
     }
 
-    protected boolean expired(@NonNull E v) {
+    @Override
+    public boolean isExpire(@NonNull RedisObject v) {
         LocalDateTime time = v.expireTime();
         return time != null && timeProvider.now().isAfter(time);
     }
@@ -60,4 +83,5 @@ public abstract class BaseTtlModule<E extends TtlObject> extends BaseModule {
             return Arrays.hashCode(content);
         }
     }
+
 }

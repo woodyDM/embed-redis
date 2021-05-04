@@ -11,7 +11,7 @@ import static org.junit.Assert.*;
  * @author wudi
  * @date 2021/5/1
  */
-public class InRedisStringTest {
+public class RStringTest {
     
     RedisString string;
 

@@ -1,6 +1,6 @@
 package cn.deepmax.redis;
 
-import cn.deepmax.redis.engine.RedisEngine;
+import cn.deepmax.redis.engine.DefaultRedisEngine;
 import cn.deepmax.redis.netty.RedisEncoder;
 import cn.deepmax.redis.netty.RedisServerHandler;
 import cn.deepmax.redis.netty.RedisTypeDecoder;
@@ -38,7 +38,7 @@ public class RedisServer {
 
     public void start() {
         ServerBootstrap boot = new ServerBootstrap();
-        RedisEngine engine = RedisEngine.getInstance();
+        DefaultRedisEngine engine = DefaultRedisEngine.getInstance();
         RedisTypeDecoder redisTypeDecoder = new RedisTypeDecoder();
         boss = new NioEventLoopGroup(1);
         workerGroup = new NioEventLoopGroup(4);

@@ -1,11 +1,9 @@
-import cn.deepmax.redis.engine.RedisEngine;
+import cn.deepmax.redis.engine.DefaultRedisEngine;
 import lombok.extern.slf4j.Slf4j;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 import org.luaj.vm2.lib.TwoArgFunction;
 import org.luaj.vm2.lib.VarArgFunction;
-
-import java.util.UUID;
 
 /**
  * lua bridge for redis
@@ -17,7 +15,7 @@ import java.util.UUID;
  */
 @Slf4j
 public class redis extends TwoArgFunction {
-    private final RedisEngine engine = RedisEngine.getInstance();
+    private final DefaultRedisEngine engine = DefaultRedisEngine.getInstance();
 
     /**
      * package load entry

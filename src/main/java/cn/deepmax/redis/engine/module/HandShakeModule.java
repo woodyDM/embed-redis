@@ -1,10 +1,13 @@
-package cn.deepmax.redis.engine;
+package cn.deepmax.redis.engine.module;
 
+import cn.deepmax.redis.engine.RedisCommand;
+import cn.deepmax.redis.engine.RedisEngine;
+import cn.deepmax.redis.engine.support.BaseModule;
 import cn.deepmax.redis.type.*;
 import io.netty.channel.ChannelHandlerContext;
 
-public class HandShakeModule extends BaseModule{
-    public HandShakeModule( ) {
+public class HandShakeModule extends BaseModule {
+    public HandShakeModule() {
         super("handshake");
         register(new Hello());
         register(new Ping());
@@ -12,7 +15,7 @@ public class HandShakeModule extends BaseModule{
 
     private static class Hello implements RedisCommand {
         @Override
-        public RedisType response(RedisType type, ChannelHandlerContext ctx) {
+        public RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine) {
             RedisArray array = new RedisArray();
             array.add(RedisBulkString.of("server"));
             array.add(RedisBulkString.of("redis"));
@@ -21,11 +24,12 @@ public class HandShakeModule extends BaseModule{
 
             return array;
         }
+
     }
 
     private static class Ping implements RedisCommand {
         @Override
-        public RedisType response(RedisType type, ChannelHandlerContext ctx) {
+        public RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine) {
             return new RedisString("PONG");
         }
     }

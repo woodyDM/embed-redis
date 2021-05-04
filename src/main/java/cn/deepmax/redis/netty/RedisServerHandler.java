@@ -1,7 +1,7 @@
 package cn.deepmax.redis.netty;
 
 import cn.deepmax.redis.engine.RedisCommand;
-import cn.deepmax.redis.engine.RedisEngine;
+import cn.deepmax.redis.engine.DefaultRedisEngine;
 import cn.deepmax.redis.type.RedisType;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -19,9 +19,9 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
     private final AtomicLong c = new AtomicLong();
     private final AtomicLong r = new AtomicLong();
 
-    private RedisEngine engine;
+    private DefaultRedisEngine engine;
 
-    public RedisServerHandler(RedisEngine engine) {
+    public RedisServerHandler(DefaultRedisEngine engine) {
         this.engine = engine;
     }
 
@@ -30,8 +30,8 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
         RedisType type = (RedisType) msg;
         log.info("[{}]Request", c.getAndIncrement());
         printRedisMessage(type);
-        RedisCommand command = engine.getCommand(type);
-        RedisType response = command.response(type, ctx);
+        RedisCommand command = engine.getCommandManager().getCommand(type);
+        RedisType response = command.response(type, ctx,engine );
         log.info("[{}]Response", r.getAndIncrement());
         printRedisMessage(response);
         ctx.writeAndFlush(response);
@@ -64,7 +64,7 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
         } else if (msg.isInteger()) {
             word = "" + msg.value();
         } else if (msg.isArray()) {
-            log.info("{}-- [{}] ", space,
+            log.info("{}-[{}] ", space,
                     msg.getClass().getSimpleName());
             for (RedisType child : msg.children()) {
                 doPrint(child, depth + 1);
@@ -74,7 +74,7 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
             throw new CodecException("unknown message type: " + msg);
         }
 
-        log.info("{}|- [{}]{}", space,
+        log.info("{}├-[{}]{}", space,
                 msg.getClass().getSimpleName(), word);
 
     }

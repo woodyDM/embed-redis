@@ -7,8 +7,7 @@ import io.netty.channel.ChannelHandlerContext;
  * @author wudi
  * @date 2021/4/29
  */
-public interface RedisCommand {
-
+public interface RedisCommand  {
     /**
      * command for search
      * @return
@@ -17,6 +16,6 @@ public interface RedisCommand {
         return this.getClass().getSimpleName().toLowerCase();
     }
 
-    RedisType response(RedisType type, ChannelHandlerContext ctx);
+    RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine);
     
 }
