@@ -1,9 +1,7 @@
 package cn.deepmax.redis.engine;
 
-import cn.deepmax.redis.infra.TimeProvider;
 import cn.deepmax.redis.type.RedisError;
 import cn.deepmax.redis.type.RedisType;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
@@ -37,10 +35,6 @@ public class CommandManager {
             String commandNames = commands.stream().map(RedisCommand::name).collect(Collectors.joining(","));
             log.info("Load module [{}] with {} commands:[{}}.", module.moduleName(), commands.size(), commandNames);
         }
-    }
-
-    public void setTimeProvider(@NonNull TimeProvider timeProvider) {
-        this.modules.values().forEach(m -> m.setTimeProvider(timeProvider));
     }
 
     public RedisCommand getCommand(RedisType msg) {

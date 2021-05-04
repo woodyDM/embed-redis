@@ -73,6 +73,7 @@ public class RedisServer {
         if (workerGroup != null) {
             workerGroup.shutdownGracefully();
         }
+        System.out.println("Redis shutdown !");
     }
 
 }
