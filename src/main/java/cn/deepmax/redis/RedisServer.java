@@ -28,7 +28,7 @@ public class RedisServer {
     private int port;
 
     public static void main(String[] args) {
-        new RedisServer(6379).start();
+        new RedisServer(6380).start();
 
     }
 

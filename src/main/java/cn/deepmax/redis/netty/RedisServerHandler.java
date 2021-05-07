@@ -1,7 +1,9 @@
 package cn.deepmax.redis.netty;
 
-import cn.deepmax.redis.engine.RedisCommand;
 import cn.deepmax.redis.engine.DefaultRedisEngine;
+import cn.deepmax.redis.engine.RedisCommand;
+import cn.deepmax.redis.engine.RedisParamException;
+import cn.deepmax.redis.type.RedisError;
 import cn.deepmax.redis.type.RedisType;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -31,7 +33,15 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
         log.info("[{}]Request", c.getAndIncrement());
         printRedisMessage(type);
         RedisCommand command = engine.getCommandManager().getCommand(type);
-        RedisType response = command.response(type, ctx,engine );
+        RedisType response;
+        try {
+            response = command.response(type, ctx, engine);
+        } catch (RedisParamException e) {
+            response = new RedisError(e.getMessage());
+        } catch (Exception e) {
+            response = new RedisError("ERR internal server error");
+            log.error("Embed server error, may be bug! ", e);
+        }
         log.info("[{}]Response", r.getAndIncrement());
         printRedisMessage(response);
         ctx.writeAndFlush(response);

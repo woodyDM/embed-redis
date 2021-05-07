@@ -18,7 +18,7 @@ public class CommandManager {
 
     private final Map<String, Module> modules = new ConcurrentHashMap<>();
     private final Map<String, RedisCommand> commandMap = new ConcurrentHashMap<>();
-    private static final RedisCommand UNSUPPORTED = ((type, ctx, engine) -> new RedisError("unsupported command"));
+    public static final RedisCommand UNSUPPORTED = ((type, ctx, engine) -> new RedisError("unsupported command"));
 
     public void load(Module module) {
         List<RedisCommand> commands = module.commands();
@@ -33,7 +33,7 @@ public class CommandManager {
                 }
             }
             String commandNames = commands.stream().map(RedisCommand::name).collect(Collectors.joining(","));
-            log.info("Load module [{}] with {} commands:[{}}.", module.moduleName(), commands.size(), commandNames);
+            log.info("Load module [{}] with {} commands:[{}].", module.moduleName(), commands.size(), commandNames);
         }
     }
 

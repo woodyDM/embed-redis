@@ -2,6 +2,7 @@ package cn.deepmax.redis.engine;
 
 import cn.deepmax.redis.engine.module.CommonModule;
 import cn.deepmax.redis.engine.module.HandShakeModule;
+import cn.deepmax.redis.engine.module.LuaModule;
 import cn.deepmax.redis.engine.module.StringModule;
 import cn.deepmax.redis.infra.DefaultTimeProvider;
 import cn.deepmax.redis.infra.TimeProvider;
@@ -36,6 +37,7 @@ public class DefaultRedisEngine implements RedisEngine {
         S.commandManager.load(new StringModule());
         S.commandManager.load(new HandShakeModule());
         S.commandManager.load(new CommonModule());
+        S.commandManager.load(new LuaModule());
     }
 
     public void setTimeProvider(TimeProvider timeProvider) {

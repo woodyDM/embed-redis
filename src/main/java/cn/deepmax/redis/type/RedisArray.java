@@ -1,6 +1,7 @@
 package cn.deepmax.redis.type;
 
 import cn.deepmax.redis.Constants;
+import cn.deepmax.redis.engine.RedisParamException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -45,7 +46,11 @@ public class RedisArray extends AbstractRedisType {
 
     @Override
     public RedisType get(int i) {
-        return types.get(i);
+        if(i>=0 && i<size()){
+            return types.get(i);
+        }else{
+            throw new RedisParamException("ERR wrong number of arguments ");
+        }
     }
 
     @Override
@@ -65,6 +70,5 @@ public class RedisArray extends AbstractRedisType {
         }
         return sb.build();
     }
-
-
+    
 }
