@@ -14,4 +14,6 @@ public interface RedisEngine  {
 
     RedisCommand getCommand(RedisType type);
 
+    RedisExecutor executor();
+    
 }

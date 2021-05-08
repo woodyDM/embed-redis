@@ -4,10 +4,20 @@ import cn.deepmax.redis.engine.RedisCommand;
 import cn.deepmax.redis.engine.RedisEngine;
 import cn.deepmax.redis.engine.support.BaseModule;
 import cn.deepmax.redis.engine.support.CompositeCommand;
+import cn.deepmax.redis.lua.LuaFuncException;
+import cn.deepmax.redis.lua.LuaScript;
+import cn.deepmax.redis.lua.RedisLuaConverter;
 import cn.deepmax.redis.type.*;
+import cn.deepmax.redis.utils.NumberUtils;
 import cn.deepmax.redis.utils.SHA1Utils;
 import io.netty.channel.ChannelHandlerContext;
+import org.luaj.vm2.Globals;
+import org.luaj.vm2.LuaError;
+import org.luaj.vm2.LuaValue;
+import org.luaj.vm2.lib.jse.JsePlatform;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -56,7 +66,28 @@ public class LuaModule extends BaseModule {
     }
     
     private RedisType response(String luaScript, RedisType type, ChannelHandlerContext ctx, RedisEngine engine) {
-        return new RedisError("NN");
+        try {
+            int keyNum = NumberUtils.parse(type.get(2).str()).intValue();
+            List<String> key = new ArrayList<>();
+            List<String> arg = new ArrayList<>();
+            for (int i = 3; i < 3 + keyNum; i++) {
+                key.add(type.get(i).str());
+            }
+            for (int i = 3 + keyNum; i < type.size(); i++) {
+                arg.add(type.get(i).str());
+            }
+            String fullLua = LuaScript.make(luaScript, key, arg);
+            Globals globals = JsePlatform.standardGlobals();
+            LuaValue lua = globals.load(fullLua);
+            LuaValue callResult = lua.call();
+            return RedisLuaConverter.toRedis(callResult);
+        }  catch (LuaError error) {
+            if (error.getCause() instanceof LuaFuncException) {
+                LuaFuncException c = (LuaFuncException) error.getCause();
+                return new RedisError(c.getMessage());
+            }
+            return new RedisError("ERR " + error.getMessage());
+        }
     }
 
     private class Load implements RedisCommand {

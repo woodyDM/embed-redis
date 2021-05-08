@@ -25,7 +25,8 @@ public class DefaultRedisEngine implements RedisEngine {
     private final Map<Key, RedisObject> data = new ConcurrentHashMap<>();
     protected TimeProvider timeProvider = new DefaultTimeProvider();
     private static final DefaultRedisEngine S = new DefaultRedisEngine();
-
+    private final RedisExecutor executor = new RedisExecutor();
+    
     public static RedisEngine instance() {
         return S;
     }
@@ -44,6 +45,11 @@ public class DefaultRedisEngine implements RedisEngine {
     @Override
     public RedisCommand getCommand(RedisType type) {
         return commandManager.getCommand(type);
+    }
+
+    @Override
+    public RedisExecutor executor() {
+        return executor;
     }
 
     public void setTimeProvider(TimeProvider timeProvider) {

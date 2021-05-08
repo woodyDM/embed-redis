@@ -1,7 +1,12 @@
-import cn.deepmax.redis.engine.DefaultRedisEngine;
 import cn.deepmax.redis.engine.RedisEngine;
 import cn.deepmax.redis.engine.RedisEngineHolder;
+import cn.deepmax.redis.lua.LuaFuncException;
+import cn.deepmax.redis.lua.RedisLuaConverter;
+import cn.deepmax.redis.type.RedisArray;
+import cn.deepmax.redis.type.RedisBulkString;
+import cn.deepmax.redis.type.RedisType;
 import lombok.extern.slf4j.Slf4j;
+import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 import org.luaj.vm2.lib.TwoArgFunction;
@@ -18,13 +23,9 @@ import org.luaj.vm2.lib.VarArgFunction;
 @Slf4j
 public class redis extends TwoArgFunction {
 
-
-    private RedisEngine engine() {
-        return RedisEngineHolder.instance();
-    }
-
     /**
      * package load entry
+     * add redis methods.
      *
      * @param modname
      * @param env
@@ -37,35 +38,82 @@ public class redis extends TwoArgFunction {
         LuaValue library = tableOf();
         library.set("call", new Call());
         library.set("pcall", new PCall());
+        library.set("error_reply", new ErrorReply());
+        library.set("status_reply", new StatusReply());
+
         env.set("redis", library);
         return library;
     }
 
-    final class Call extends VarArgFunction {
+    private RedisEngine engine() {
+        return RedisEngineHolder.instance();
+    }
 
+    /**
+     * https://redis.io/commands/eval
+     */
+    final class Call extends TheCall {
+        @Override
+        protected RedisType onError(RedisType resp) {
+            throw new LuaFuncException(resp.str());
+        }
+    }
 
+    final class PCall extends TheCall {
+        @Override
+        protected RedisType onError(RedisType resp) {
+            //the error will convert to LuaTable
+            return resp;
+        }
+    }
+
+    abstract class TheCall extends VarArgFunction {
+        @Override
         public Varargs invoke(Varargs args) {
-            log.info("invoke:[{}]", args);
-            return action(args.arg(1), args.arg(2));
-
+            RedisType msg = RedisLuaConverter.toRedis(args);
+            RedisType resp;
+            try {
+                // a Redis command call will result in an error, redis.call() will 
+                // raise a Lua error that in turn will force EVAL to return an error to the command caller,
+                // redis.pcall will trap the error and return a Lua table representing the error.
+                resp = engine().executor().execute(msg, engine());
+                if (resp.isError()) {
+                    resp = onError(resp);
+                }
+            } catch (LuaFuncException e) {
+                throw e;
+            } catch (Exception e) {
+                resp = new RedisArray();
+                resp.add(RedisBulkString.of("ERR " + e.getMessage()));
+            }
+            return RedisLuaConverter.toLua(resp);
         }
 
+        protected abstract RedisType onError(RedisType resp);
+    }
 
-        public LuaValue action(LuaValue a, LuaValue b) {
-
-            String s = a.strvalue().toString();
-            String sb = b.strvalue().toString();
-            log.info("[{}][{}]", s, sb);
-        //    engine.set(s.getBytes(), UUID.randomUUID().toString().getBytes());
-            String v = "1";
-            return LuaValue.valueOf(v);
+    final static class ErrorReply extends Reply {
+        @Override
+        public Varargs invoke(Varargs args) {
+            return super.invoke(args, "err");
         }
     }
 
-    //todo
-    final class PCall extends VarArgFunction {
-        
+    final static class StatusReply extends Reply {
+        @Override
+        public Varargs invoke(Varargs args) {
+            return super.invoke(args, "ok");
+        }
     }
 
-
+    static class Reply extends VarArgFunction {
+        protected Varargs invoke(Varargs args, String key) {
+            LuaValue value = args.arg(1);
+            String status = value.strvalue().toString();
+            LuaTable table = LuaTable.tableOf();
+            table.set(key, status);
+            return table;
+        }
+    }
 }
+
