@@ -1,0 +1,20 @@
+package cn.deepmax.redis.engine;
+
+import lombok.NonNull;
+
+/**
+ * @author wudi
+ * @date 2021/5/8
+ */
+public class RedisEngineHolder {
+    private static RedisEngine engine;
+
+    public static void set(@NonNull RedisEngine engine) {
+        RedisEngineHolder.engine = engine;
+    }
+
+    public static RedisEngine instance() {
+        return engine;
+    }
+    
+}

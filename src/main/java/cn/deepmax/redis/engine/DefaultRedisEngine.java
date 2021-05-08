@@ -6,6 +6,7 @@ import cn.deepmax.redis.engine.module.LuaModule;
 import cn.deepmax.redis.engine.module.StringModule;
 import cn.deepmax.redis.infra.DefaultTimeProvider;
 import cn.deepmax.redis.infra.TimeProvider;
+import cn.deepmax.redis.type.RedisType;
 import lombok.NonNull;
 
 import java.time.LocalDateTime;
@@ -25,19 +26,24 @@ public class DefaultRedisEngine implements RedisEngine {
     protected TimeProvider timeProvider = new DefaultTimeProvider();
     private static final DefaultRedisEngine S = new DefaultRedisEngine();
 
-    public static DefaultRedisEngine getInstance() {
+    public static RedisEngine instance() {
         return S;
     }
-
+    
     public CommandManager getCommandManager() {
         return commandManager;
     }
-
+    
     static {
         S.commandManager.load(new StringModule());
         S.commandManager.load(new HandShakeModule());
         S.commandManager.load(new CommonModule());
         S.commandManager.load(new LuaModule());
+    }
+
+    @Override
+    public RedisCommand getCommand(RedisType type) {
+        return commandManager.getCommand(type);
     }
 
     public void setTimeProvider(TimeProvider timeProvider) {

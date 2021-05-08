@@ -1,7 +1,7 @@
 package cn.deepmax.redis.netty;
 
-import cn.deepmax.redis.engine.DefaultRedisEngine;
 import cn.deepmax.redis.engine.RedisCommand;
+import cn.deepmax.redis.engine.RedisEngine;
 import cn.deepmax.redis.engine.RedisParamException;
 import cn.deepmax.redis.type.RedisError;
 import cn.deepmax.redis.type.RedisType;
@@ -21,9 +21,9 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
     private final AtomicLong c = new AtomicLong();
     private final AtomicLong r = new AtomicLong();
 
-    private DefaultRedisEngine engine;
+    private RedisEngine engine;
 
-    public RedisServerHandler(DefaultRedisEngine engine) {
+    public RedisServerHandler(RedisEngine engine) {
         this.engine = engine;
     }
 
@@ -32,7 +32,7 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
         RedisType type = (RedisType) msg;
         log.info("[{}]Request", c.getAndIncrement());
         printRedisMessage(type);
-        RedisCommand command = engine.getCommandManager().getCommand(type);
+        RedisCommand command = engine.getCommand(type);
         RedisType response;
         try {
             response = command.response(type, ctx, engine);

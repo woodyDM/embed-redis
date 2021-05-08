@@ -1,5 +1,7 @@
 package cn.deepmax.redis.engine;
 
+import cn.deepmax.redis.type.RedisType;
+
 public interface RedisEngine  {
 
     RedisObject set(byte[] key, RedisObject newValue);
@@ -9,4 +11,7 @@ public interface RedisEngine  {
     RedisObject del(byte[] key);
 
     boolean isExpire(RedisObject obj);
+
+    RedisCommand getCommand(RedisType type);
+
 }

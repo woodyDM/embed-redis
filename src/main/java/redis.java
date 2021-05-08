@@ -1,4 +1,6 @@
 import cn.deepmax.redis.engine.DefaultRedisEngine;
+import cn.deepmax.redis.engine.RedisEngine;
+import cn.deepmax.redis.engine.RedisEngineHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
@@ -15,7 +17,11 @@ import org.luaj.vm2.lib.VarArgFunction;
  */
 @Slf4j
 public class redis extends TwoArgFunction {
-    private final DefaultRedisEngine engine = DefaultRedisEngine.getInstance();
+
+
+    private RedisEngine engine() {
+        return RedisEngineHolder.instance();
+    }
 
     /**
      * package load entry

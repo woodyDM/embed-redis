@@ -1,6 +1,8 @@
 package cn.deepmax.redis;
 
 import cn.deepmax.redis.engine.DefaultRedisEngine;
+import cn.deepmax.redis.engine.RedisEngine;
+import cn.deepmax.redis.engine.RedisEngineHolder;
 import cn.deepmax.redis.netty.RedisEncoder;
 import cn.deepmax.redis.netty.RedisServerHandler;
 import cn.deepmax.redis.netty.RedisTypeDecoder;
@@ -24,12 +26,10 @@ public class RedisServer {
     private EventLoopGroup boss = null;
     private EventLoopGroup workerGroup = null;
     private Channel serverChannel = null;
-
     private int port;
 
     public static void main(String[] args) {
         new RedisServer(6380).start();
-
     }
 
     public RedisServer(int port) {
@@ -38,10 +38,12 @@ public class RedisServer {
 
     public void start() {
         ServerBootstrap boot = new ServerBootstrap();
-        DefaultRedisEngine engine = DefaultRedisEngine.getInstance();
+        RedisEngine engine = DefaultRedisEngine.instance();
+        RedisEngineHolder.set(engine);
+        
         RedisTypeDecoder redisTypeDecoder = new RedisTypeDecoder();
         boss = new NioEventLoopGroup(1);
-        workerGroup = new NioEventLoopGroup(4);
+        workerGroup = new NioEventLoopGroup(1);
         boot.group(boss, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childHandler(new ChannelInitializer<SocketChannel>() {
