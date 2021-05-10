@@ -1,6 +1,10 @@
 package cn.deepmax.redis;
 
 
+import cn.deepmax.redis.type.RedisError;
+import cn.deepmax.redis.type.RedisString;
+import cn.deepmax.redis.type.RedisType;
+
 /**
  * @author wudi
  * @date 2021/4/29
@@ -29,5 +33,7 @@ public class Constants {
 
     static final int LONG_MAX_LENGTH = POSITIVE_LONG_MAX_LENGTH + 1; // +1 is sign
 
+    public static final RedisType NO_AUTH_ERROR = new RedisError("NOAUTH Authentication required.");
+    public static final RedisType OK = new RedisString("OK"); 
 
 }

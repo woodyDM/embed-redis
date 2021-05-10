@@ -1,7 +1,7 @@
 package cn.deepmax.redis.integration;
 
 import cn.deepmax.redis.RedisServer;
-import cn.deepmax.redis.type.RedisString;
+import cn.deepmax.redis.engine.RedisConfiguration;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;
@@ -20,7 +20,7 @@ public class BaseTest {
     @BeforeClass
     public static void beforeClass() throws Exception {
         int port = 6380;
-        server = new RedisServer(port);
+        server = new RedisServer(new RedisConfiguration(6380, null));
         server.start();
         RedisURI uri = RedisURI.create("localhost", port);
         client = RedisClient.create(uri);

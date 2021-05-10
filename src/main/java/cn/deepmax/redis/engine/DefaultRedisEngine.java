@@ -1,9 +1,6 @@
 package cn.deepmax.redis.engine;
 
-import cn.deepmax.redis.engine.module.CommonModule;
-import cn.deepmax.redis.engine.module.HandShakeModule;
-import cn.deepmax.redis.engine.module.LuaModule;
-import cn.deepmax.redis.engine.module.StringModule;
+import cn.deepmax.redis.engine.module.*;
 import cn.deepmax.redis.infra.DefaultTimeProvider;
 import cn.deepmax.redis.infra.TimeProvider;
 import cn.deepmax.redis.type.RedisType;
@@ -22,26 +19,27 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultRedisEngine implements RedisEngine {
 
     private CommandManager commandManager = new CommandManager();
-    private final Map<Key, RedisObject> data = new ConcurrentHashMap<>();
-    protected TimeProvider timeProvider = new DefaultTimeProvider();
-    private static final DefaultRedisEngine S = new DefaultRedisEngine();
-    private final RedisExecutor executor = new RedisExecutor();
     
-    public static RedisEngine instance() {
+    protected TimeProvider timeProvider = new DefaultTimeProvider();
+    private final Map<Key, RedisObject> data = new ConcurrentHashMap<>();
+    private final RedisExecutor executor = new RedisExecutor();
+    private final DefaultAuthManager authManager = new DefaultAuthManager();
+    private static final DefaultRedisEngine S = new DefaultRedisEngine();
+    public static DefaultRedisEngine instance() {
         return S;
+    }
+    static {
+        S.commandManager.load(new StringModule());
+        S.commandManager.load(new HandShakeModule());
+        S.commandManager.load(new CommonModule());
+        S.commandManager.load(new LuaModule());
+        S.commandManager.load(new AuthModule());
     }
     
     public CommandManager getCommandManager() {
         return commandManager;
     }
     
-    static {
-        S.commandManager.load(new StringModule());
-        S.commandManager.load(new HandShakeModule());
-        S.commandManager.load(new CommonModule());
-        S.commandManager.load(new LuaModule());
-    }
-
     @Override
     public RedisCommand getCommand(RedisType type) {
         return commandManager.getCommand(type);
@@ -75,6 +73,11 @@ public class DefaultRedisEngine implements RedisEngine {
     public boolean isExpire(@NonNull RedisObject v) {
         LocalDateTime time = v.expireTime();
         return time != null && timeProvider.now().isAfter(time);
+    }
+
+    @Override
+    public AuthManager authManager() {
+        return authManager;
     }
 
     static class Key {

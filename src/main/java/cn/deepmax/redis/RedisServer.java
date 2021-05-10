@@ -1,6 +1,7 @@
 package cn.deepmax.redis;
 
 import cn.deepmax.redis.engine.DefaultRedisEngine;
+import cn.deepmax.redis.engine.RedisConfiguration;
 import cn.deepmax.redis.engine.RedisEngine;
 import cn.deepmax.redis.engine.RedisEngineHolder;
 import cn.deepmax.redis.netty.RedisEncoder;
@@ -17,6 +18,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.redis.RedisArrayAggregator;
 import io.netty.handler.codec.redis.RedisBulkStringAggregator;
 import io.netty.handler.codec.redis.RedisDecoder;
+import lombok.NonNull;
 
 /**
  * Hello world!
@@ -26,20 +28,23 @@ public class RedisServer {
     private EventLoopGroup boss = null;
     private EventLoopGroup workerGroup = null;
     private Channel serverChannel = null;
-    private int port;
+    private final RedisConfiguration configuration;
+
+    public RedisServer(@NonNull RedisConfiguration configuration) {
+        this.configuration = configuration;
+    }
 
     public static void main(String[] args) {
-        new RedisServer(6380).start();
+        new RedisServer(new RedisConfiguration(6380, "1")).start();
     }
 
-    public RedisServer(int port) {
-        this.port = port;
-    }
 
     public void start() {
+        int port = configuration.getPort();
         ServerBootstrap boot = new ServerBootstrap();
         RedisEngine engine = DefaultRedisEngine.instance();
         RedisEngineHolder.set(engine);
+        engine.authManager().setAuth(configuration.getAuth());
         
         RedisTypeDecoder redisTypeDecoder = new RedisTypeDecoder();
         boss = new NioEventLoopGroup(1);

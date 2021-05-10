@@ -18,15 +18,26 @@ public class RedisExecutor {
     private final AtomicLong requestCounter = new AtomicLong();
     private final AtomicLong responseCounter = new AtomicLong();
 
+    /**
+     * for lua exec
+     * @param type
+     * @param engine
+     * @return
+     */
     public RedisType execute(RedisType type, RedisEngine engine) {
-        return execute(type, engine, null);
+        RedisCommand command = get(type, engine, null);
+        return execute(command, type, engine, null);
     }
 
-    public RedisType execute(RedisType type, RedisEngine engine, ChannelHandlerContext ctx) {
+    public RedisCommand get(RedisType type, RedisEngine engine, ChannelHandlerContext ctx) {
         boolean net = ctx != null;
         log.info("[{}][{}]Request", requestCounter.getAndIncrement(), net);
         printRedisMessage(type);
-        RedisCommand command = engine.getCommand(type);
+        return engine.getCommand(type);
+    }
+
+    public RedisType execute(RedisCommand command, RedisType type, RedisEngine engine, ChannelHandlerContext ctx) {
+        boolean net = ctx != null;
         RedisType response;
         try {
             response = command.response(type, ctx, engine);

@@ -1,13 +1,17 @@
 package cn.deepmax.redis.netty;
 
+import cn.deepmax.redis.Constants;
+import cn.deepmax.redis.engine.AuthManager;
+import cn.deepmax.redis.engine.RedisCommand;
 import cn.deepmax.redis.engine.RedisEngine;
+import cn.deepmax.redis.engine.RedisExecutor;
+import cn.deepmax.redis.engine.module.AuthModule;
 import cn.deepmax.redis.type.RedisType;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * An example Redis client handler. This handler read input from STDIN and write output to STDOUT.
  */
 @Slf4j
 public class RedisServerHandler extends ChannelInboundHandlerAdapter {
@@ -21,8 +25,24 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         RedisType type = (RedisType) msg;
-        RedisType response = engine.executor().execute(type, engine, ctx);
+        AuthManager auth = engine.authManager();
+        RedisExecutor exec = engine.executor();
+        RedisCommand command = exec.get(type, engine, ctx);
+        if (auth.needAuth() && !auth.alreadyAuth(ctx.channel())) {
+            command = wrapAuth(command);
+        }
+        RedisType response = exec.execute(command, type, engine, ctx);
         ctx.writeAndFlush(response);
+    }
+
+    private RedisCommand wrapAuth(RedisCommand command) {
+        return ((type, ctx, en) -> {
+            if (command instanceof AuthModule.Auth || en.authManager().alreadyAuth(ctx.channel())) {
+                return command.response(type, ctx, en);
+            } else {
+                return Constants.NO_AUTH_ERROR;
+            }
+        });
     }
 
     @Override
