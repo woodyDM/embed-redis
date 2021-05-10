@@ -1,10 +1,7 @@
 package cn.deepmax.redis.netty;
 
 import cn.deepmax.redis.Constants;
-import cn.deepmax.redis.engine.AuthManager;
-import cn.deepmax.redis.engine.RedisCommand;
-import cn.deepmax.redis.engine.RedisEngine;
-import cn.deepmax.redis.engine.RedisExecutor;
+import cn.deepmax.redis.engine.*;
 import cn.deepmax.redis.engine.module.AuthModule;
 import cn.deepmax.redis.type.RedisType;
 import io.netty.channel.ChannelHandlerContext;
@@ -37,7 +34,9 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
 
     private RedisCommand wrapAuth(RedisCommand command) {
         return ((type, ctx, en) -> {
-            if (command instanceof AuthModule.Auth || en.authManager().alreadyAuth(ctx.channel())) {
+            if (command instanceof AuthModule.Auth ||
+                    command == CommandManager.UNKNOWN_COMMAND ||
+                    en.authManager().alreadyAuth(ctx.channel())) {
                 return command.response(type, ctx, en);
             } else {
                 return Constants.NO_AUTH_ERROR;

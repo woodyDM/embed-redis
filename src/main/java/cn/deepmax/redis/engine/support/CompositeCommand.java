@@ -30,7 +30,7 @@ public class CompositeCommand implements RedisCommand {
         String childCommand = type.get(1).str();
         RedisCommand c = child.get(childCommand.toLowerCase());
         if (c == null) {
-            c = CommandManager.UNSUPPORTED;
+            c = CommandManager.UNKNOWN_COMMAND;
         }
         return c.response(type, ctx, engine);
     }
