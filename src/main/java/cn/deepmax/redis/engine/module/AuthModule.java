@@ -22,6 +22,10 @@ public class AuthModule extends BaseModule {
     public static class Auth implements RedisCommand {
         @Override
         public RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine) {
+            //todo ACL?
+            if (type.size() > 2) {
+                return new RedisError("Redis6 ACL is not supported");
+            }
             AuthManager auth = engine.authManager();
             String userAuth = type.get(1).str();
             if (!auth.needAuth() || auth.tryAuth(userAuth, ctx.channel())) {

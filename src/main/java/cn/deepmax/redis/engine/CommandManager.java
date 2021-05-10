@@ -28,8 +28,8 @@ public class CommandManager {
                 Module old = modules.put(commandName, module);
                 commandMap.put(commandName, command);
                 if (old != null) {
-                    throw new IllegalArgumentException("can't load command " + commandName + " at module " + module.moduleName()
-                            + " because command already exist at module " + old.moduleName());
+                    log.warn("Same command [{}] found at module {} and {}, the command in {} will take effect. ", commandName, module.moduleName(),
+                            old.moduleName(), module.moduleName());
                 }
             }
             String commandNames = commands.stream().map(RedisCommand::name).collect(Collectors.joining(","));
