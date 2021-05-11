@@ -2,6 +2,7 @@ package cn.deepmax.redis.engine.module;
 
 import cn.deepmax.redis.engine.RedisCommand;
 import cn.deepmax.redis.engine.RedisEngine;
+import cn.deepmax.redis.engine.RedisParamException;
 import cn.deepmax.redis.engine.support.BaseModule;
 import cn.deepmax.redis.engine.support.CompositeCommand;
 import cn.deepmax.redis.lua.LuaFuncException;
@@ -9,7 +10,7 @@ import cn.deepmax.redis.lua.LuaScript;
 import cn.deepmax.redis.lua.RedisLuaConverter;
 import cn.deepmax.redis.type.*;
 import cn.deepmax.redis.utils.NumberUtils;
-import cn.deepmax.redis.utils.SHA1Utils;
+import cn.deepmax.redis.utils.SHA1;
 import io.netty.channel.ChannelHandlerContext;
 import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaError;
@@ -94,7 +95,10 @@ public class LuaModule extends BaseModule {
         @Override
         public RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine) {
             String script = type.get(2).str();
-            String v = SHA1Utils.sha1(script);
+            if (script == null || script.length() == 0) {
+                throw new RedisParamException("invalid lua script");
+            }
+            String v = SHA1.encode(script);
             scriptCache.put(v, script);
             return RedisBulkString.of(v);
         }
