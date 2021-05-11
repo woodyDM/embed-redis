@@ -18,4 +18,6 @@ public interface RedisEngine  {
 
     AuthManager authManager();
     
+    PubsubManager pubsub();
+    
 }

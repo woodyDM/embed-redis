@@ -32,6 +32,11 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
         ctx.writeAndFlush(response);
     }
 
+    /**
+     * wrap for auth
+     * @param command
+     * @return
+     */
     private RedisCommand wrapAuth(RedisCommand command) {
         return ((type, ctx, en) -> {
             if (command instanceof AuthModule.Auth ||
@@ -54,6 +59,7 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         System.out.println("Exit channel ");
+        engine.pubsub().quit(ctx.channel());
     }
     
 }

@@ -7,7 +7,6 @@ import cn.deepmax.redis.type.RedisType;
 import lombok.NonNull;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultRedisEngine implements RedisEngine {
 
     private CommandManager commandManager = new CommandManager();
-    
+    private PubsubManager pubsubManager = new DefaultPubsub();
     protected TimeProvider timeProvider = new DefaultTimeProvider();
     private final Map<Key, RedisObject> data = new ConcurrentHashMap<>();
     private final RedisExecutor executor = new RedisExecutor();
@@ -28,12 +27,14 @@ public class DefaultRedisEngine implements RedisEngine {
     public static DefaultRedisEngine instance() {
         return S;
     }
+    
     static {
         S.commandManager.load(new StringModule());
         S.commandManager.load(new HandShakeModule());
         S.commandManager.load(new CommonModule());
         S.commandManager.load(new LuaModule());
         S.commandManager.load(new AuthModule());
+        S.commandManager.load(new PubsubModule());
     }
     
     public CommandManager getCommandManager() {
@@ -80,25 +81,9 @@ public class DefaultRedisEngine implements RedisEngine {
         return authManager;
     }
 
-    static class Key {
-        byte[] content;
-
-        Key(byte[] content) {
-            this.content = content;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Key key = (Key) o;
-            return Arrays.equals(content, key.content);
-        }
-
-        @Override
-        public int hashCode() {
-            return Arrays.hashCode(content);
-        }
+    @Override
+    public PubsubManager pubsub() {
+        return pubsubManager;
     }
 
 }

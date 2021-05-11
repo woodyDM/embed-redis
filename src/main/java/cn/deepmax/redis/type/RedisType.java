@@ -1,6 +1,5 @@
 package cn.deepmax.redis.type;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 
@@ -25,19 +24,23 @@ public interface RedisType {
     default boolean isInteger() {
         return false;
     }
-    
+
     default boolean isArray() {
         return false;
     }
+
+    default boolean isComposite() {
+        return false;
+    }
     
-    default void add(RedisType type){
+    default void add(RedisType type) {
         throw new UnsupportedOperationException();
     }
 
     default List<RedisType> children() {
         return Collections.emptyList();
     }
-    
+
     default RedisType get(int i) {
         throw new UnsupportedOperationException();
     }

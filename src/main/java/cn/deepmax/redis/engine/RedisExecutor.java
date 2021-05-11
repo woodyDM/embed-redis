@@ -66,7 +66,7 @@ public class RedisExecutor {
             word = msg.str();
         } else if (msg.isInteger()) {
             word = "" + msg.value();
-        } else if (msg.isArray()) {
+        } else if (msg.isArray() || msg.isComposite()) {
             log.info("{}-[{}] ", space,
                     msg.getClass().getSimpleName());
             for (RedisType child : msg.children()) {

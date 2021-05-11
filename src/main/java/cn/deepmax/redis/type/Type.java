@@ -9,5 +9,7 @@ public enum Type {
     ERROR,
     INTEGER,
     BULK_STRING,
-    ARRAY
+    ARRAY,
+    
+    COMPOSITE;
 }

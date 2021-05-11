@@ -35,7 +35,7 @@ public class RedisServer {
     }
 
     public static void main(String[] args) {
-        new RedisServer(new RedisConfiguration(6380, "1")).start();
+        new RedisServer(new RedisConfiguration(6380, null)).start();
     }
 
 
