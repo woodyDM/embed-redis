@@ -25,7 +25,7 @@ public class CommonModule extends BaseModule {
             }
             int c = 0;
             for (int i = 1; i < type.children().size(); i++) {
-                RedisObject old = engine.del(type.get(i).bytes());
+                RedisObject old = engine.getDbManager().get(ctx.channel()).del(type.get(i).bytes());
                 if (old != null && !engine.isExpire(old)) {
                     c++;
                 }

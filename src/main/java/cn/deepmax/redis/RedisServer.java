@@ -45,6 +45,7 @@ public class RedisServer {
         RedisEngine engine = DefaultRedisEngine.instance();
         RedisEngineHolder.set(engine);
         engine.authManager().setAuth(configuration.getAuth());
+        engine.setConfiguration(configuration);
         
         RedisTypeDecoder redisTypeDecoder = new RedisTypeDecoder();
         boss = new NioEventLoopGroup(1);

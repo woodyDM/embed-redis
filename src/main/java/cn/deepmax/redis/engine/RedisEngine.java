@@ -2,22 +2,46 @@ package cn.deepmax.redis.engine;
 
 import cn.deepmax.redis.type.RedisType;
 
-public interface RedisEngine  {
+public interface RedisEngine {
 
-    RedisObject set(byte[] key, RedisObject newValue);
+    RedisConfiguration configuration();
 
-    RedisObject get(byte[] key);
+    void setConfiguration(RedisConfiguration configuration);
 
-    RedisObject del(byte[] key);
-
-    boolean isExpire(RedisObject obj);
-
+    DbManager getDbManager();
+    
     RedisCommand getCommand(RedisType type);
 
     RedisExecutor executor();
 
     AuthManager authManager();
-    
+
     PubsubManager pubsub();
-    
+
+    boolean isExpire(RedisObject obj);
+
+    interface Db {
+
+        RedisObject set(byte[] key, RedisObject newValue);
+
+        RedisObject get(byte[] key);
+
+        RedisObject del(byte[] key);
+
+
+        void addKeyListener(KeyListener keyListener);
+
+    }
+
+    interface KeyListener {
+        /**
+         * key动作监听
+         *
+         * @param key
+         * @param obj    变化后的key
+         * @param opType 1 set  -1 del
+         */
+        void op(int db, byte[] key, RedisObject obj, int opType);
+    }
+
 }

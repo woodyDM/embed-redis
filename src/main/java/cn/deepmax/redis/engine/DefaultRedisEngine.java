@@ -20,7 +20,9 @@ public class DefaultRedisEngine implements RedisEngine {
     private CommandManager commandManager = new CommandManager();
     private PubsubManager pubsubManager = new DefaultPubsub();
     protected TimeProvider timeProvider = new DefaultTimeProvider();
-    private final Map<Key, RedisObject> data = new ConcurrentHashMap<>();
+    private DbManager dbManager = new DefaultDbManager(16);
+    private RedisConfiguration configuration ;
+    
     private final RedisExecutor executor = new RedisExecutor();
     private final DefaultAuthManager authManager = new DefaultAuthManager();
     private static final DefaultRedisEngine S = new DefaultRedisEngine();
@@ -35,8 +37,24 @@ public class DefaultRedisEngine implements RedisEngine {
         S.commandManager.load(new LuaModule());
         S.commandManager.load(new AuthModule());
         S.commandManager.load(new PubsubModule());
+        S.commandManager.load(new DatabaseModule());
     }
-    
+
+    @Override
+    public RedisConfiguration configuration() {
+        return configuration;
+    }
+
+    @Override
+    public void setConfiguration(RedisConfiguration configuration) {
+        this.configuration = configuration;
+    }
+
+    @Override
+    public DbManager getDbManager() {
+        return dbManager;
+    }
+
     public CommandManager getCommandManager() {
         return commandManager;
     }
@@ -55,21 +73,7 @@ public class DefaultRedisEngine implements RedisEngine {
         this.timeProvider = Objects.requireNonNull(timeProvider);
     }
 
-    @Override
-    public RedisObject set(byte[] key, RedisObject newValue) {
-        return data.put(new Key(key), newValue);
-    }
-
-    @Override
-    public RedisObject get(byte[] key) {
-        return data.get(new Key(key));
-    }
-
-    @Override
-    public RedisObject del(byte[] key) {
-        return data.remove(new Key(key));
-    }
-
+  
     @Override
     public boolean isExpire(@NonNull RedisObject v) {
         LocalDateTime time = v.expireTime();

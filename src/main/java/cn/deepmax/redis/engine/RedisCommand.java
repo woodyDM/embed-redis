@@ -1,5 +1,6 @@
 package cn.deepmax.redis.engine;
 
+import cn.deepmax.redis.type.RedisString;
 import cn.deepmax.redis.type.RedisType;
 import io.netty.channel.ChannelHandlerContext;
 
@@ -10,12 +11,16 @@ import io.netty.channel.ChannelHandlerContext;
 public interface RedisCommand  {
     /**
      * command for search
+     *
      * @return
      */
-    default String name(){
+    default String name() {
         return this.getClass().getSimpleName().toLowerCase();
     }
 
     RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine);
-    
+
+    RedisType OK = new RedisString("OK");
+
+
 }
