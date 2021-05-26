@@ -39,7 +39,7 @@ public class StringModule extends BaseModule {
             byte[] key = type.get(1).bytes();
             byte[] value = type.get(2).bytes();
             set(key, new RString(value));
-            return new RedisString("OK");
+            return OK;
         }
     }
 

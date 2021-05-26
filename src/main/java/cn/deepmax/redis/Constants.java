@@ -34,6 +34,5 @@ public class Constants {
     static final int LONG_MAX_LENGTH = POSITIVE_LONG_MAX_LENGTH + 1; // +1 is sign
 
     public static final RedisType NO_AUTH_ERROR = new RedisError("NOAUTH Authentication required.");
-    public static final RedisType OK = new RedisString("OK"); 
 
 }

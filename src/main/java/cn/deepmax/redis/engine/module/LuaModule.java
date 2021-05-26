@@ -121,7 +121,7 @@ public class LuaModule extends BaseModule {
         @Override
         public RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine) {
             scriptCache.clear();
-            return new RedisString("OK");
+            return OK;
         }
     }
 }

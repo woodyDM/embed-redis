@@ -24,9 +24,9 @@ public class RedisExecutor {
      * @param engine
      * @return
      */
-    public RedisType execute(RedisType type, RedisEngine engine) {
-        RedisCommand command = get(type, engine, null);
-        return execute(command, type, engine, null);
+    public RedisType execute(RedisType type, RedisEngine engine,ChannelHandlerContext ctx) {
+        RedisCommand command = get(type, engine, ctx);
+        return execute(command, type, engine, ctx);
     }
 
     public RedisCommand get(RedisType type, RedisEngine engine, ChannelHandlerContext ctx) {

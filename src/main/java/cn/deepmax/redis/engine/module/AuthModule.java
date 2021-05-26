@@ -29,7 +29,7 @@ public class AuthModule extends BaseModule {
             AuthManager auth = engine.authManager();
             String userAuth = type.get(1).str();
             if (!auth.needAuth() || auth.tryAuth(userAuth, ctx.channel())) {
-                return Constants.OK;
+                return OK;
             }else{
                 return new RedisError("WRONGPASS invalid username-password pair");
             }

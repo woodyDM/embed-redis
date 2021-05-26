@@ -1,16 +1,20 @@
 import cn.deepmax.redis.engine.RedisEngine;
 import cn.deepmax.redis.engine.RedisEngineHolder;
+import cn.deepmax.redis.lua.LuaChannelContext;
 import cn.deepmax.redis.lua.LuaFuncException;
 import cn.deepmax.redis.lua.RedisLuaConverter;
 import cn.deepmax.redis.type.RedisArray;
 import cn.deepmax.redis.type.RedisBulkString;
 import cn.deepmax.redis.type.RedisType;
+import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 import org.luaj.vm2.lib.TwoArgFunction;
 import org.luaj.vm2.lib.VarArgFunction;
+
+import java.util.Objects;
 
 /**
  * lua bridge for redis
@@ -76,7 +80,9 @@ public class redis extends TwoArgFunction {
                 // a Redis command call will result in an error, redis.call() will 
                 // raise a Lua error that in turn will force EVAL to return an error to the command caller,
                 // redis.pcall will trap the error and return a Lua table representing the error.
-                resp = engine().executor().execute(msg, engine());
+                ChannelHandlerContext ctx = LuaChannelContext.get();
+                Objects.requireNonNull(ctx);
+                resp = engine().executor().execute(msg, engine(),ctx);
                 if (resp.isError()) {
                     resp = onError(resp);
                 }

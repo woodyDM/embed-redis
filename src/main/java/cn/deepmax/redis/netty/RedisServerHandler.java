@@ -3,6 +3,7 @@ package cn.deepmax.redis.netty;
 import cn.deepmax.redis.Constants;
 import cn.deepmax.redis.engine.*;
 import cn.deepmax.redis.engine.module.AuthModule;
+import cn.deepmax.redis.lua.LuaChannelContext;
 import cn.deepmax.redis.type.RedisType;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -24,12 +25,20 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
         RedisType type = (RedisType) msg;
         AuthManager auth = engine.authManager();
         RedisExecutor exec = engine.executor();
-        RedisCommand command = exec.get(type, engine, ctx);
-        if (auth.needAuth() && !auth.alreadyAuth(ctx.channel())) {
-            command = wrapAuth(command);
+        RedisType response = null;
+        try {
+            LuaChannelContext.set(ctx);
+            RedisCommand command = exec.get(type, engine, ctx);
+            if (auth.needAuth() && !auth.alreadyAuth(ctx.channel())) {
+                command = wrapAuth(command);
+            }
+            response = exec.execute(command, type, engine, ctx);
+        } finally {
+            LuaChannelContext.remove();
         }
-        RedisType response = exec.execute(command, type, engine, ctx);
-        ctx.writeAndFlush(response);
+        if (response != null) {
+            ctx.writeAndFlush(response);
+        }
     }
 
     /**
