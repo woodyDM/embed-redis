@@ -1,37 +1,52 @@
 package cn.deepmax.redis.integration;
 
 import org.junit.Test;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.core.RedisTemplate;
+
+import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-public class CommonTest extends BaseTest {
+public class CommonTest extends BaseTemplateTest {
+
+    public CommonTest(RedisTemplate<String, Object> redisTemplate) {
+        super(redisTemplate);
+    }
 
     @Test
     public void shouldResponsePing() {
-        String pong = redis.ping();
-        assertEquals(pong, "PONG");
+        String value = redisTemplate.execute(new RedisCallback<String>() {
+            @Override
+            public String doInRedis(RedisConnection redisConnection) throws DataAccessException {
+                return redisConnection.ping();
+            }
+        });
+        assertEquals(value, "PONG");
     }
 
     @Test
     public void shouldDel() {
+        
+         v().set("1", "1");
+        v().set("2", "2");
+        v().set("3", "3");
 
-        String v = redis.set("1", "1");
-        String v2 = redis.set("2", "2");
-        String v3 = redis.set("3", "3");
-
-        Long num = redis.del("1", "3");
-        String vg1 = redis.get("1");
-        String vg2 = redis.get("2");
-        String vg3 = redis.get("3");
+        Long num = t().delete(Arrays.asList("1", "3"));
+        Object vg1 = v().get("1");
+        Object vg2 = v().get("2");
+        Object vg3 = v().get("3");
 
         assertEquals(num.longValue(), 2L);
         assertNull(vg1);
         assertNull(vg3);
         assertEquals(vg2, "2");
 
-        redis.set("2", "2M");
-        assertEquals("2M", redis.get("2"));
+        v().set("2", "2M");
+        assertEquals("2M", v().get("2"));
 
     }
 }

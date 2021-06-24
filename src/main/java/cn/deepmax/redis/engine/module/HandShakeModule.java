@@ -16,13 +16,17 @@ public class HandShakeModule extends BaseModule {
     private static class Hello implements RedisCommand {
         @Override
         public RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine) {
-            RedisArray array = new RedisArray();
-            array.add(RedisBulkString.of("server"));
-            array.add(RedisBulkString.of("redis"));
-            array.add(RedisBulkString.of("proto"));
-            array.add(new RedisInteger(2));
-
-            return array;
+            if (type.size() == 1) {
+                RedisArray array = new RedisArray();
+                array.add(RedisBulkString.of("server"));
+                array.add(RedisBulkString.of("redis"));
+                array.add(RedisBulkString.of("proto"));
+                array.add(new RedisInteger(2));
+                return array;
+            } else {
+                RedisType v = type.get(1);
+                return new RedisError("NOPROTO unsupported protocol version");
+            }
         }
 
     }

@@ -19,10 +19,12 @@ import io.netty.handler.codec.redis.RedisArrayAggregator;
 import io.netty.handler.codec.redis.RedisBulkStringAggregator;
 import io.netty.handler.codec.redis.RedisDecoder;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Hello world!
  */
+@Slf4j
 public class RedisServer {
 
     private EventLoopGroup boss = null;
@@ -68,8 +70,7 @@ public class RedisServer {
         ChannelFuture channelFuture = boot.bind(port);
         channelFuture.syncUninterruptibly();
         serverChannel = channelFuture.channel();
-        System.out.println("Redis start at port " + port);
-
+        log.info("Redis start at port [{}] !", port);
     }
 
     public void stop() {
@@ -81,7 +82,7 @@ public class RedisServer {
         if (workerGroup != null) {
             workerGroup.shutdownGracefully();
         }
-        System.out.println("Redis shutdown !");
+        log.info("Redis server shutdown successfully !");
     }
 
 }
