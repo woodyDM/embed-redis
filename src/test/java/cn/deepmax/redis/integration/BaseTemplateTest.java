@@ -2,6 +2,8 @@ package cn.deepmax.redis.integration;
 
 import cn.deepmax.redis.RedisServer;
 import cn.deepmax.redis.engine.RedisConfiguration;
+import io.lettuce.core.ClientOptions;
+import io.lettuce.core.protocol.ProtocolVersion;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.redisson.config.Config;
@@ -11,6 +13,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
@@ -68,7 +71,13 @@ public abstract class BaseTemplateTest {
         config.setPort(PORT);
         config.setPassword(AUTH);
 
-        LettuceConnectionFactory factory = new LettuceConnectionFactory(config);
+        LettuceClientConfiguration lettuceClientConfiguration = LettuceClientConfiguration.builder()
+                .clientOptions(ClientOptions.builder()
+                        .protocolVersion(ProtocolVersion.RESP2)
+                        .build()).build();
+
+        LettuceConnectionFactory factory = new LettuceConnectionFactory(config, lettuceClientConfiguration);
+
         return new Client(template(factory), factory);
 
     }
