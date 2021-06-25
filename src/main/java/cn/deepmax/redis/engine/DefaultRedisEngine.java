@@ -7,9 +7,7 @@ import cn.deepmax.redis.type.RedisType;
 import lombok.NonNull;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author wudi
@@ -23,8 +21,8 @@ public class DefaultRedisEngine implements RedisEngine {
     private DbManager dbManager = new DefaultDbManager(16);
     private RedisConfiguration configuration ;
     
-    private final RedisExecutor executor = new RedisExecutor();
-    private final DefaultAuthManager authManager = new DefaultAuthManager();
+    private final DefaultRedisExecutor executor = new DefaultRedisExecutor();
+    private final NettyAuthManager authManager = new NettyAuthManager();
     private static final DefaultRedisEngine S = new DefaultRedisEngine();
     public static DefaultRedisEngine instance() {
         return S;
@@ -65,7 +63,7 @@ public class DefaultRedisEngine implements RedisEngine {
     }
 
     @Override
-    public RedisExecutor executor() {
+    public DefaultRedisExecutor executor() {
         return executor;
     }
 

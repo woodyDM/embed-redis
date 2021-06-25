@@ -5,10 +5,7 @@ import cn.deepmax.redis.type.RedisBulkString;
 import cn.deepmax.redis.utils.RegexUtils;
 import io.netty.channel.Channel;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -35,7 +32,7 @@ public class DefaultPubsub implements PubsubManager {
     static class Normal extends BasePubsub {
         @Override
         public Set<PubPair> matches(Key channel, byte[] message) {
-            Set<Channel> channels = container.get(channel);
+            Set<Redis.Client> channels = container.get(channel);
             if (channels == null) {
                 return Collections.emptySet();
             }
@@ -55,9 +52,9 @@ public class DefaultPubsub implements PubsubManager {
         @Override
         public Set<PubPair> matches(Key channel, byte[] message) {
             Set<PubPair> result = new HashSet<>();
-            for (Map.Entry<Key, Set<Channel>> entry : container.entrySet()) {
+            for (Map.Entry<Key, Set<Redis.Client>> entry : container.entrySet()) {
                 Key p = entry.getKey();
-                Set<Channel> chs = entry.getValue();
+                Set<Redis.Client> chs = entry.getValue();
                 if (chs != null && !chs.isEmpty()) {
                     Pattern pattern = patternMap.get(p);
                     boolean match = pattern.matcher(channel.str()).find();
@@ -67,7 +64,7 @@ public class DefaultPubsub implements PubsubManager {
                         msg.add(RedisBulkString.of(p.getContent()));
                         msg.add(RedisBulkString.of(channel.getContent()));
                         msg.add(RedisBulkString.of(message));
-                        for (Channel ch : chs) {
+                        for (Redis.Client ch : chs) {
                             result.add(new PubPair(ch, msg));
                         }
                     }
@@ -77,42 +74,42 @@ public class DefaultPubsub implements PubsubManager {
         }
 
         @Override
-        protected void postSub(Channel client, Key channel) {
+        protected void postSub(Redis.Client client, Key channel) {
             String regx = RegexUtils.toRegx(channel.str());
             patternMap.put(channel, Pattern.compile(regx));
         }
     }
 
     static abstract class BasePubsub implements Pubsub {
-        protected final Map<Key, Set<Channel>> container = new ConcurrentHashMap<>();
+        protected final Map<Key, Set<Redis.Client>> container = new HashMap<>();
 
         @Override
         public void pub(PubPair pubPair) {
-            pubPair.getChannel().writeAndFlush(pubPair.getMsg());
+            pubPair.getClient().send(pubPair.getMsg());
         }
 
         @Override
-        public void sub(Channel client, Key... channel) {
+        public void sub(Redis.Client client, Key... channel) {
             if (inValidChannels(channel)) {
                 return;
             }
             for (Key ch : channel) {
-                Set<Channel> value = container.computeIfAbsent(ch, (key) -> new HashSet<>());
+                Set<Redis.Client> value = container.computeIfAbsent(ch, (key) -> new HashSet<>());
                 value.add(client);
                 postSub(client, ch);
             }
         }
 
-        protected void postSub(Channel client, Key channel) {
+        protected void postSub(Redis.Client client, Key channel) {
         }
 
         @Override
-        public void unsub(Channel client, Key... channel) {
+        public void unsub(Redis.Client client, Key... channel) {
             if (inValidChannels(channel)) {
                 return;
             }
             for (Key ch : channel) {
-                Set<Channel> chs = container.get(ch);
+                Set<Redis.Client> chs = container.get(ch);
                 if (chs != null) {
                     chs.remove(client);
                 }
@@ -120,7 +117,7 @@ public class DefaultPubsub implements PubsubManager {
         }
 
         @Override
-        public void quit(Channel client) {
+        public void quit(Redis.Client client) {
             container.forEach((k, chs) -> chs.remove(client));
         }
 

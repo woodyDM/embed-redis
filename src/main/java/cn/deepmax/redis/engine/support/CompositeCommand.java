@@ -1,10 +1,7 @@
 package cn.deepmax.redis.engine.support;
 
-import cn.deepmax.redis.engine.CommandManager;
-import cn.deepmax.redis.engine.RedisCommand;
-import cn.deepmax.redis.engine.RedisEngine;
+import cn.deepmax.redis.engine.*;
 import cn.deepmax.redis.type.RedisType;
-import io.netty.channel.ChannelHandlerContext;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class CompositeCommand implements RedisCommand {
     private final Map<String, RedisCommand> child = new ConcurrentHashMap<>();
-    private String root;
+    private final String root;
 
     public CompositeCommand(String root) {
         this.root = root;
@@ -26,15 +23,15 @@ public class CompositeCommand implements RedisCommand {
     }
 
     @Override
-    public RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine) {
+    public RedisType response(RedisType type, Redis.Client client, RedisEngine engine) {
         String childCommand = type.get(1).str();
         RedisCommand c = child.get(childCommand.toLowerCase());
         if (c == null) {
             c = CommandManager.UNKNOWN_COMMAND;
         }
-        return c.response(type, ctx, engine);
+        return c.response(type, client, engine);
     }
-    
+
     @Override
     public String name() {
         return root;

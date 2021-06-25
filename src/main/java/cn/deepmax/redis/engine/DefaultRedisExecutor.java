@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @date 2021/5/8
  */
 @Slf4j
-public class RedisExecutor {
+public class DefaultRedisExecutor {
     private final AtomicLong requestCounter = new AtomicLong();
     private final AtomicLong responseCounter = new AtomicLong();
 
@@ -40,7 +40,7 @@ public class RedisExecutor {
         boolean net = ctx != null;
         RedisType response;
         try {
-            response = command.response(type, ctx, engine);
+            response = command.response(type, new NettyClient(ctx), engine);
         } catch (RedisParamException e) {
             response = new RedisError(e.getMessage());
         } catch (Exception e) {

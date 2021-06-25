@@ -1,6 +1,5 @@
 package cn.deepmax.redis.engine;
 
-import io.netty.channel.Channel;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 
@@ -8,8 +7,8 @@ import io.netty.util.AttributeKey;
  * @author wudi
  * @date 2021/5/20
  */
-public class DefaultDbManager implements DbManager {
-    
+public class DefaultDbManager implements DbManager, NettyRedisClientHelper {
+
     private final int total;
     private final RedisEngine.Db[] dbs;
     private static final AttributeKey<Integer> IDX = AttributeKey.valueOf("DB_INDEX");
@@ -31,24 +30,24 @@ public class DefaultDbManager implements DbManager {
     }
 
     @Override
-    public void switchTo(Channel channel, int index) {
+    public void switchTo(Redis.Client client, int index) {
         if (index >= 0 && index < total) {
-            channel.attr(IDX).set(index);
+            channel(client).attr(IDX).set(index);
         } else {
             throw new RedisParamException("db number out of bound");
         }
     }
 
     @Override
-    public int getIndex(Channel channel) {
-        Attribute<Integer> attr = channel.attr(IDX);
+    public int getIndex(Redis.Client client) {
+        Attribute<Integer> attr = channel(client).attr(IDX);
         attr.setIfAbsent(0);
-        Integer idx = attr.get();
-        return idx;
+        return attr.get();
     }
 
     @Override
     public int getTotal() {
         return total;
     }
+
 }

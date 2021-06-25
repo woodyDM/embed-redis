@@ -1,22 +1,20 @@
 package cn.deepmax.redis.engine;
 
-import io.netty.channel.Channel;
-
 /**
  * @author wudi
  * @date 2021/5/20
  */
 public interface DbManager {
-    
-    default RedisEngine.Db get(Channel channel) {
-        return get(getIndex(channel));
+
+    default RedisEngine.Db get(Redis.Client client) {
+        return get(getIndex(client));
     }
 
     RedisEngine.Db get(int index);
 
-    int getIndex(Channel channel);
+    int getIndex(Redis.Client client);
 
-    void switchTo(Channel channel, int index);
+    void switchTo(Redis.Client client, int index);
 
     int getTotal();
 }

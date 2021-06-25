@@ -1,5 +1,6 @@
 package cn.deepmax.redis.engine.module;
 
+import cn.deepmax.redis.engine.Redis;
 import cn.deepmax.redis.engine.RedisCommand;
 import cn.deepmax.redis.engine.RedisEngine;
 import cn.deepmax.redis.engine.support.BaseModule;
@@ -15,7 +16,7 @@ public class HandShakeModule extends BaseModule {
 
     private static class Hello implements RedisCommand {
         @Override
-        public RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine) {
+        public RedisType response(RedisType type, Redis.Client client, RedisEngine engine) {
             if (type.size() == 1) {
                 RedisArray array = new RedisArray();
                 array.add(RedisBulkString.of("server"));
@@ -33,7 +34,7 @@ public class HandShakeModule extends BaseModule {
 
     private static class Ping implements RedisCommand {
         @Override
-        public RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine) {
+        public RedisType response(RedisType type, Redis.Client client, RedisEngine engine) {
             return new RedisString("PONG");
         }
     }

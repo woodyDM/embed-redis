@@ -17,10 +17,12 @@ public interface RedisCommand  {
     default String name() {
         return this.getClass().getSimpleName().toLowerCase();
     }
-
-    RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine);
+    
+    RedisType response(RedisType type, Redis.Client client, RedisEngine engine);
 
     RedisType OK = new RedisString("OK");
+    
+  
 
 
 }

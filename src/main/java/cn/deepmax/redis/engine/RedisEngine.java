@@ -12,7 +12,7 @@ public interface RedisEngine {
     
     RedisCommand getCommand(RedisType type);
 
-    RedisExecutor executor();
+    DefaultRedisExecutor executor();
 
     AuthManager authManager();
 
@@ -27,8 +27,7 @@ public interface RedisEngine {
         RedisObject get(byte[] key);
 
         RedisObject del(byte[] key);
-
-
+        
         void addKeyListener(KeyListener keyListener);
 
     }

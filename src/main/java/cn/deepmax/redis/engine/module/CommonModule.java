@@ -1,5 +1,6 @@
 package cn.deepmax.redis.engine.module;
 
+import cn.deepmax.redis.engine.Redis;
 import cn.deepmax.redis.engine.RedisCommand;
 import cn.deepmax.redis.engine.RedisEngine;
 import cn.deepmax.redis.engine.RedisObject;
@@ -19,13 +20,13 @@ public class CommonModule extends BaseModule {
 
     private static class Del implements RedisCommand {
         @Override
-        public RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine) {
+        public RedisType response(RedisType type, Redis.Client client, RedisEngine engine) {
             if (type.children().size() < 2) {
                 return new RedisError("ERR wrong number of arguments for 'del' command");
             }
             int c = 0;
             for (int i = 1; i < type.children().size(); i++) {
-                RedisObject old = engine.getDbManager().get(ctx.channel()).del(type.get(i).bytes());
+                RedisObject old = engine.getDbManager().get(client ).del(type.get(i).bytes());
                 if (old != null && !engine.isExpire(old)) {
                     c++;
                 }

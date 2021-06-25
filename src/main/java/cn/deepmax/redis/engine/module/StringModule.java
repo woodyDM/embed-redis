@@ -1,5 +1,6 @@
 package cn.deepmax.redis.engine.module;
 
+import cn.deepmax.redis.engine.Redis;
 import cn.deepmax.redis.engine.support.BaseCommand;
 import cn.deepmax.redis.engine.support.BaseModule;
 import cn.deepmax.redis.type.*;
@@ -15,7 +16,7 @@ public class StringModule extends BaseModule {
 
     private static class Get extends BaseCommand<RString> {
         @Override
-        protected RedisType response_(RedisType type, ChannelHandlerContext ctx) {
+        protected RedisType response_(RedisType type, Redis.Client client) {
             if (type.size() < 2) {
                 return new RedisError("invalid set size");
             }
@@ -32,7 +33,7 @@ public class StringModule extends BaseModule {
 
     private static class Set extends BaseCommand<RString> {
         @Override
-        protected RedisType response_(RedisType type, ChannelHandlerContext ctx) {
+        protected RedisType response_(RedisType type, Redis.Client client) {
             if (type.size() < 3) {
                 return new RedisError("invalid set size");
             }

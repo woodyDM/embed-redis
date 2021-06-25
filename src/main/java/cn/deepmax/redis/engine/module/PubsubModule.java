@@ -1,12 +1,8 @@
 package cn.deepmax.redis.engine.module;
 
-import cn.deepmax.redis.engine.Key;
-import cn.deepmax.redis.engine.PubsubManager;
-import cn.deepmax.redis.engine.RedisCommand;
-import cn.deepmax.redis.engine.RedisEngine;
+import cn.deepmax.redis.engine.*;
 import cn.deepmax.redis.engine.support.BaseModule;
 import cn.deepmax.redis.type.*;
-import io.netty.channel.ChannelHandlerContext;
 
 /**
  * @author wudi
@@ -23,7 +19,7 @@ public class PubsubModule extends BaseModule {
 
     private static class Publish implements RedisCommand {
         @Override
-        public RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine) {
+        public RedisType response(RedisType type, Redis.Client client, RedisEngine engine) {
             byte[] bytes = type.get(1).bytes();
             Key channel = new Key(bytes);
             byte[] message = type.get(2).bytes();
@@ -55,7 +51,7 @@ public class PubsubModule extends BaseModule {
         }
 
         @Override
-        public RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine) {
+        public RedisType response(RedisType type, Redis.Client client, RedisEngine engine) {
             if (type.size() <= 1) {
                 return new RedisError("invalid sub size");
             }
@@ -63,7 +59,7 @@ public class PubsubModule extends BaseModule {
             for (int i = 1; i < type.size(); i++) {
                 channels[i - 1] = new Key(type.get(i).bytes());
             }
-            select(engine.pubsub()).sub(ctx.channel(), channels);
+            select(engine.pubsub()).sub(client, channels);
             CompositeRedisType composite = new CompositeRedisType();
             for (int i = 0; i < channels.length; i++) {
                 Key k = channels[i];

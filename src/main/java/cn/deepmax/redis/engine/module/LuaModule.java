@@ -1,5 +1,6 @@
 package cn.deepmax.redis.engine.module;
 
+import cn.deepmax.redis.engine.Redis;
 import cn.deepmax.redis.engine.RedisCommand;
 import cn.deepmax.redis.engine.RedisEngine;
 import cn.deepmax.redis.engine.RedisParamException;
@@ -47,26 +48,26 @@ public class LuaModule extends BaseModule {
 
     private class Eval implements RedisCommand {
         @Override
-        public RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine) {
+        public RedisType response(RedisType type, Redis.Client client, RedisEngine engine) {
             String lua = type.get(1).str();
-            return LuaModule.this.response(lua, type, ctx, engine);
+            return LuaModule.this.response(lua, type, client, engine);
         }
     }
 
     private class Evalsha implements RedisCommand {
         @Override
-        public RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine) {
+        public RedisType response(RedisType type, Redis.Client client, RedisEngine engine) {
             String sha1 = type.get(1).str();
             String lua = scriptCache.get(sha1);
             if (lua != null) {
-                return LuaModule.this.response(lua, type, ctx, engine);
+                return LuaModule.this.response(lua, type, client, engine);
             }else{
                 return new RedisError("NOSCRIPT No matching script. Please use EVAL.");
             }
         }
     }
     
-    private RedisType response(String luaScript, RedisType type, ChannelHandlerContext ctx, RedisEngine engine) {
+    private RedisType response(String luaScript, RedisType type, Redis.Client client, RedisEngine engine) {
         try {
             int keyNum = NumberUtils.parse(type.get(2).str()).intValue();
             List<String> key = new ArrayList<>();
@@ -93,7 +94,7 @@ public class LuaModule extends BaseModule {
 
     private class Load implements RedisCommand {
         @Override
-        public RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine) {
+        public RedisType response(RedisType type, Redis.Client client, RedisEngine engine) {
             String script = type.get(2).str();
             if (script == null || script.length() == 0) {
                 throw new RedisParamException("invalid lua script");
@@ -106,7 +107,7 @@ public class LuaModule extends BaseModule {
 
     private class Exists implements RedisCommand {
         @Override
-        public RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine) {
+        public RedisType response(RedisType type, Redis.Client client, RedisEngine engine) {
             RedisArray result = new RedisArray();
             for (int i = 2; i < type.size(); i++) {
                 String sha1 = type.get(i).str();
@@ -119,7 +120,7 @@ public class LuaModule extends BaseModule {
 
     private class Flush implements RedisCommand {
         @Override
-        public RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine) {
+        public RedisType response(RedisType type, Redis.Client client, RedisEngine engine) {
             scriptCache.clear();
             return OK;
         }

@@ -35,14 +35,14 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         RedisType type = (RedisType) msg;
         AuthManager auth = engine.authManager();
-        RedisExecutor exec = engine.executor();
+        DefaultRedisExecutor exec = engine.executor();
         RedisType response = null;
         try {
             LuaChannelContext.set(ctx);
             RedisCommand command = exec.get(type, engine, ctx);
             String cmdName = command.name();
-             
-            if (auth.needAuth() && !auth.alreadyAuth(ctx.channel()) && !whiteList.contains(cmdName.toLowerCase())) {
+            NettyClient client = new NettyClient(ctx);
+            if (auth.needAuth() && !auth.alreadyAuth(client) && !whiteList.contains(cmdName.toLowerCase())) {
                 command = wrapAuth(command);
             }
             response = exec.execute(command, type, engine, ctx);
@@ -60,11 +60,11 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
      * @return
      */
     private RedisCommand wrapAuth(RedisCommand command) {
-        return ((type, ctx, en) -> {
+        return ((type, client, en) -> {
             if (command instanceof AuthModule.Auth ||
                     command == CommandManager.UNKNOWN_COMMAND ||
-                    en.authManager().alreadyAuth(ctx.channel())) {
-                return command.response(type, ctx, en);
+                    en.authManager().alreadyAuth(client)) {
+                return command.response(type, client, en);
             } else {
                 return Constants.NO_AUTH_ERROR;
             }
@@ -81,7 +81,7 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         System.out.println("Exit channel ");
-        engine.pubsub().quit(ctx.channel());
+        engine.pubsub().quit(new NettyClient(ctx));
     }
     
 }

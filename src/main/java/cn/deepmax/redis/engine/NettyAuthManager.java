@@ -1,6 +1,5 @@
 package cn.deepmax.redis.engine;
 
-import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
 
 import java.util.Objects;
@@ -9,7 +8,7 @@ import java.util.Objects;
  * @author wudi
  * @date 2021/5/10
  */
-public class DefaultAuthManager implements AuthManager {
+public class NettyAuthManager implements AuthManager, NettyRedisClientHelper {
     private String auth;
 
     private static final AttributeKey<String> AUTH_KEY = AttributeKey.newInstance("AUTH");
@@ -20,23 +19,23 @@ public class DefaultAuthManager implements AuthManager {
     }
 
     @Override
-    public boolean tryAuth(String auth, Channel channel) {
+    public boolean tryAuth(String auth, Redis.Client client) {
         if (Objects.equals(this.auth, auth)) {
-            channel.attr(AUTH_KEY).set("OK");
+            channel(client).attr(AUTH_KEY).set("OK");
             return true;
-        }else{
+        } else {
             return false;
         }
     }
 
     @Override
-    public boolean alreadyAuth(Channel channel) {
-        return channel.hasAttr(AUTH_KEY);
+    public boolean alreadyAuth(Redis.Client client) {
+        return channel(client).hasAttr(AUTH_KEY);
     }
 
     @Override
     public boolean needAuth() {
         return auth != null && auth.length() > 0;
     }
- 
+    
 }

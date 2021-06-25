@@ -1,5 +1,6 @@
 package cn.deepmax.redis.engine.module;
 
+import cn.deepmax.redis.engine.Redis;
 import cn.deepmax.redis.engine.RedisCommand;
 import cn.deepmax.redis.engine.RedisEngine;
 import cn.deepmax.redis.engine.support.BaseModule;
@@ -19,9 +20,9 @@ public class DatabaseModule extends BaseModule {
 
     private static class Select implements RedisCommand {
         @Override
-        public RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine) {
+        public RedisType response(RedisType type, Redis.Client client, RedisEngine engine) {
             int i = Integer.parseInt(type.get(1).str());
-            engine.getDbManager().switchTo(ctx.channel(), i);
+            engine.getDbManager().switchTo(client, i);
             return OK;
         }
     }

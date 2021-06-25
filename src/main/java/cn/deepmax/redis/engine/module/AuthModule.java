@@ -2,6 +2,7 @@ package cn.deepmax.redis.engine.module;
 
 import cn.deepmax.redis.Constants;
 import cn.deepmax.redis.engine.AuthManager;
+import cn.deepmax.redis.engine.Redis;
 import cn.deepmax.redis.engine.RedisCommand;
 import cn.deepmax.redis.engine.RedisEngine;
 import cn.deepmax.redis.engine.support.BaseModule;
@@ -21,14 +22,14 @@ public class AuthModule extends BaseModule {
 
     public static class Auth implements RedisCommand {
         @Override
-        public RedisType response(RedisType type, ChannelHandlerContext ctx, RedisEngine engine) {
+        public RedisType response(RedisType type, Redis.Client client, RedisEngine engine) {
             //todo ACL?
             if (type.size() > 2) {
                 return new RedisError("Redis6 ACL is not supported");
             }
             AuthManager auth = engine.authManager();
             String userAuth = type.get(1).str();
-            if (!auth.needAuth() || auth.tryAuth(userAuth, ctx.channel())) {
+            if (!auth.needAuth() || auth.tryAuth(userAuth, client)) {
                 return OK;
             }else{
                 return new RedisError("WRONGPASS invalid username-password pair");

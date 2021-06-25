@@ -1,9 +1,7 @@
 package cn.deepmax.redis.engine;
 
 import cn.deepmax.redis.type.RedisType;
-import io.netty.channel.Channel;
 
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -28,22 +26,22 @@ public interface PubsubManager {
         return p1.size() + p2.size();
     }
 
-    default void quit(Channel client) {
+    default void quit(Redis.Client client) {
         normal().quit(client);
         regex().quit(client);
     }
 
     class PubPair {
-        private final Channel channel;
+        private final Redis.Client client;
         private final RedisType msg;
 
-        public PubPair(Channel channel, RedisType msg) {
-            this.channel = channel;
+        public PubPair(Redis.Client client, RedisType msg) {
+            this.client = client;
             this.msg = msg;
         }
 
-        public Channel getChannel() {
-            return channel;
+        public Redis.Client getClient() {
+            return client;
         }
 
         public RedisType getMsg() {
@@ -55,12 +53,12 @@ public interface PubsubManager {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             PubPair pubPair = (PubPair) o;
-            return channel.equals(pubPair.channel);
+            return client.id().equals(pubPair.client.id());
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(channel);
+            return client.id().hashCode();
         }
     }
 
@@ -70,11 +68,11 @@ public interface PubsubManager {
 
         void pub(PubPair pubPair);
 
-        void sub(Channel client, Key... channel);
+        void sub(Redis.Client client, Key... channel);
 
-        void unsub(Channel client, Key... channel);
+        void unsub(Redis.Client client, Key... channel);
 
-        void quit(Channel client);
+        void quit(Redis.Client client);
     }
 
 }
