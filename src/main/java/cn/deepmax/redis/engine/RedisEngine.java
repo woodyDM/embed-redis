@@ -8,12 +8,10 @@ public interface RedisEngine {
 
     void setConfiguration(RedisConfiguration configuration);
 
+    RedisType execute(RedisType type, Redis.Client client);
+    
     DbManager getDbManager();
     
-    RedisCommand getCommand(RedisType type);
-
-    DefaultRedisExecutor executor();
-
     AuthManager authManager();
 
     PubsubManager pubsub();
@@ -28,19 +26,6 @@ public interface RedisEngine {
 
         RedisObject del(byte[] key);
         
-        void addKeyListener(KeyListener keyListener);
-
     }
-
-    interface KeyListener {
-        /**
-         * key动作监听
-         *
-         * @param key
-         * @param obj    变化后的key
-         * @param opType 1 set  -1 del
-         */
-        void op(int db, byte[] key, RedisObject obj, int opType);
-    }
-
+    
 }

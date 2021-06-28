@@ -1,3 +1,4 @@
+import cn.deepmax.redis.engine.NettyClient;
 import cn.deepmax.redis.engine.RedisEngine;
 import cn.deepmax.redis.engine.RedisEngineHolder;
 import cn.deepmax.redis.lua.LuaChannelContext;
@@ -82,7 +83,7 @@ public class redis extends TwoArgFunction {
                 // redis.pcall will trap the error and return a Lua table representing the error.
                 ChannelHandlerContext ctx = LuaChannelContext.get();
                 Objects.requireNonNull(ctx);
-                resp = engine().executor().execute(msg, engine(),ctx);
+                resp = engine().execute(msg, new NettyClient(ctx));
                 if (resp.isError()) {
                     resp = onError(resp);
                 }

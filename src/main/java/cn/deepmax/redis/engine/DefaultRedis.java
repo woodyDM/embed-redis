@@ -29,6 +29,6 @@ public class DefaultRedis implements Redis {
 
     @Override
     public RedisType exec(RedisType type, Client client) {
-        return engine.getCommand(type).response(type, client, engine);
+        return engine.execute(type, client);
     }
 }

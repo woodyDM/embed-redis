@@ -25,13 +25,5 @@ public class RedisDatabase implements RedisEngine.Db {
     public RedisObject del(byte[] key) {
         return data.remove(new Key(key));
     }
-
     
-    
-   
-
-    @Override
-    public void addKeyListener(RedisEngine.KeyListener keyListener) {
-
-    }
 }

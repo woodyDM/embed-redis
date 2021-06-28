@@ -1,12 +1,16 @@
 package cn.deepmax.redis.engine;
 
+import cn.deepmax.redis.Constants;
+import cn.deepmax.redis.engine.module.AuthModule;
 import cn.deepmax.redis.type.RedisError;
 import cn.deepmax.redis.type.RedisType;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.CodecException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -14,49 +18,81 @@ import java.util.concurrent.atomic.AtomicLong;
  * @date 2021/5/8
  */
 @Slf4j
-public class DefaultRedisExecutor {
+public class DefaultRedisExecutor implements RedisExecutor {
     private final AtomicLong requestCounter = new AtomicLong();
     private final AtomicLong responseCounter = new AtomicLong();
 
+    static Set<String> whiteList = new HashSet<>();
+
+    static {
+        whiteList.add("hello");
+        whiteList.add("ping");
+    }
+
     /**
-     * for lua exec
+     * execute
+     *
      * @param type
      * @param engine
+     * @param client
      * @return
      */
-    public RedisType execute(RedisType type, RedisEngine engine,ChannelHandlerContext ctx) {
-        RedisCommand command = get(type, engine, ctx);
-        return execute(command, type, engine, ctx);
-    }
-
-    public RedisCommand get(RedisType type, RedisEngine engine, ChannelHandlerContext ctx) {
-        boolean net = ctx != null;
-        log.info("[{}][{}]Request", requestCounter.getAndIncrement(), net);
+    @Override
+    public RedisType execute(RedisType type, RedisEngine engine, Redis.Client client) {
+        Objects.requireNonNull(client);
+        log.debug("[{}]Request", requestCounter.getAndIncrement());
         printRedisMessage(type);
-        return engine.getCommand(type);
+        return doExec(type, engine, client);
     }
+    
+    private RedisType doExec(RedisType type, RedisEngine engine, Redis.Client client) {
+        AuthManager auth = engine.authManager();
+        RedisCommand command = ((DefaultRedisEngine) engine).getCommandManager().getCommand(type);
+        String cmdName = command.name();
 
-    public RedisType execute(RedisCommand command, RedisType type, RedisEngine engine, ChannelHandlerContext ctx) {
-        boolean net = ctx != null;
+        if (auth.needAuth() && !auth.alreadyAuth(client) && !whiteList.contains(cmdName.toLowerCase())) {
+            command = wrapAuth(command);
+        }
         RedisType response;
         try {
-            response = command.response(type, new NettyClient(ctx), engine);
+
+            response = command.response(type, client, engine);
         } catch (RedisParamException e) {
             response = new RedisError(e.getMessage());
         } catch (Exception e) {
             response = new RedisError("ERR internal server error");
             log.error("Embed server error, may be bug! ", e);
         }
-        log.info("[{}][{}]Response", responseCounter.getAndIncrement(), net);
+        log.debug("[{}]Response", responseCounter.getAndIncrement());
         printRedisMessage(response);
         return response;
     }
-    
-    private void printRedisMessage(RedisType msg) {
-        doPrint(msg, 0);
+
+
+    /**
+     * wrap for auth
+     *
+     * @param command
+     * @return
+     */
+    private RedisCommand wrapAuth(RedisCommand command) {
+        return ((type, client, en) -> {
+            if (command instanceof AuthModule.Auth ||
+                    command == CommandManager.UNKNOWN_COMMAND ||
+                    en.authManager().alreadyAuth(client)) {
+                return command.response(type, client, en);
+            } else {
+                return Constants.NO_AUTH_ERROR;
+            }
+        });
     }
 
-    private void doPrint(RedisType msg, int depth) {
+
+    private void printRedisMessage(RedisType msg) {
+        doPrint(msg, 0, false);
+    }
+
+    private void doPrint(RedisType msg, int depth, boolean isLast) {
         String word = "";
 
         String space = String.join("", Collections.nCopies(depth, " "));
@@ -67,16 +103,17 @@ public class DefaultRedisExecutor {
         } else if (msg.isInteger()) {
             word = "" + msg.value();
         } else if (msg.isArray() || msg.isComposite()) {
-            log.info("{}-[{}] ", space,
+            log.debug("{}-[{}] ", space,
                     msg.getClass().getSimpleName());
-            for (RedisType child : msg.children()) {
-                doPrint(child, depth + 1);
+            for (int i = 0; i < msg.children().size(); i++) {
+                doPrint(msg.children().get(i), depth + 1, i == msg.children().size() - 1);
             }
             return;
         } else {
             throw new CodecException("unknown message type: " + msg);
         }
-        log.info("{}├-[{}]{}", space,
+        String corner = (isLast ? "└" : "├");
+        log.debug("{}{}-[{}]{}", corner, space,
                 msg.getClass().getSimpleName(), word);
 
     }

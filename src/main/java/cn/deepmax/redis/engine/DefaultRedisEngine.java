@@ -19,15 +19,15 @@ public class DefaultRedisEngine implements RedisEngine {
     private PubsubManager pubsubManager = new DefaultPubsub();
     protected TimeProvider timeProvider = new DefaultTimeProvider();
     private DbManager dbManager = new DefaultDbManager(16);
-    private RedisConfiguration configuration ;
-    
-    private final DefaultRedisExecutor executor = new DefaultRedisExecutor();
+    private RedisConfiguration configuration;
+    private final RedisExecutor executor = new DefaultRedisExecutor();
     private final NettyAuthManager authManager = new NettyAuthManager();
     private static final DefaultRedisEngine S = new DefaultRedisEngine();
+
     public static DefaultRedisEngine instance() {
         return S;
     }
-    
+
     static {
         S.commandManager.load(new StringModule());
         S.commandManager.load(new HandShakeModule());
@@ -56,22 +56,16 @@ public class DefaultRedisEngine implements RedisEngine {
     public CommandManager getCommandManager() {
         return commandManager;
     }
-    
-    @Override
-    public RedisCommand getCommand(RedisType type) {
-        return commandManager.getCommand(type);
-    }
 
     @Override
-    public DefaultRedisExecutor executor() {
-        return executor;
+    public RedisType execute(RedisType type, Redis.Client client) {
+        return executor.execute(type, this, client);
     }
 
     public void setTimeProvider(TimeProvider timeProvider) {
         this.timeProvider = Objects.requireNonNull(timeProvider);
     }
-
-  
+    
     @Override
     public boolean isExpire(@NonNull RedisObject v) {
         LocalDateTime time = v.expireTime();
