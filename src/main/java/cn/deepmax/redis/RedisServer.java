@@ -1,9 +1,9 @@
 package cn.deepmax.redis;
 
-import cn.deepmax.redis.engine.DefaultRedisEngine;
-import cn.deepmax.redis.engine.RedisConfiguration;
-import cn.deepmax.redis.engine.RedisEngine;
-import cn.deepmax.redis.engine.RedisEngineHolder;
+import cn.deepmax.redis.core.DefaultRedisEngine;
+import cn.deepmax.redis.api.RedisConfiguration;
+import cn.deepmax.redis.api.RedisEngine;
+import cn.deepmax.redis.api.RedisEngineHolder;
 import cn.deepmax.redis.netty.RedisEncoder;
 import cn.deepmax.redis.netty.RedisServerHandler;
 import cn.deepmax.redis.netty.RedisTypeDecoder;

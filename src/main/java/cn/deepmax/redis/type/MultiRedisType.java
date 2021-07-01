@@ -1,6 +1,6 @@
 package cn.deepmax.redis.type;
 
-import cn.deepmax.redis.engine.RedisParamException;
+import cn.deepmax.redis.api.RedisParamException;
 
 import java.util.ArrayList;
 import java.util.List;

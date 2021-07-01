@@ -1,7 +1,7 @@
 package cn.deepmax.redis.netty;
 
-import cn.deepmax.redis.engine.NettyClient;
-import cn.deepmax.redis.engine.RedisEngine;
+import cn.deepmax.redis.core.NettyClient;
+import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.lua.LuaChannelContext;
 import cn.deepmax.redis.type.RedisType;
 import io.netty.channel.ChannelHandlerContext;

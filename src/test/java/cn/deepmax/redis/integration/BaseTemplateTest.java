@@ -1,7 +1,7 @@
 package cn.deepmax.redis.integration;
 
 import cn.deepmax.redis.RedisServer;
-import cn.deepmax.redis.engine.RedisConfiguration;
+import cn.deepmax.redis.api.RedisConfiguration;
 import io.lettuce.core.ClientOptions;
 import io.lettuce.core.protocol.ProtocolVersion;
 import org.junit.runner.RunWith;

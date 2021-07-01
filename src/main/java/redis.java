@@ -1,6 +1,6 @@
-import cn.deepmax.redis.engine.NettyClient;
-import cn.deepmax.redis.engine.RedisEngine;
-import cn.deepmax.redis.engine.RedisEngineHolder;
+import cn.deepmax.redis.core.NettyClient;
+import cn.deepmax.redis.api.RedisEngine;
+import cn.deepmax.redis.api.RedisEngineHolder;
 import cn.deepmax.redis.lua.LuaChannelContext;
 import cn.deepmax.redis.lua.LuaFuncException;
 import cn.deepmax.redis.lua.RedisLuaConverter;

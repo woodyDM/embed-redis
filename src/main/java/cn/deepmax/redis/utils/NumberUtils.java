@@ -1,6 +1,6 @@
 package cn.deepmax.redis.utils;
 
-import cn.deepmax.redis.engine.RedisParamException;
+import cn.deepmax.redis.api.RedisParamException;
 
 /**
  * @author wudi
