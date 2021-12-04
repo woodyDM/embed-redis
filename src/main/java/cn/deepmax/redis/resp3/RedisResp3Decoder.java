@@ -87,7 +87,7 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
         remainingBulkLength = 0;
     }
 
-    private boolean decodeType(ByteBuf in) throws Exception {
+    private boolean decodeType(ByteBuf in) {
         if (!in.isReadable()) {
             return false;
         }
@@ -97,7 +97,7 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
         return true;
     }
 
-    private boolean decodeInline(ByteBuf in, List<Object> out) throws Exception {
+    private boolean decodeInline(ByteBuf in, List<Object> out) {
         ByteBuf lineBytes = readLine(in);
         if (lineBytes == null) {
             return false;
@@ -107,7 +107,7 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
         return true;
     }
 
-    private boolean decodeLength(ByteBuf in, List<Object> out) throws Exception {
+    private boolean decodeLength(ByteBuf in, List<Object> out) throws RedisCodecException {
         ByteBuf lineByteBuf = readLine(in);
         if (lineByteBuf == null) {
             return false;
@@ -115,6 +115,9 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
         final long length = parseRedisNumber(lineByteBuf);
         if (length < Constants.EMPTY_LENGTH_VALUE) {
             throw new RedisCodecException("length: " + length + " (expected: >= " + Constants.EMPTY_LENGTH_VALUE + ")");
+        }
+        if ((type == RedisMessageType.AGG_ATTRIBUTE || type == RedisMessageType.AGG_MAP) && length % 2 == 1) {
+            throw new RedisCodecException("invalid length for map or attribute type ,length: " + length);
         }
         switch (type) {
             case BLOG_STRING:
@@ -130,7 +133,7 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
             case AGG_MAP:
             case AGG_SET:
             case AGG_ATTRIBUTE:
-                out.add(new ArrayHeaderRedisMessage(length));
+                out.add(new AggRedisTypeHeaderMessage(length, type));
                 resetDecoder();
                 return true;
             case PUGH_TYPE:
@@ -141,34 +144,31 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
         }
     }
 
-    private boolean decodeBulkTypes(ByteBuf in, List<Object> out) throws Exception {
-        switch (remainingBulkLength) {
-            case -1: // $-1\r\n
-                throw new RedisCodecException("Invalid length for blob type  :" + type + " " + -1);
-            case 0:
-                state = State.DECODE_BULK_EOL;
-                return decodeBulkValueEndOfLine(in, out);
-            default: // expectedBulkLength is always positive.
-                out.add(new BulkValueHeaderRedisMessage(remainingBulkLength, type));
-                state = State.DECODE_BULK_CONTENT;
-                return decodeBulkStringContent(in, out);
+    private boolean decodeBulkTypes(ByteBuf in, List<Object> out) throws RedisCodecException {
+        out.add(new BulkValueHeaderRedisMessage(remainingBulkLength, type));
+        if (remainingBulkLength == 0) {
+            state = State.DECODE_BULK_EOL;
+            return decodeBulkValueEndOfLine(in, out);
+        } else {
+            // expectedBulkLength is always positive.
+            state = State.DECODE_BULK_CONTENT;
+            return decodeBulkStringContent(in, out);
         }
     }
 
     // $0\r\n <here> \r\n
-    private boolean decodeBulkValueEndOfLine(ByteBuf in, List<Object> out) throws Exception {
+    private boolean decodeBulkValueEndOfLine(ByteBuf in, List<Object> out) throws RedisCodecException {
         if (in.readableBytes() < Constants.EOL_LENGTH) {
             return false;
         }
-        //todo
         readEndOfLine(in);
-        out.add(FullBulkStringRedisMessage.EMPTY_INSTANCE);
+        out.add(LastBulkStringRedisContent.EMPTY_LAST_CONTENT);
         resetDecoder();
         return true;
     }
 
     // ${expectedBulkLength}\r\n <here> {data...}\r\n
-    private boolean decodeBulkStringContent(ByteBuf in, List<Object> out) throws Exception {
+    private boolean decodeBulkStringContent(ByteBuf in, List<Object> out) throws RedisCodecException {
         final int readableBytes = in.readableBytes();
         if (readableBytes == 0 || remainingBulkLength == 0 && readableBytes < Constants.EOL_LENGTH) {
             return false;
@@ -278,7 +278,7 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
         }
         return negative;
     }
-    
+
     private static ByteBuf readLine(ByteBuf in) {
         if (!in.isReadable(Constants.EOL_LENGTH)) {
             return null;
@@ -358,7 +358,7 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
         StringBuilder sb = new StringBuilder();
 
         @Override
-        public boolean process(byte value) throws Exception {
+        public boolean process(byte value) throws RedisCodecException {
             if (value < '0' || value > '9') {
                 throw new RedisCodecException("bad byte in number: " + value);
             }
@@ -380,7 +380,7 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
         private long result;
 
         @Override
-        public boolean process(byte value) throws Exception {
+        public boolean process(byte value) throws RedisCodecException {
             if (value < '0' || value > '9') {
                 throw new RedisCodecException("bad byte in number: " + value);
             }
@@ -396,5 +396,5 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
             result = 0;
         }
     }
-    
+
 }

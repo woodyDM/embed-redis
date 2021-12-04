@@ -16,7 +16,7 @@ public class BooleanRedisMessage implements RedisMessage {
         this.value = value;
     }
 
-    public boolean isValue() {
+    public boolean value() {
         return value;
     }
 }
