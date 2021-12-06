@@ -37,6 +37,25 @@ public abstract class BaseRedisResp3Test {
     }
 
     @Test
+    public void shouldDecodeInline() {
+        assertTrue(channel.writeInbound(byteBufOf("PING\r\n")));
+        
+        assertMsg((InlineCommandRedisMessage msg)->{
+            assertEquals(msg.content(),"PING");
+        });
+        
+    }
+
+    @Test
+    public void shouldDecodeInline2() {
+        assertTrue(channel.writeInbound(byteBufOf("EXISTS somekey\r\n")));
+
+        assertMsg((InlineCommandRedisMessage msg)->{
+            assertEquals(msg.content(),"EXISTS somekey");
+        });
+    }
+
+    @Test
     public void shouldDecodeTwoSimpleStrings() {
         assertFalse(channel.writeInbound(byteBufOf("+")));
         assertFalse(channel.writeInbound(byteBufOf("O")));

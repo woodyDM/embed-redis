@@ -1,13 +1,13 @@
 package cn.deepmax.redis.resp3;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.redis.RedisCodecException;
 
 /**
  * @author wudi
  * @date 2021/12/3
  */
 public enum RedisMessageType {
+    INLINE_COMMAND(' ', true),
 
     BLOG_STRING('$', false),    //$<length>\r\n<bytes>\r\n
     SIMPLE_STRING('+', true),  //+<string>\r\n
@@ -42,10 +42,16 @@ public enum RedisMessageType {
     }
 
     /**
+     *
      */
-    public static RedisMessageType readFrom(ByteBuf in ) {
+    public static RedisMessageType readFrom(ByteBuf in) {
+        final int initialIndex = in.readerIndex();
         byte b = in.readByte();
-        return of(b);
+        RedisMessageType type = of(b);
+        if (type == INLINE_COMMAND) {
+            in.readerIndex(initialIndex);
+        }
+        return type;
     }
     
     public static RedisMessageType of(byte b){
@@ -54,7 +60,7 @@ public enum RedisMessageType {
                 return v;
             }
         }
-        throw new RedisCodecException("invalid type of byte (" + b + ")");
+        return INLINE_COMMAND;
     }
 
 

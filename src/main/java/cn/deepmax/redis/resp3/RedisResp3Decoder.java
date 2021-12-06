@@ -202,6 +202,8 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
 
     private RedisMessage newInlineRedisMessage(RedisMessageType messageType, ByteBuf content) {
         switch (messageType) {
+            case INLINE_COMMAND:
+                return new InlineCommandRedisMessage(content.toString(CharsetUtil.UTF_8));
             case SIMPLE_STRING:
                 return new SimpleStringRedisMessage(content.toString(CharsetUtil.UTF_8));
             case SIMPLE_ERROR:
