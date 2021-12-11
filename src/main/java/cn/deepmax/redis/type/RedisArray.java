@@ -11,7 +11,7 @@ public class RedisArray extends MultiRedisType {
 
     public static final RedisArray NIL = new RedisArray() {
         @Override
-        public boolean isNil() {
+        public boolean isNull() {
             return true;
         }
     };
@@ -29,13 +29,13 @@ public class RedisArray extends MultiRedisType {
     public byte[] respContent() {
         ByteBuilder sb = new ByteBuilder();
         sb.append("*");
-        if (isNil()) {
+        if (isNull()) {
             sb.append("-1");
         } else {
             sb.append(children().size());
         }
         sb.append(Constants.EOL);
-        if (!isNil()) {
+        if (!isNull()) {
             for (RedisType type : children()) {
                 sb.append(type.respContent());
             }

@@ -1,8 +1,6 @@
 package cn.deepmax.redis.type;
 
 import cn.deepmax.redis.Constants;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 
 import java.nio.charset.StandardCharsets;
 
@@ -16,7 +14,7 @@ public class RedisBulkString extends AbstractRedisType {
 
     public static final RedisBulkString NIL = new RedisBulkString() {
         @Override
-        public boolean isNil() {
+        public boolean isNull() {
             return true;
         }
     };
@@ -68,7 +66,7 @@ public class RedisBulkString extends AbstractRedisType {
 
     @Override
     public byte[] bytes() {
-        if (isNil()) {
+        if (isNull()) {
             return null;
         } else {
             return bytes;
@@ -80,7 +78,7 @@ public class RedisBulkString extends AbstractRedisType {
         ByteBuilder sb = new ByteBuilder();
         sb.append("$");
 
-        if (isNil()) {
+        if (isNull()) {
             sb.append("-1");
         } else {
             sb.append(bytes.length).append(Constants.EOL)

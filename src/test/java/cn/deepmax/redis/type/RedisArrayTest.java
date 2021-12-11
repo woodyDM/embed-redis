@@ -17,7 +17,7 @@ public class RedisArrayTest {
         RedisArray array = new RedisArray();
         
         assertTrue(array.isArray());
-        assertFalse(array.isNil());
+        assertFalse(array.isNull());
         assertArrayEquals(array.respContent(),"*0\r\n".getBytes(StandardCharsets.UTF_8));
     }
 
@@ -26,7 +26,7 @@ public class RedisArrayTest {
         RedisArray array = RedisArray.NIL;
 
         assertTrue(array.isArray());
-        assertTrue(array.isNil());
+        assertTrue(array.isNull());
         assertArrayEquals(array.respContent(),"*-1\r\n".getBytes(StandardCharsets.UTF_8));
     }
 
@@ -39,7 +39,7 @@ public class RedisArrayTest {
         array.add(  RedisBulkString.of("abcd"));
         
         assertTrue(array.isArray());
-        assertFalse(array.isNil());
+        assertFalse(array.isNull());
         assertEquals(array.children().size(),4);
         assertArrayEquals(array.respContent(),"*4\r\n+ab你\r\n:1000\r\n-Err 1\r\n$4\r\nabcd\r\n".getBytes(StandardCharsets.UTF_8));
     }

@@ -10,7 +10,7 @@ import org.luaj.vm2.*;
 public class RedisLuaConverter {
 
     public static LuaValue toLua(RedisType type) {
-        if (type.isNil()) {
+        if (type.isNull()) {
             return LuaBoolean.valueOf(false);
         } else if (type.isInteger()) {
             return LuaValue.valueOf(type.value());

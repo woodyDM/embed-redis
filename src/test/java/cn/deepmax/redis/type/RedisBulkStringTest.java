@@ -17,7 +17,7 @@ public class RedisBulkStringTest {
     public void shouldOK() {
         RedisBulkString string = RedisBulkString.of((String)null);
      
-        assertTrue(string.isNil());
+        assertTrue(string.isNull());
         assertTrue(string.isString());
         assertArrayEquals(string.respContent(),"$-1\r\n".getBytes(StandardCharsets.UTF_8));
     }
@@ -26,7 +26,7 @@ public class RedisBulkStringTest {
     public void shouldOK2() {
         RedisBulkString string = RedisBulkString.of("");
 
-        assertFalse(string.isNil());
+        assertFalse(string.isNull());
         assertTrue(string.isString());
         assertArrayEquals(string.respContent(),"$0\r\n\r\n".getBytes(StandardCharsets.UTF_8));
     }
@@ -35,7 +35,7 @@ public class RedisBulkStringTest {
     public void shouldOK3() {
         RedisBulkString string = RedisBulkString.of("ab你好");
 
-        assertFalse(string.isNil());
+        assertFalse(string.isNull());
         assertTrue(string.isString());
         assertArrayEquals(string.respContent(),"$8\r\nab你好\r\n".getBytes(StandardCharsets.UTF_8));
     }

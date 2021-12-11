@@ -9,7 +9,7 @@ import java.util.List;
  */
 public interface RedisType {
 
-    default boolean isNil() {
+    default boolean isNull() {
         return false;
     }
     

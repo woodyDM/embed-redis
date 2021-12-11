@@ -58,7 +58,6 @@ public class RedisServer {
                     @Override
                     protected void initChannel(SocketChannel ch) throws Exception {
                         ch.pipeline().addLast(new RedisDecoder(true))
-                                .addLast(new RedisDecoder())
                                 .addLast(new RedisBulkStringAggregator())
                                 .addLast(new RedisArrayAggregator())
                                 .addLast(redisTypeDecoder)

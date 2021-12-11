@@ -26,7 +26,7 @@ public class RStringTest {
         assertFalse(string.isArray());
         assertFalse(string.isInteger());
         assertFalse(string.isError());
-        assertFalse(string.isNil());
+        assertFalse(string.isNull());
         assertArrayEquals(string.respContent(),"+OK\r\n".getBytes(StandardCharsets.UTF_8));
         
     }
