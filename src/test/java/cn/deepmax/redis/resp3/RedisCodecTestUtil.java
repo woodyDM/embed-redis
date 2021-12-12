@@ -18,11 +18,22 @@ package cn.deepmax.redis.resp3;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.util.CharsetUtil;
 
 final class RedisCodecTestUtil {
 
     private RedisCodecTestUtil() {
+    }
+
+    static ByteBuf readAll(EmbeddedChannel channel) {
+        ByteBuf buf = Unpooled.buffer();
+        ByteBuf read;
+        while ((read = channel.readOutbound()) != null) {
+            buf.writeBytes(read);
+            read.release();
+        }
+        return buf;
     }
 
     static byte[] bytesOf(long value) {

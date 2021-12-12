@@ -61,7 +61,8 @@ public class RedisResp3Encoder extends MessageToMessageEncoder<RedisMessage> {
         } else if (msg instanceof IntegerRedisMessage) {
             writeIntegerMessage(allocator, (IntegerRedisMessage) msg, out);
         } else if (msg instanceof FullBulkValueRedisMessage) {
-            writeFullBulkValueMessage(allocator, (FullBulkValueRedisMessage) msg, out);
+            FullBulkValueRedisMessage m = (FullBulkValueRedisMessage) msg;
+            writeFullBulkValueMessage(allocator, m, m.type(), out);
         } else if (msg instanceof FullBulkStringRedisMessage) {
             writeFullBulkStringMessage(allocator, (FullBulkStringRedisMessage) msg, out);
         } else if (msg instanceof BulkStringRedisContent) {
@@ -71,30 +72,39 @@ public class RedisResp3Encoder extends MessageToMessageEncoder<RedisMessage> {
         } else if (msg instanceof BulkStringHeaderRedisMessage) {
             writeBulkStringHeader(allocator, (BulkStringHeaderRedisMessage) msg, out);
         } else if (msg instanceof NullRedisMessage) {
-            //todo
-        } else if (msg instanceof FloatingNumberRedisMessage) {
-
+            writeNullMessage(allocator, out);
+        } else if (msg instanceof DoubleRedisMessage) {
+            DoubleRedisMessage fmsg = (DoubleRedisMessage) msg;
+            writeString(allocator, RedisMessageType.DOUBLE, fmsg.content(), out);
         } else if (msg instanceof BooleanRedisMessage) {
-
+            writeString(allocator, RedisMessageType.BOOLEAN, ((BooleanRedisMessage) msg).content(), out);
         } else if (msg instanceof BigNumberRedisMessage) {
-
+            writeString(allocator, RedisMessageType.BIG_NUMBER, ((BigNumberRedisMessage) msg).content(), out);
         } else if (msg instanceof ListRedisMessage) {
-
+            writeArrayMessage(allocator, RedisMessageType.AGG_ARRAY, (ArrayRedisMessage) msg, out);
         } else if (msg instanceof SetRedisMessage) {
-
+            writeArrayMessage(allocator, RedisMessageType.AGG_SET, (ArrayRedisMessage) msg, out);
         } else if (msg instanceof MapRedisMessage) {
-
+            writeMappedMessage(allocator, RedisMessageType.AGG_MAP, (MapRedisMessage) msg, out);
         } else if (msg instanceof AttributeRedisMessage) {
-
+            writeMappedMessage(allocator, RedisMessageType.AGG_ATTRIBUTE, (AttributeRedisMessage) msg, out);
         } else if (msg instanceof AggRedisTypeHeaderMessage) {
-
+            writeAggHeader(allocator, (AggRedisTypeHeaderMessage) msg, out);
         } else if (msg instanceof ArrayHeaderRedisMessage) {
             writeArrayHeader(allocator, (ArrayHeaderRedisMessage) msg, out);
         } else if (msg instanceof ArrayRedisMessage) {
-            writeArrayMessage(allocator, (ArrayRedisMessage) msg, out);
+            writeArrayMessage(allocator, RedisMessageType.AGG_ARRAY, (ArrayRedisMessage) msg, out);
         } else {
             throw new CodecException("unknown message type: " + msg);
         }
+    }
+
+    private void writeNullMessage(ByteBufAllocator allocator, List<Object> out) {
+        ByteBuf buf = allocator.ioBuffer(RedisMessageType.NULL.length() +
+                Constants.EOL_LENGTH);
+        RedisMessageType.NULL.writeTo(buf);
+        buf.writeShort(Constants.EOL_SHORT);
+        out.add(buf);
     }
 
     private static void writeInlineCommandMessage(ByteBufAllocator allocator, InlineCommandRedisMessage msg,
@@ -122,39 +132,33 @@ public class RedisResp3Encoder extends MessageToMessageEncoder<RedisMessage> {
     }
 
     private void writeIntegerMessage(ByteBufAllocator allocator, IntegerRedisMessage msg, List<Object> out) {
-        ByteBuf buf = allocator.ioBuffer(RedisConstants.TYPE_LENGTH + RedisConstants.LONG_MAX_LENGTH +
-                RedisConstants.EOL_LENGTH);
-        RedisMessageType.INTEGER.writeTo(buf);
+        ByteBuf buf = allocator.ioBuffer(Constants.TYPE_LENGTH + Constants.LONG_MAX_LENGTH +
+                Constants.EOL_LENGTH);
+        RedisMessageType.NUMBER.writeTo(buf);
         buf.writeBytes(numberToBytes(msg.value()));
-        buf.writeShort(RedisConstants.EOL_SHORT);
+        buf.writeShort(Constants.EOL_SHORT);
         out.add(buf);
     }
 
     private void writeBulkStringHeader(ByteBufAllocator allocator, BulkStringHeaderRedisMessage msg, List<Object> out) {
-        final ByteBuf buf = allocator.ioBuffer(RedisConstants.TYPE_LENGTH +
-                (msg.isNull() ? RedisConstants.NULL_LENGTH :
-                        RedisConstants.LONG_MAX_LENGTH + RedisConstants.EOL_LENGTH));
-        RedisMessageType.BULK_STRING.writeTo(buf);
+        final ByteBuf buf = allocator.ioBuffer(Constants.TYPE_LENGTH +
+                (msg.isNull() ? Constants.NULL_LENGTH :
+                        Constants.LONG_MAX_LENGTH + Constants.EOL_LENGTH));
+        RedisMessageType.BLOG_STRING.writeTo(buf);
         if (msg.isNull()) {
-            buf.writeShort(RedisConstants.NULL_SHORT);
+            buf.writeShort(Constants.NULL_SHORT);
         } else {
             buf.writeBytes(numberToBytes(msg.bulkStringLength()));
-            buf.writeShort(RedisConstants.EOL_SHORT);
+            buf.writeShort(Constants.EOL_SHORT);
         }
         out.add(buf);
     }
 
     private void writeBulkValueHeader(ByteBufAllocator allocator, BulkValueHeaderRedisMessage msg, List<Object> out) {
-        final ByteBuf buf = allocator.ioBuffer(RedisConstants.TYPE_LENGTH +
-                (msg.isNull() ? RedisConstants.NULL_LENGTH :
-                        RedisConstants.LONG_MAX_LENGTH + RedisConstants.EOL_LENGTH));
-        RedisMessageType.BULK_STRING.writeTo(buf);
-        if (msg.isNull()) {
-            buf.writeShort(RedisConstants.NULL_SHORT);
-        } else {
-            buf.writeBytes(numberToBytes(msg.bulkStringLength()));
-            buf.writeShort(RedisConstants.EOL_SHORT);
-        }
+        final ByteBuf buf = allocator.ioBuffer(Constants.TYPE_LENGTH + Constants.LONG_MAX_LENGTH + Constants.EOL_LENGTH);
+        msg.getType().writeTo(buf);
+        buf.writeBytes(numberToBytes(msg.getLength()));
+        buf.writeShort(Constants.EOL_SHORT);
         out.add(buf);
     }
 
@@ -162,93 +166,95 @@ public class RedisResp3Encoder extends MessageToMessageEncoder<RedisMessage> {
                                                List<Object> out) {
         out.add(msg.content().retain());
         if (msg instanceof LastBulkStringRedisContent) {
-            out.add(allocator.ioBuffer(RedisConstants.EOL_LENGTH).writeShort(RedisConstants.EOL_SHORT));
+            out.add(allocator.ioBuffer(Constants.EOL_LENGTH).writeShort(Constants.EOL_SHORT));
         }
     }
 
     private void writeFullBulkStringMessage(ByteBufAllocator allocator, FullBulkStringRedisMessage msg,
                                             List<Object> out) {
         if (msg.isNull()) {
-            ByteBuf buf = allocator.ioBuffer(RedisConstants.TYPE_LENGTH + RedisConstants.NULL_LENGTH +
-                    RedisConstants.EOL_LENGTH);
-            RedisMessageType.BULK_STRING.writeTo(buf);
-            buf.writeShort(RedisConstants.NULL_SHORT);
-            buf.writeShort(RedisConstants.EOL_SHORT);
+            ByteBuf buf = allocator.ioBuffer(Constants.TYPE_LENGTH + Constants.NULL_LENGTH +
+                    Constants.EOL_LENGTH);
+            RedisMessageType.BLOG_STRING.writeTo(buf);
+            buf.writeShort(Constants.NULL_SHORT);
+            buf.writeShort(Constants.EOL_SHORT);
             out.add(buf);
         } else {
-            ByteBuf headerBuf = allocator.ioBuffer(RedisConstants.TYPE_LENGTH + RedisConstants.LONG_MAX_LENGTH +
-                    RedisConstants.EOL_LENGTH);
-            RedisMessageType.BULK_STRING.writeTo(headerBuf);
-            headerBuf.writeBytes(numberToBytes(msg.content().readableBytes()));
-            headerBuf.writeShort(RedisConstants.EOL_SHORT);
-            out.add(headerBuf);
-            out.add(msg.content().retain());
-            out.add(allocator.ioBuffer(RedisConstants.EOL_LENGTH).writeShort(RedisConstants.EOL_SHORT));
+            writeFullBulkValueMessage(allocator, msg, RedisMessageType.BLOG_STRING, out);
         }
     }
 
-    private void writeFullBulkValueMessage(ByteBufAllocator allocator, FullBulkValueRedisMessage msg,
+    private void writeFullBulkValueMessage(ByteBufAllocator allocator, FullBulkStringRedisMessage msg, RedisMessageType type,
                                            List<Object> out) {
-        if (msg.isNull()) {
-            ByteBuf buf = allocator.ioBuffer(RedisConstants.TYPE_LENGTH + RedisConstants.NULL_LENGTH +
-                    RedisConstants.EOL_LENGTH);
-            RedisMessageType.BULK_STRING.writeTo(buf);
-            buf.writeShort(RedisConstants.NULL_SHORT);
-            buf.writeShort(RedisConstants.EOL_SHORT);
-            out.add(buf);
-        } else {
-            ByteBuf headerBuf = allocator.ioBuffer(RedisConstants.TYPE_LENGTH + RedisConstants.LONG_MAX_LENGTH +
-                    RedisConstants.EOL_LENGTH);
-            RedisMessageType.BULK_STRING.writeTo(headerBuf);
-            headerBuf.writeBytes(numberToBytes(msg.content().readableBytes()));
-            headerBuf.writeShort(RedisConstants.EOL_SHORT);
-            out.add(headerBuf);
-            out.add(msg.content().retain());
-            out.add(allocator.ioBuffer(RedisConstants.EOL_LENGTH).writeShort(RedisConstants.EOL_SHORT));
-        }
+
+        ByteBuf headerBuf = allocator.ioBuffer(Constants.TYPE_LENGTH + Constants.LONG_MAX_LENGTH +
+                Constants.EOL_LENGTH);
+        type.writeTo(headerBuf);
+        headerBuf.writeBytes(numberToBytes(msg.content().readableBytes()));
+        headerBuf.writeShort(Constants.EOL_SHORT);
+        out.add(headerBuf);
+        out.add(msg.content().retain());
+        out.add(allocator.ioBuffer(Constants.EOL_LENGTH).writeShort(Constants.EOL_SHORT));
+    }
+
+    /**
+     * Write agg header only without body. Use this if you want to write arrays as streaming.
+     */
+    private void writeAggHeader(ByteBufAllocator allocator, AggRedisTypeHeaderMessage msg, List<Object> out) {
+        writeArrayHeader(allocator, msg.getType(), msg.isNull(), msg.length(), out);
     }
 
     /**
      * Write array header only without body. Use this if you want to write arrays as streaming.
      */
     private void writeArrayHeader(ByteBufAllocator allocator, ArrayHeaderRedisMessage msg, List<Object> out) {
-        writeArrayHeader(allocator, msg.isNull(), msg.length(), out);
+        writeArrayHeader(allocator, RedisMessageType.AGG_ARRAY, msg.isNull(), msg.length(), out);
     }
 
     /**
-     * Write full constructed array message.
+     * Write map message.
      */
-    private void writeArrayMessage(ByteBufAllocator allocator, ArrayRedisMessage msg, List<Object> out) {
+    private void writeMappedMessage(ByteBufAllocator allocator, RedisMessageType type, AbstractMapRedisMessage msg, List<Object> out) {
+        writeArrayHeader(allocator, type, false, msg.size(), out);
+        msg.data().forEach((k, v) -> {
+            writeRedisMessage(allocator, k, out);
+            writeRedisMessage(allocator, v, out);
+        });
+    }
+
+    /**
+     * Write full constructed array-based message.
+     */
+    private void writeArrayMessage(ByteBufAllocator allocator, RedisMessageType type, ArrayRedisMessage msg, List<Object> out) {
         if (msg.isNull()) {
-            writeArrayHeader(allocator, msg.isNull(), RedisConstants.NULL_VALUE, out);
+            writeArrayHeader(allocator, type, msg.isNull(), Constants.NULL_VALUE, out);
         } else {
-            writeArrayHeader(allocator, msg.isNull(), msg.children().size(), out);
+            writeArrayHeader(allocator, type, msg.isNull(), msg.children().size(), out);
             for (RedisMessage child : msg.children()) {
                 writeRedisMessage(allocator, child, out);
             }
         }
     }
 
-    private void writeArrayHeader(ByteBufAllocator allocator, boolean isNull, long length, List<Object> out) {
+    private void writeArrayHeader(ByteBufAllocator allocator, RedisMessageType type, boolean isNull, long length, List<Object> out) {
         if (isNull) {
-            final ByteBuf buf = allocator.ioBuffer(RedisConstants.TYPE_LENGTH + RedisConstants.NULL_LENGTH +
-                    RedisConstants.EOL_LENGTH);
-            RedisMessageType.ARRAY_HEADER.writeTo(buf);
-            buf.writeShort(RedisConstants.NULL_SHORT);
-            buf.writeShort(RedisConstants.EOL_SHORT);
+            final ByteBuf buf = allocator.ioBuffer(Constants.TYPE_LENGTH + Constants.NULL_LENGTH +
+                    Constants.EOL_LENGTH);
+            type.writeTo(buf);
+            buf.writeShort(Constants.NULL_SHORT);
+            buf.writeShort(Constants.EOL_SHORT);
             out.add(buf);
         } else {
-            final ByteBuf buf = allocator.ioBuffer(RedisConstants.TYPE_LENGTH + RedisConstants.LONG_MAX_LENGTH +
-                    RedisConstants.EOL_LENGTH);
-            RedisMessageType.ARRAY_HEADER.writeTo(buf);
+            final ByteBuf buf = allocator.ioBuffer(Constants.TYPE_LENGTH + Constants.LONG_MAX_LENGTH +
+                    Constants.EOL_LENGTH);
+            type.writeTo(buf);
             buf.writeBytes(numberToBytes(length));
-            buf.writeShort(RedisConstants.EOL_SHORT);
+            buf.writeShort(Constants.EOL_SHORT);
             out.add(buf);
         }
     }
 
     private byte[] numberToBytes(long value) {
-        byte[] bytes = messagePool.getByteBufOfInteger(value);
-        return bytes != null ? bytes : RedisCodecUtil.longToAsciiBytes(value);
+        return RedisCodecUtil.longToAsciiBytes(value);
     }
 }

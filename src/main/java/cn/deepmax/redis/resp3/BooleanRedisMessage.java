@@ -19,4 +19,8 @@ public class BooleanRedisMessage implements RedisMessage {
     public boolean value() {
         return value;
     }
+
+    public String content() {
+        return value ? "t" : "f";
+    }
 }

@@ -6,13 +6,11 @@ import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.redis.*;
 import io.netty.util.ReferenceCountUtil;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
 import static cn.deepmax.redis.resp3.RedisCodecTestUtil.byteBufOf;
@@ -109,7 +107,7 @@ public abstract class BaseRedisResp3Test {
 
         NullRedisMessage msg = channel.readInbound();
 
-        assertThat(msg, is(NullRedisMessage.INS));
+        assertThat(msg, is(NullRedisMessage.INSTANCE));
         ReferenceCountUtil.release(msg);
     }
 
@@ -129,7 +127,7 @@ public abstract class BaseRedisResp3Test {
         assertFalse(channel.writeInbound(byteBufOf(value)));
         assertTrue(channel.writeInbound(byteBufOf("\r\n")));
 
-        FloatingNumberRedisMessage msg = channel.readInbound();
+        DoubleRedisMessage msg = channel.readInbound();
 
         assertThat(msg.getValue(), equalTo(10.156));
         ReferenceCountUtil.release(msg);
@@ -142,7 +140,7 @@ public abstract class BaseRedisResp3Test {
         assertFalse(channel.writeInbound(byteBufOf(value)));
         assertTrue(channel.writeInbound(byteBufOf("\r\n")));
 
-        FloatingNumberRedisMessage msg = channel.readInbound();
+        DoubleRedisMessage msg = channel.readInbound();
 
         assertThat(msg.getValue(), equalTo(-0.156));
         ReferenceCountUtil.release(msg);
@@ -155,7 +153,7 @@ public abstract class BaseRedisResp3Test {
         assertFalse(channel.writeInbound(byteBufOf(value)));
         assertTrue(channel.writeInbound(byteBufOf("\r\n")));
 
-        FloatingNumberRedisMessage msg = channel.readInbound();
+        DoubleRedisMessage msg = channel.readInbound();
 
         assertThat(msg.getValue(), equalTo(100D));
         ReferenceCountUtil.release(msg);
@@ -168,7 +166,7 @@ public abstract class BaseRedisResp3Test {
         assertFalse(channel.writeInbound(byteBufOf(value)));
         assertTrue(channel.writeInbound(byteBufOf("\r\n")));
 
-        FloatingNumberRedisMessage msg = channel.readInbound();
+        DoubleRedisMessage msg = channel.readInbound();
 
         assertThat(msg.getValue(), equalTo(-200D));
         ReferenceCountUtil.release(msg);
@@ -182,9 +180,9 @@ public abstract class BaseRedisResp3Test {
         assertFalse(channel.writeInbound(byteBufOf(value)));
         assertTrue(channel.writeInbound(byteBufOf("\r\n")));
 
-        FloatingNumberRedisMessage msg = channel.readInbound();
+        DoubleRedisMessage msg = channel.readInbound();
 
-        assertThat(msg, sameInstance(FloatingNumberRedisMessage.INF));
+        assertThat(msg, sameInstance(DoubleRedisMessage.INF));
         ReferenceCountUtil.release(msg);
     }
 
@@ -195,9 +193,9 @@ public abstract class BaseRedisResp3Test {
         assertFalse(channel.writeInbound(byteBufOf(value)));
         assertTrue(channel.writeInbound(byteBufOf("\r\n")));
 
-        FloatingNumberRedisMessage msg = channel.readInbound();
+        DoubleRedisMessage msg = channel.readInbound();
 
-        assertThat(msg, sameInstance(FloatingNumberRedisMessage.INF_NEG));
+        assertThat(msg, sameInstance(DoubleRedisMessage.INF_NEG));
         ReferenceCountUtil.release(msg);
     }
 
@@ -232,7 +230,7 @@ public abstract class BaseRedisResp3Test {
         assertFalse(channel.writeInbound(byteBufOf("\r")));
         assertTrue(channel.writeInbound(byteBufOf("\n,")));
 
-        FloatingNumberRedisMessage msg1 = channel.readInbound();
+        DoubleRedisMessage msg1 = channel.readInbound();
         assertThat(msg1.getValue(), equalTo(10.15D));
         ReferenceCountUtil.release(msg1);
 
@@ -241,19 +239,19 @@ public abstract class BaseRedisResp3Test {
         assertTrue(channel.writeInbound(byteBufOf("\n,99\r\n")));
 
 
-        FloatingNumberRedisMessage msg2 = channel.readInbound();
+        DoubleRedisMessage msg2 = channel.readInbound();
         assertThat(msg2.getValue(), equalTo(-0.75D));
         ReferenceCountUtil.release(msg2);
 
-        FloatingNumberRedisMessage msg3 = channel.readInbound();
-        assertThat(msg3, sameInstance(FloatingNumberRedisMessage.INF_NEG));
+        DoubleRedisMessage msg3 = channel.readInbound();
+        assertThat(msg3, sameInstance(DoubleRedisMessage.INF_NEG));
         ReferenceCountUtil.release(msg3);
 
-        FloatingNumberRedisMessage msg4 = channel.readInbound();
-        assertThat(msg4, sameInstance(FloatingNumberRedisMessage.INF));
+        DoubleRedisMessage msg4 = channel.readInbound();
+        assertThat(msg4, sameInstance(DoubleRedisMessage.INF));
         ReferenceCountUtil.release(msg4);
 
-        FloatingNumberRedisMessage msg5 = channel.readInbound();
+        DoubleRedisMessage msg5 = channel.readInbound();
         assertThat(msg5.getValue(), equalTo(99D));
         ReferenceCountUtil.release(msg5);
     }

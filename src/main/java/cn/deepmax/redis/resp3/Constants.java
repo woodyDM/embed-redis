@@ -8,12 +8,15 @@ package cn.deepmax.redis.resp3;
  */
 final class Constants {
 
+    static final int NULL_VALUE = -1;
 
     static final int TYPE_LENGTH = 1;
 
     static final int EOL_LENGTH = 2;        //\r\n length
 
-    static final int INF_LENGTH = 3;        //inf
+    static final String INF = "inf";
+
+    static final int INF_LENGTH = INF.length();        //inf
 
     static final int NULL_LENGTH = 2;
     

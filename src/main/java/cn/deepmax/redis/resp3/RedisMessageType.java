@@ -45,7 +45,7 @@ public enum RedisMessageType {
     NULL('_', true),
     /**
      * ,<floating-point-number>\r\n          ",inf\r\n"   ",-inf\r\n"
-     * only v3: {@link FloatingNumberRedisMessage}
+     * only v3: {@link DoubleRedisMessage}
      */
     DOUBLE(',', true),
     /**
@@ -89,7 +89,7 @@ public enum RedisMessageType {
      * Moreover the number of following elements must be even
      * only v3
      * v3 {@link AggRedisTypeHeaderMessage}
-     * v3 {@link ListRedisMessage}
+     * v3 {@link MapRedisMessage}
      */
     AGG_MAP('%', false),
     /**

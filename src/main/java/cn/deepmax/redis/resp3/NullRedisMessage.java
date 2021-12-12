@@ -8,7 +8,7 @@ import io.netty.handler.codec.redis.RedisMessage;
  */
 public class NullRedisMessage implements RedisMessage {
 
-    public static final NullRedisMessage INS = new NullRedisMessage();
+    public static final NullRedisMessage INSTANCE = new NullRedisMessage();
 
     private NullRedisMessage() {
     }

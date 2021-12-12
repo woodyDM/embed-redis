@@ -18,4 +18,8 @@ public class BigNumberRedisMessage implements RedisMessage {
     public BigDecimal getValue() {
         return value;
     }
+
+    public String content() {
+        return value.toString();
+    }
 }

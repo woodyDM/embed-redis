@@ -214,7 +214,7 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
                 if (content.readableBytes() != 0) {
                     throw new RedisCodecException("null should have 0 byte to read, readable is: " + content.readableBytes());
                 }
-                return NullRedisMessage.INS;
+                return NullRedisMessage.INSTANCE;
             case DOUBLE:
                 return parseRedisFloat(content);
             case BOOLEAN:
@@ -251,7 +251,7 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
         }
     }
 
-    private FloatingNumberRedisMessage parseRedisFloat(ByteBuf byteBuf) {
+    private DoubleRedisMessage parseRedisFloat(ByteBuf byteBuf) {
         final boolean negative = isNegative(byteBuf);
         final int byteOffset = negative ? 1 : 0;
         // double or inf
@@ -260,14 +260,14 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
             byteBuf.getBytes(byteOffset, b);
             if (b[0] == 'i' && b[1] == 'n' && b[2] == 'f') {
                 byteBuf.skipBytes(Constants.INF_LENGTH + byteOffset);
-                return negative ? FloatingNumberRedisMessage.INF_NEG : FloatingNumberRedisMessage.INF;
+                return negative ? DoubleRedisMessage.INF_NEG : DoubleRedisMessage.INF;
             }
         }
         if (negative) {
             byteBuf.skipBytes(1);
-            return new FloatingNumberRedisMessage(-parsePositiveDouble(byteBuf));
+            return new DoubleRedisMessage(parsePositiveDouble(byteBuf).negate());
         } else {
-            return new FloatingNumberRedisMessage(parsePositiveDouble(byteBuf));
+            return new DoubleRedisMessage(parsePositiveDouble(byteBuf));
         }
     }
 
@@ -317,7 +317,7 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
         return toPositiveLongProcessor.content();
     }
 
-    private double parsePositiveDouble(ByteBuf byteBuf) {
+    private BigDecimal parsePositiveDouble(ByteBuf byteBuf) {
         toPositiveDoubleProcessor.reset();
         byteBuf.forEachByte(toPositiveDoubleProcessor);
         return toPositiveDoubleProcessor.content();
@@ -347,8 +347,8 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
             return true;
         }
 
-        public double content() {
-            return Double.parseDouble(sb.toString());
+        public BigDecimal content() {
+            return new BigDecimal(sb.toString());
         }
 
         public void reset() {
