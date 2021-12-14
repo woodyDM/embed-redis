@@ -38,7 +38,9 @@ public abstract class BaseTemplateTest {
     static {
         server = new RedisServer(new RedisConfiguration(PORT, AUTH));
         server.start();
-
+        Runtime.getRuntime().addShutdownHook(new Thread(()->{
+            server.stop();
+        }));
         ts[0] = createJedis();
         ts[1] = createLettuce();
         ts[2] = createRedisson();
@@ -127,7 +129,7 @@ public abstract class BaseTemplateTest {
             try {
                 ((InitializingBean) factory).afterPropertiesSet();
             } catch (Exception e) {
-                throw new IllegalStateException("failed to init " + factory.getClass().getName());
+                throw new IllegalStateException("failed to init " + factory.getClass().getName(), e);
             }
             t.afterPropertiesSet();
         }

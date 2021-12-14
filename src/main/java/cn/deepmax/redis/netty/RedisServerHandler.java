@@ -18,8 +18,7 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
     public RedisServerHandler(RedisEngine engine) {
         this.engine = engine;
     }
-
-
+    
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         RedisType type = (RedisType) msg;

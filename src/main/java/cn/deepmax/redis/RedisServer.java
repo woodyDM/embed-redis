@@ -7,6 +7,10 @@ import cn.deepmax.redis.api.RedisEngineHolder;
 import cn.deepmax.redis.netty.RedisEncoder;
 import cn.deepmax.redis.netty.RedisServerHandler;
 import cn.deepmax.redis.netty.RedisTypeDecoder;
+import cn.deepmax.redis.resp3.RedisAggTypesAggregator;
+import cn.deepmax.redis.resp3.RedisBulkValueAggregator;
+import cn.deepmax.redis.resp3.RedisResp3Decoder;
+import cn.deepmax.redis.resp3.RedisResp3Encoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -57,11 +61,11 @@ public class RedisServer {
                 .childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel ch) throws Exception {
-                        ch.pipeline().addLast(new RedisDecoder(true))
-                                .addLast(new RedisBulkStringAggregator())
-                                .addLast(new RedisArrayAggregator())
+                        ch.pipeline().addLast(new RedisResp3Decoder( ))
+                                .addLast(new RedisBulkValueAggregator())
+                                .addLast(new RedisAggTypesAggregator())
                                 .addLast(redisTypeDecoder)
-                                .addLast(new RedisEncoder())
+                                .addLast(new RedisResp3Encoder())
                                 .addLast(new RedisServerHandler(engine));
 
                     }
