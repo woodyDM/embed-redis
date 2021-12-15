@@ -5,12 +5,7 @@ import io.netty.handler.codec.redis.RedisMessage;
 import java.util.List;
 
 public class AttributeRedisMessage extends AbstractMapRedisMessage {
-    public AttributeRedisMessage(List<RedisMessage> list) {
-        super(list);
-    }
-    private AttributeRedisMessage(){}
-
-    public static final AttributeRedisMessage EMPTY = new AttributeRedisMessage(){
+    public static final AttributeRedisMessage EMPTY = new AttributeRedisMessage() {
         @Override
         public AttributeRedisMessage retain() {
             return this;
@@ -46,4 +41,11 @@ public class AttributeRedisMessage extends AbstractMapRedisMessage {
             return "EmptyAttributeRedisMessage";
         }
     };
+
+    public AttributeRedisMessage(List<RedisMessage> list) {
+        super(list);
+    }
+
+    private AttributeRedisMessage() {
+    }
 }

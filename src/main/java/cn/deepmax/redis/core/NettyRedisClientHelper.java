@@ -9,7 +9,7 @@ import io.netty.channel.Channel;
  * @date 2021/6/25
  */
 public interface NettyRedisClientHelper {
-    
+
     default Channel channel(Redis.Client client) {
         if (client.id() instanceof io.netty.channel.Channel) {
             return (Channel) client.id();
@@ -17,5 +17,5 @@ public interface NettyRedisClientHelper {
             throw new IllegalArgumentException("Invalid client type");
         }
     }
-    
+
 }

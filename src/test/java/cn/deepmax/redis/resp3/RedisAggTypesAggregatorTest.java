@@ -33,7 +33,7 @@ public class RedisAggTypesAggregatorTest extends BaseRedisResp3Test{
             assertEquals(msg.children().size(), 2);
             FullBulkValueRedisMessage m1 = (FullBulkValueRedisMessage) msg.children().get(0);
             assertEquals(m1.type(),RedisMessageType.BLOG_STRING);
-            assertEquals(m1.toString(),"hello \r\nworld");
+            assertEquals(m1.str(),"hello \r\nworld");
 
             SimpleStringRedisMessage m2 = (SimpleStringRedisMessage) msg.children().get(1);
             assertEquals(m2.content(), "OK");
@@ -52,7 +52,7 @@ public class RedisAggTypesAggregatorTest extends BaseRedisResp3Test{
             assertEquals(msg.children().size(), 2);
             FullBulkValueRedisMessage m1 = (FullBulkValueRedisMessage) msg.children().get(0);
             assertEquals(m1.type(),RedisMessageType.BLOG_STRING);
-            assertEquals(m1.toString(),"hello \r\nworld");
+            assertEquals(m1.str(),"hello \r\nworld");
 
             MapRedisMessage m2 = (MapRedisMessage) msg.children().get(1);
             assertEquals(m2.content().size(), 2);

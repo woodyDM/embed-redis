@@ -1,6 +1,6 @@
 package cn.deepmax.redis.api;
 
-import cn.deepmax.redis.type.RedisType;
+import io.netty.handler.codec.redis.RedisMessage;
 
 public interface Redis {
 
@@ -8,7 +8,7 @@ public interface Redis {
 
     void setConfiguration(RedisConfiguration configuration);
 
-    RedisType exec(RedisType type, Client client);
+    RedisMessage exec(RedisMessage type, Client client);
 
     /**
      * unique client Identification,client must override equals and hashCode;
@@ -16,7 +16,7 @@ public interface Redis {
     interface Client {
         Object id();
 
-        void send(RedisType msg);
+        void send(RedisMessage msg);
     }
 
 }

@@ -25,12 +25,26 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
     private RedisMessageType type;
     private int remainingBulkLength;
 
-    private enum State {
-        DECODE_TYPE,
-        DECODE_INLINE,
-        DECODE_LENGTH,
-        DECODE_BULK_EOL,
-        DECODE_BULK_CONTENT,
+    private static void readEndOfLine(final ByteBuf in) {
+        final short delim = in.readShort();
+        if (Constants.EOL_SHORT == delim) {
+            return;
+        }
+        final byte[] bytes = RedisCodecUtil.shortToBytes(delim);
+        throw new RedisCodecException("delimiter: [" + bytes[0] + "," + bytes[1] + "] (expected: \\r\\n)");
+    }
+
+    private static ByteBuf readLine(ByteBuf in) {
+        if (!in.isReadable(Constants.EOL_LENGTH)) {
+            return null;
+        }
+        final int lfIndex = in.forEachByte(ByteProcessor.FIND_LF);
+        if (lfIndex < 0) {
+            return null;
+        }
+        ByteBuf data = in.readSlice(lfIndex - in.readerIndex() - 1); // `-1` is for CR
+        readEndOfLine(in); // validate CR LF
+        return data;
     }
 
     /**
@@ -191,15 +205,6 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
         return true;
     }
 
-    private static void readEndOfLine(final ByteBuf in) {
-        final short delim = in.readShort();
-        if (Constants.EOL_SHORT == delim) {
-            return;
-        }
-        final byte[] bytes = RedisCodecUtil.shortToBytes(delim);
-        throw new RedisCodecException("delimiter: [" + bytes[0] + "," + bytes[1] + "] (expected: \\r\\n)");
-    }
-
     private RedisMessage newInlineRedisMessage(RedisMessageType messageType, ByteBuf content) {
         switch (messageType) {
             case INLINE_COMMAND:
@@ -281,19 +286,6 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
         return negative;
     }
 
-    private static ByteBuf readLine(ByteBuf in) {
-        if (!in.isReadable(Constants.EOL_LENGTH)) {
-            return null;
-        }
-        final int lfIndex = in.forEachByte(ByteProcessor.FIND_LF);
-        if (lfIndex < 0) {
-            return null;
-        }
-        ByteBuf data = in.readSlice(lfIndex - in.readerIndex() - 1); // `-1` is for CR
-        readEndOfLine(in); // validate CR LF
-        return data;
-    }
-
     private long parseRedisNumber(ByteBuf byteBuf) {
         final int readableBytes = byteBuf.readableBytes();
         final boolean negative = readableBytes > 0 && byteBuf.getByte(byteBuf.readerIndex()) == '-';
@@ -327,6 +319,14 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
         toPositiveBigNumberProcessor.reset();
         byteBuf.forEachByte(toPositiveBigNumberProcessor);
         return toPositiveBigNumberProcessor.content();
+    }
+
+    private enum State {
+        DECODE_TYPE,
+        DECODE_INLINE,
+        DECODE_LENGTH,
+        DECODE_BULK_EOL,
+        DECODE_BULK_CONTENT,
     }
 
     private static final class ToPositiveDoubleProcessor implements ByteProcessor {

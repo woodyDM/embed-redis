@@ -10,9 +10,9 @@ import java.time.LocalDateTime;
  */
 class RString implements RedisObject {
 
-    private byte[] s;
+    private final byte[] s;
 
-    private LocalDateTime expire;
+    private final LocalDateTime expire;
 
     public RString(byte[] v) {
         this(v, null);

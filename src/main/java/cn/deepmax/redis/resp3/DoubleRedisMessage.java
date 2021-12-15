@@ -10,10 +10,9 @@ import java.math.BigDecimal;
  */
 public class DoubleRedisMessage implements RedisMessage {
 
-    private final BigDecimal value;
-
     public static final DoubleRedisMessage INF = new DoubleRedisMessage(null);
     public static final DoubleRedisMessage INF_NEG = new DoubleRedisMessage(null);
+    private final BigDecimal value;
 
     public DoubleRedisMessage(BigDecimal value) {
         this.value = value;

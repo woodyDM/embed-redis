@@ -2,8 +2,7 @@ package cn.deepmax.redis.core;
 
 import cn.deepmax.redis.api.*;
 import cn.deepmax.redis.core.module.*;
-import cn.deepmax.redis.api.TimeProvider;
-import cn.deepmax.redis.type.RedisType;
+import io.netty.handler.codec.redis.RedisMessage;
 import lombok.NonNull;
 
 import java.time.LocalDateTime;
@@ -15,18 +14,7 @@ import java.util.Objects;
  */
 public class DefaultRedisEngine implements RedisEngine {
 
-    private CommandManager commandManager = new CommandManager();
-    private PubsubManager pubsubManager = new DefaultPubsub();
-    protected TimeProvider timeProvider = new DefaultTimeProvider();
-    private DbManager dbManager = new DefaultDbManager(16);
-    private RedisConfiguration configuration;
-    private final RedisExecutor executor = new DefaultRedisExecutor();
-    private final NettyAuthManager authManager = new NettyAuthManager();
     private static final DefaultRedisEngine S = new DefaultRedisEngine();
-
-    public static DefaultRedisEngine instance() {
-        return S;
-    }
 
     static {
         S.commandManager.load(new StringModule());
@@ -36,6 +24,18 @@ public class DefaultRedisEngine implements RedisEngine {
         S.commandManager.load(new AuthModule());
         S.commandManager.load(new PubsubModule());
         S.commandManager.load(new DatabaseModule());
+    }
+
+    private final RedisExecutor executor = new DefaultRedisExecutor();
+    private final NettyAuthManager authManager = new NettyAuthManager();
+    private final CommandManager commandManager = new CommandManager();
+    private final PubsubManager pubsubManager = new DefaultPubsub();
+    private final DbManager dbManager = new DefaultDbManager(16);
+    protected TimeProvider timeProvider = new DefaultTimeProvider();
+    private RedisConfiguration configuration;
+
+    public static DefaultRedisEngine instance() {
+        return S;
     }
 
     @Override
@@ -58,14 +58,14 @@ public class DefaultRedisEngine implements RedisEngine {
     }
 
     @Override
-    public RedisType execute(RedisType type, Redis.Client client) {
+    public RedisMessage execute(RedisMessage type, Redis.Client client) {
         return executor.execute(type, this, client);
     }
 
     public void setTimeProvider(TimeProvider timeProvider) {
         this.timeProvider = Objects.requireNonNull(timeProvider);
     }
-    
+
     @Override
     public boolean isExpire(@NonNull RedisObject v) {
         LocalDateTime time = v.expireTime();

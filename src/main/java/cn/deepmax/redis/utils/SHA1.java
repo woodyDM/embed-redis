@@ -43,6 +43,6 @@ public class SHA1 {
         }
         return buf.toString().toUpperCase();
     }
-    
+
 }
 

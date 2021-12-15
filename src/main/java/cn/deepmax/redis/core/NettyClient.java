@@ -1,9 +1,9 @@
 package cn.deepmax.redis.core;
 
 import cn.deepmax.redis.api.Redis;
-import cn.deepmax.redis.type.RedisType;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.redis.RedisMessage;
 
 import java.util.Objects;
 
@@ -24,7 +24,7 @@ public class NettyClient implements Redis.Client {
     }
 
     @Override
-    public void send(RedisType msg) {
+    public void send(RedisMessage msg) {
         channel.writeAndFlush(msg);
     }
 

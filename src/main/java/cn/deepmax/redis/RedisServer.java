@@ -1,12 +1,10 @@
 package cn.deepmax.redis;
 
-import cn.deepmax.redis.core.DefaultRedisEngine;
 import cn.deepmax.redis.api.RedisConfiguration;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.api.RedisEngineHolder;
-import cn.deepmax.redis.netty.RedisEncoder;
+import cn.deepmax.redis.core.DefaultRedisEngine;
 import cn.deepmax.redis.netty.RedisServerHandler;
-import cn.deepmax.redis.netty.RedisTypeDecoder;
 import cn.deepmax.redis.resp3.RedisAggTypesAggregator;
 import cn.deepmax.redis.resp3.RedisBulkValueAggregator;
 import cn.deepmax.redis.resp3.RedisResp3Decoder;
@@ -19,9 +17,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.redis.RedisArrayAggregator;
-import io.netty.handler.codec.redis.RedisBulkStringAggregator;
-import io.netty.handler.codec.redis.RedisDecoder;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,10 +26,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RedisServer {
 
+    private final RedisConfiguration configuration;
     private EventLoopGroup boss = null;
     private EventLoopGroup workerGroup = null;
     private Channel serverChannel = null;
-    private final RedisConfiguration configuration;
 
     public RedisServer(@NonNull RedisConfiguration configuration) {
         this.configuration = configuration;
@@ -52,8 +47,7 @@ public class RedisServer {
         RedisEngineHolder.set(engine);
         engine.authManager().setAuth(configuration.getAuth());
         engine.setConfiguration(configuration);
-        
-        RedisTypeDecoder redisTypeDecoder = new RedisTypeDecoder();
+
         boss = new NioEventLoopGroup(1);
         workerGroup = new NioEventLoopGroup(1);
         boot.group(boss, workerGroup)
@@ -61,10 +55,10 @@ public class RedisServer {
                 .childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel ch) throws Exception {
-                        ch.pipeline().addLast(new RedisResp3Decoder( ))
+                        ch.pipeline().addLast(new RedisResp3Decoder())
                                 .addLast(new RedisBulkValueAggregator())
                                 .addLast(new RedisAggTypesAggregator())
-                                .addLast(redisTypeDecoder)
+//                                .addLast(redisTypeDecoder)
                                 .addLast(new RedisResp3Encoder())
                                 .addLast(new RedisServerHandler(engine));
 

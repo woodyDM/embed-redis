@@ -2,9 +2,10 @@ package cn.deepmax.redis.core;
 
 import cn.deepmax.redis.api.PubsubManager;
 import cn.deepmax.redis.api.Redis;
-import cn.deepmax.redis.type.RedisArray;
-import cn.deepmax.redis.type.RedisBulkString;
+import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
+import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.utils.RegexUtils;
+import io.netty.handler.codec.redis.RedisMessage;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,8 +18,8 @@ import java.util.stream.Collectors;
  */
 public class DefaultPubsub implements PubsubManager {
 
-    private Pubsub n = new Normal();
-    private Pubsub r = new Regex();
+    private final Pubsub n = new Normal();
+    private final Pubsub r = new Regex();
 
     @Override
     public Pubsub normal() {
@@ -37,17 +38,16 @@ public class DefaultPubsub implements PubsubManager {
             if (channels == null) {
                 return Collections.emptySet();
             }
-            RedisArray msg = new RedisArray();
-            msg.add(RedisBulkString.of("message"));
-            msg.add(RedisBulkString.of(channel.getContent()));
-            msg.add(RedisBulkString.of(message));
-            return channels.stream().map(ch -> new PubPair(ch, msg)).collect(Collectors.toSet());
+            List<RedisMessage> msg = new ArrayList<>();
+            msg.add(FullBulkValueRedisMessage.ofString("message"));
+            msg.add(FullBulkValueRedisMessage.ofString(channel.getContent()));
+            msg.add(FullBulkValueRedisMessage.ofString(message));
+            return channels.stream().map(ch -> new PubPair(ch, new ListRedisMessage(msg))).collect(Collectors.toSet());
         }
-
     }
 
     static class Regex extends BasePubsub {
-        
+
         private final Map<Key, Pattern> patternMap = new ConcurrentHashMap<>();
 
         @Override
@@ -60,13 +60,13 @@ public class DefaultPubsub implements PubsubManager {
                     Pattern pattern = patternMap.get(p);
                     boolean match = pattern.matcher(channel.str()).find();
                     if (match) {
-                        RedisArray msg = new RedisArray();
-                        msg.add(RedisBulkString.of("pmessage"));
-                        msg.add(RedisBulkString.of(p.getContent()));
-                        msg.add(RedisBulkString.of(channel.getContent()));
-                        msg.add(RedisBulkString.of(message));
+                        List<RedisMessage> msg = new ArrayList<>();
+                        msg.add(FullBulkValueRedisMessage.ofString("pmessage"));
+                        msg.add(FullBulkValueRedisMessage.ofString(p.getContent()));
+                        msg.add(FullBulkValueRedisMessage.ofString(channel.getContent()));
+                        msg.add(FullBulkValueRedisMessage.ofString(message));
                         for (Redis.Client ch : chs) {
-                            result.add(new PubPair(ch, msg));
+                            result.add(new PubPair(ch, new ListRedisMessage(msg)));
                         }
                     }
                 }

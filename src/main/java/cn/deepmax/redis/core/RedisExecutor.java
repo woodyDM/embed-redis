@@ -2,7 +2,7 @@ package cn.deepmax.redis.core;
 
 import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.type.RedisType;
+import io.netty.handler.codec.redis.RedisMessage;
 
 /**
  * @author wudi
@@ -18,6 +18,6 @@ public interface RedisExecutor {
      * @param client
      * @return
      */
-    RedisType execute(RedisType type, RedisEngine engine, Redis.Client client);
+    RedisMessage execute(RedisMessage type, RedisEngine engine, Redis.Client client);
 
 }

@@ -13,10 +13,6 @@ public abstract class AbstractMapRedisMessage extends AbstractReferenceCounted i
 
     private final Map<RedisMessage, RedisMessage> data = new LinkedHashMap<>();
 
-    public Map<RedisMessage, RedisMessage> content() {
-        return data;
-    }
-
     protected AbstractMapRedisMessage() {
     }
 
@@ -30,6 +26,10 @@ public abstract class AbstractMapRedisMessage extends AbstractReferenceCounted i
                 data.put(list.get(i * 2), list.get(i * 2 + 1));
             }
         }
+    }
+
+    public Map<RedisMessage, RedisMessage> content() {
+        return data;
     }
 
     @Override

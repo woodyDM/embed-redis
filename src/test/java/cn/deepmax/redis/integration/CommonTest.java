@@ -31,7 +31,7 @@ public class CommonTest extends BaseTemplateTest {
     @Test
     public void shouldDel() {
         
-         v().set("1", "1");
+        v().set("1", "1");
         v().set("2", "2");
         v().set("3", "3");
 

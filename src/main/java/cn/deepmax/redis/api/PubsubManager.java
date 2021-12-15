@@ -1,7 +1,7 @@
 package cn.deepmax.redis.api;
 
 import cn.deepmax.redis.core.Key;
-import cn.deepmax.redis.type.RedisType;
+import io.netty.handler.codec.redis.RedisMessage;
 
 import java.util.Set;
 
@@ -32,11 +32,24 @@ public interface PubsubManager {
         regex().quit(client);
     }
 
+    interface Pubsub {
+
+        Set<PubPair> matches(Key channel, byte[] msg);
+
+        void pub(PubPair pubPair);
+
+        void sub(Redis.Client client, Key... channel);
+
+        void unsub(Redis.Client client, Key... channel);
+
+        void quit(Redis.Client client);
+    }
+
     class PubPair {
         private final Redis.Client client;
-        private final RedisType msg;
+        private final RedisMessage msg;
 
-        public PubPair(Redis.Client client, RedisType msg) {
+        public PubPair(Redis.Client client, RedisMessage msg) {
             this.client = client;
             this.msg = msg;
         }
@@ -45,7 +58,7 @@ public interface PubsubManager {
             return client;
         }
 
-        public RedisType getMsg() {
+        public RedisMessage getMsg() {
             return msg;
         }
 
@@ -61,19 +74,6 @@ public interface PubsubManager {
         public int hashCode() {
             return client.id().hashCode();
         }
-    }
-
-    interface Pubsub {
-
-        Set<PubPair> matches(Key channel, byte[] msg);
-
-        void pub(PubPair pubPair);
-
-        void sub(Redis.Client client, Key... channel);
-
-        void unsub(Redis.Client client, Key... channel);
-
-        void quit(Redis.Client client);
     }
 
 }

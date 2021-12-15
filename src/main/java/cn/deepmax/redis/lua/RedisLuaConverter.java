@@ -1,7 +1,14 @@
 package cn.deepmax.redis.lua;
 
-import cn.deepmax.redis.type.*;
+import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
+import cn.deepmax.redis.resp3.ListRedisMessage;
+import cn.deepmax.redis.resp3.NullRedisMessage;
+import cn.deepmax.redis.type.RedisMessages;
+import io.netty.handler.codec.redis.*;
 import org.luaj.vm2.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author wudi
@@ -9,81 +16,84 @@ import org.luaj.vm2.*;
  */
 public class RedisLuaConverter {
 
-    public static LuaValue toLua(RedisType type) {
-        if (type.isNull()) {
+    //??? where to use
+    public static LuaValue toLua(RedisMessage type) {
+        if (type instanceof NullRedisMessage || type == FullBulkStringRedisMessage.NULL_INSTANCE
+                || type == ArrayRedisMessage.NULL_INSTANCE) {
             return LuaBoolean.valueOf(false);
-        } else if (type.isInteger()) {
-            return LuaValue.valueOf(type.value());
-        } else if (type.isString()) {
-            return LuaString.valueOf(type.str());
-        } else if (type.isError()) {
+        } else if (type instanceof IntegerRedisMessage) {
+            return LuaValue.valueOf(((IntegerRedisMessage) type).value());
+        } else if (RedisMessages.isStr(type)) {
+            return LuaString.valueOf(RedisMessages.getStr(type));
+        } else if (RedisMessages.isError(type)) {
             LuaTable table = LuaTable.tableOf();
-            table.set("err", type.str());
+            table.set("err", RedisMessages.getStr(type));
             return table;
-        } else if (type.isArray()) {
+        } else if (type instanceof ArrayRedisMessage) {
             LuaTable table = LuaTable.tableOf();
-            for (int i = 0; i < type.size(); i++) {
-                table.set(1 + i, toLua(type.get(i)));
+            ArrayRedisMessage m = (ArrayRedisMessage) type;
+            for (int i = 0; i < m.children().size(); i++) {
+                table.set(1 + i, toLua(m.children().get(i)));
             }
             return table;
         } else {
-            throw new LuaError("Unable to convert type " + type.type());
+            throw new LuaError("Unable to convert type " + type.getClass().getName());
         }
     }
 
-    public static RedisType toRedis(Varargs value) {
+    public static RedisMessage toRedis(Varargs value) {
         int i = value.narg();
         if (i == 1) {
             LuaValue v = value.arg1();
             switch (v.type()) {
                 case LuaValue.TBOOLEAN:
                     boolean flag = v.toboolean();
-                    return flag ? new RedisInteger(1) : RedisBulkString.NIL;
+                    return flag ? new IntegerRedisMessage(1) : FullBulkValueRedisMessage.NULL_INSTANCE;
                 case LuaValue.TNUMBER:
                 case LuaValue.TINT:
                     int ivalue = (int) v.todouble();
-                    return new RedisInteger(ivalue);
+                    return new IntegerRedisMessage(ivalue);
                 case LuaValue.TSTRING:
-                    return RedisBulkString.of(v.toString());
+                    return FullBulkValueRedisMessage.ofString(v.toString());
                 case LuaValue.TTABLE:
                     LuaTable table = v.checktable();
                     int len = table.keyCount();
                     if (len == 1) {
                         LuaValue okValue = table.get("ok");
                         if (!okValue.isnil()) {
-                            return new RedisString(okValue.toString());
+                            return new SimpleStringRedisMessage(okValue.toString());
                         }
                         LuaValue errValue = table.get("err");
                         if (!errValue.isnil()) {
-                            return new RedisError(errValue.toString());
+                            return new ErrorRedisMessage(errValue.toString());
                         }
                     }
                     //other
-                    RedisArray array = new RedisArray();
+                    List<RedisMessage> r = new ArrayList<>();
                     for (LuaValue key : table.keys()) {
                         LuaValue argj = table.get(key.toString());
                         //truncated to the first nil inside the Lua array if any
                         if (argj.isnil()) {
                             break;
                         }
-                        array.add(toRedis(argj));
+                        r.add(toRedis(argj));
                     }
-                    return array;
+                    return new ListRedisMessage(r);
                 default:
                     throw new LuaError("unsupported lua type " + v.typename());
             }
         } else {
-            RedisArray ar = new RedisArray();
+            List<RedisMessage> r = new ArrayList<>();
+
             for (int j = 0; j < i; j++) {
                 LuaValue arg = value.arg(j + 1);
                 //truncated to the first nil inside the Lua array if any
                 if (arg.type() == LuaValue.TNIL) {
                     break;
                 }
-                ar.add(toRedis(arg));
+                r.add(toRedis(arg));
             }
-            return ar;
+            return new ListRedisMessage(r);
         }
-
     }
 }

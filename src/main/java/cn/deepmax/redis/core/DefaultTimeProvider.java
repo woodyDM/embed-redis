@@ -13,5 +13,5 @@ public class DefaultTimeProvider implements TimeProvider {
     public LocalDateTime now() {
         return LocalDateTime.now();
     }
-    
+
 }

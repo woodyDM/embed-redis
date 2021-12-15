@@ -1,6 +1,6 @@
 package cn.deepmax.redis.api;
 
-import cn.deepmax.redis.type.RedisType;
+import io.netty.handler.codec.redis.RedisMessage;
 
 public interface RedisEngine {
 
@@ -8,10 +8,10 @@ public interface RedisEngine {
 
     void setConfiguration(RedisConfiguration configuration);
 
-    RedisType execute(RedisType type, Redis.Client client);
-    
+    RedisMessage execute(RedisMessage type, Redis.Client client);
+
     DbManager getDbManager();
-    
+
     AuthManager authManager();
 
     PubsubManager pubsub();
@@ -25,7 +25,7 @@ public interface RedisEngine {
         RedisObject get(byte[] key);
 
         RedisObject del(byte[] key);
-        
+
     }
-    
+
 }

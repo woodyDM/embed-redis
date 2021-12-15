@@ -1,7 +1,6 @@
 package cn.deepmax.redis.resp3;
 
 
-
 /**
  * @author wudi
  * @date 2021/12/3
@@ -19,7 +18,7 @@ final class Constants {
     static final int INF_LENGTH = INF.length();        //inf
 
     static final int NULL_LENGTH = 2;
-    
+
     static final int BOOLEAN_LENGTH = 1;
 
     static final int EMPTY_LENGTH_VALUE = 0;
@@ -33,7 +32,7 @@ final class Constants {
 
     static final int LONG_MAX_LENGTH = POSITIVE_LONG_MAX_LENGTH + 1; // +1 is sign
 
-    static final short NULL_SHORT =  RedisCodecUtil.makeShort('-', '1');
+    static final short NULL_SHORT = RedisCodecUtil.makeShort('-', '1');
 
-    static final short EOL_SHORT =  RedisCodecUtil.makeShort('\r', '\n');
+    static final short EOL_SHORT = RedisCodecUtil.makeShort('\r', '\n');
 }

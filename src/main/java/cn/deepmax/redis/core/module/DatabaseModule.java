@@ -1,10 +1,10 @@
 package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.api.Redis;
-import cn.deepmax.redis.core.RedisCommand;
 import cn.deepmax.redis.api.RedisEngine;
+import cn.deepmax.redis.core.RedisCommand;
 import cn.deepmax.redis.core.support.BaseModule;
-import cn.deepmax.redis.type.RedisType;
+import io.netty.handler.codec.redis.RedisMessage;
 
 /**
  * @author wudi
@@ -19,8 +19,9 @@ public class DatabaseModule extends BaseModule {
 
     private static class Select implements RedisCommand {
         @Override
-        public RedisType response(RedisType type, Redis.Client client, RedisEngine engine) {
-            int i = Integer.parseInt(type.get(1).str());
+        public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
+            String idx = cast(type).getAt(1).str();
+            int i = Integer.parseInt(idx);
             engine.getDbManager().switchTo(client, i);
             return OK;
         }

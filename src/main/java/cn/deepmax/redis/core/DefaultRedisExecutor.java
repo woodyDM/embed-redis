@@ -6,15 +6,15 @@ import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.api.RedisParamException;
 import cn.deepmax.redis.core.module.AuthModule;
-import cn.deepmax.redis.type.RedisError;
-import cn.deepmax.redis.type.RedisType;
+import cn.deepmax.redis.type.RedisMessages;
 import io.netty.handler.codec.CodecException;
+import io.netty.handler.codec.redis.ArrayRedisMessage;
+import io.netty.handler.codec.redis.ErrorRedisMessage;
+import io.netty.handler.codec.redis.IntegerRedisMessage;
+import io.netty.handler.codec.redis.RedisMessage;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -23,15 +23,15 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Slf4j
 public class DefaultRedisExecutor implements RedisExecutor {
-    private final AtomicLong requestCounter = new AtomicLong();
-    private final AtomicLong responseCounter = new AtomicLong();
-
     static Set<String> whiteList = new HashSet<>();
 
     static {
         whiteList.add("hello");
         whiteList.add("ping");
     }
+
+    private final AtomicLong requestCounter = new AtomicLong();
+    private final AtomicLong responseCounter = new AtomicLong();
 
     /**
      * execute
@@ -42,14 +42,14 @@ public class DefaultRedisExecutor implements RedisExecutor {
      * @return
      */
     @Override
-    public RedisType execute(RedisType type, RedisEngine engine, Redis.Client client) {
+    public RedisMessage execute(RedisMessage type, RedisEngine engine, Redis.Client client) {
         Objects.requireNonNull(client);
         log.debug("[{}]Request", requestCounter.getAndIncrement());
         printRedisMessage(type);
         return doExec(type, engine, client);
     }
-    
-    private RedisType doExec(RedisType type, RedisEngine engine, Redis.Client client) {
+
+    private RedisMessage doExec(RedisMessage type, RedisEngine engine, Redis.Client client) {
         AuthManager auth = engine.authManager();
         RedisCommand command = ((DefaultRedisEngine) engine).getCommandManager().getCommand(type);
         String cmdName = command.name();
@@ -57,14 +57,14 @@ public class DefaultRedisExecutor implements RedisExecutor {
         if (auth.needAuth() && !auth.alreadyAuth(client) && !whiteList.contains(cmdName.toLowerCase())) {
             command = wrapAuth(command);
         }
-        RedisType response;
+        RedisMessage response;
         try {
 
             response = command.response(type, client, engine);
         } catch (RedisParamException e) {
-            response = new RedisError(e.getMessage());
+            response = new ErrorRedisMessage(e.getMessage());
         } catch (Exception e) {
-            response = new RedisError("ERR internal server error");
+            response = new ErrorRedisMessage("ERR internal server error");
             log.error("Embed server error, may be bug! ", e);
         }
         log.debug("[{}]Response", responseCounter.getAndIncrement());
@@ -92,25 +92,26 @@ public class DefaultRedisExecutor implements RedisExecutor {
     }
 
 
-    private void printRedisMessage(RedisType msg) {
+    private void printRedisMessage(RedisMessage msg) {
         doPrint(msg, 0, false);
     }
 
-    private void doPrint(RedisType msg, int depth, boolean isLast) {
+    private void doPrint(RedisMessage msg, int depth, boolean isLast) {
         String word = "";
 
         String space = String.join("", Collections.nCopies(depth, " "));
-        if (msg.isString()) {
-            word = msg.str();
-        } else if (msg.isError()) {
-            word = msg.str();
-        } else if (msg.isInteger()) {
-            word = "" + msg.value();
-        } else if (msg.isArray() || msg.isComposite()) {
+        if (RedisMessages.isStr(msg)) {
+            word = RedisMessages.getStr(msg);
+        } else if (RedisMessages.isStr(msg)) {
+            word = RedisMessages.getStr(msg);
+        } else if (msg instanceof IntegerRedisMessage) {
+            word = "" + ((IntegerRedisMessage) msg).value();
+        } else if (msg instanceof ArrayRedisMessage) {
             log.debug("{}-[{}] ", space,
                     msg.getClass().getSimpleName());
-            for (int i = 0; i < msg.children().size(); i++) {
-                doPrint(msg.children().get(i), depth + 1, i == msg.children().size() - 1);
+            List<RedisMessage> children = ((ArrayRedisMessage) msg).children();
+            for (int i = 0; i < children.size(); i++) {
+                doPrint(children.get(i), depth + 1, i == children.size() - 1);
             }
             return;
         } else {

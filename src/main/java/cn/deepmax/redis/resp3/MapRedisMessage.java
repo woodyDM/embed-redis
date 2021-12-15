@@ -4,14 +4,7 @@ import io.netty.handler.codec.redis.RedisMessage;
 
 import java.util.List;
 
-public class MapRedisMessage extends AbstractMapRedisMessage   {
-    public MapRedisMessage(List<RedisMessage> list) {
-        super(list);
-    }
-
-    private MapRedisMessage() {
-    }
-
+public class MapRedisMessage extends AbstractMapRedisMessage {
     public static final MapRedisMessage EMPTY = new MapRedisMessage() {
         @Override
         public MapRedisMessage retain() {
@@ -48,4 +41,11 @@ public class MapRedisMessage extends AbstractMapRedisMessage   {
             return "EmptyMapRedisMessage";
         }
     };
+
+    public MapRedisMessage(List<RedisMessage> list) {
+        super(list);
+    }
+
+    private MapRedisMessage() {
+    }
 }

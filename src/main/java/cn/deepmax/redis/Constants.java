@@ -1,9 +1,8 @@
 package cn.deepmax.redis;
 
 
-import cn.deepmax.redis.type.RedisError;
-import cn.deepmax.redis.type.RedisString;
-import cn.deepmax.redis.type.RedisType;
+import io.netty.handler.codec.redis.ErrorRedisMessage;
+import io.netty.handler.codec.redis.RedisMessage;
 
 /**
  * @author wudi
@@ -12,10 +11,7 @@ import cn.deepmax.redis.type.RedisType;
 public class Constants {
 
     public static final String EOL = "\r\n";
-
-    private Constants() {
-    }
-
+    public static final RedisMessage NO_AUTH_ERROR = new ErrorRedisMessage("NOAUTH Authentication required.");
     static final int TYPE_LENGTH = 1;
 
     static final int EOL_LENGTH = 2;
@@ -33,6 +29,7 @@ public class Constants {
 
     static final int LONG_MAX_LENGTH = POSITIVE_LONG_MAX_LENGTH + 1; // +1 is sign
 
-    public static final RedisType NO_AUTH_ERROR = new RedisError("NOAUTH Authentication required.");
+    private Constants() {
+    }
 
 }

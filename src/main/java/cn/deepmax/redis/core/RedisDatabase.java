@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @date 2021/5/20
  */
 public class RedisDatabase implements RedisEngine.Db {
-   
+
     private final Map<Key, RedisObject> data = new ConcurrentHashMap<>();
 
     @Override
@@ -28,5 +28,5 @@ public class RedisDatabase implements RedisEngine.Db {
     public RedisObject del(byte[] key) {
         return data.remove(new Key(key));
     }
-    
+
 }

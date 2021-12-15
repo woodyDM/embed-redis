@@ -15,43 +15,6 @@ public class NavMap<T> {
     private Node<T> lastNode;
     private int index = 0;
 
-    public static class Node<T> {
-        Node<T> pre;
-        Node<T> next;
-        final T value;
-        final Integer idx;
-
-        private Node(T value, Integer idx) {
-            this.value = value;
-            this.idx = idx;
-        }
-
-        public Node<T> getPre() {
-            return pre;
-        }
-
-        public Node<T> getNext() {
-            return next;
-        }
-
-        public T getValue() {
-            return value;
-        }
-
-        public Integer getIdx() {
-            return idx;
-        }
-
-        @Override
-        public String toString() {
-            final StringBuffer sb = new StringBuffer("Node{");
-            sb.append("value=").append(value);
-            sb.append(", idx=").append(idx);
-            sb.append('}');
-            return sb.toString();
-        }
-    }
-
     public T get(Key key) {
         Node<T> n = container.get(key);
         return n == null ? null : n.value;
@@ -104,5 +67,42 @@ public class NavMap<T> {
         }
         lastNode = node;
         return old == null ? null : old.value;
+    }
+
+    public static class Node<T> {
+        final T value;
+        final Integer idx;
+        Node<T> pre;
+        Node<T> next;
+
+        private Node(T value, Integer idx) {
+            this.value = value;
+            this.idx = idx;
+        }
+
+        public Node<T> getPre() {
+            return pre;
+        }
+
+        public Node<T> getNext() {
+            return next;
+        }
+
+        public T getValue() {
+            return value;
+        }
+
+        public Integer getIdx() {
+            return idx;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuffer sb = new StringBuffer("Node{");
+            sb.append("value=").append(value);
+            sb.append(", idx=").append(idx);
+            sb.append('}');
+            return sb.toString();
+        }
     }
 }

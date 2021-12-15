@@ -13,14 +13,13 @@ public enum RedisMessageType {
     INLINE_COMMAND(' ', true),
     /**
      * $<length>\r\n<bytes>\r\n
-     *
+     * <p>
      * v2 {@link io.netty.handler.codec.redis.BulkStringHeaderRedisMessage}
      * v2 {@link io.netty.handler.codec.redis.BulkStringRedisContent}
      * v2 {@link io.netty.handler.codec.redis.FullBulkStringRedisMessage}
      * v3 {@link BulkValueHeaderRedisMessage}
      * v3 {@link io.netty.handler.codec.redis.BulkStringRedisContent}
      * v3 {@link FullBulkValueRedisMessage}
-     *
      */
     BLOG_STRING('$', false),
     /**
@@ -54,7 +53,7 @@ public enum RedisMessageType {
      */
     BOOLEAN('#', true),
     /**
-     * !<length>\r\n<bytes>\r\n 
+     * !<length>\r\n<bytes>\r\n
      * only v3
      * v3 {@link BulkValueHeaderRedisMessage}
      * v3 {@link io.netty.handler.codec.redis.BulkStringRedisContent}
@@ -62,7 +61,7 @@ public enum RedisMessageType {
      */
     BLOG_ERROR('!', false),
     /**
-     * =<length>\r\n<bytes>\r\n 
+     * =<length>\r\n<bytes>\r\n
      * only v3
      * v3 {@link BulkValueHeaderRedisMessage}
      * v3 {@link io.netty.handler.codec.redis.BulkStringRedisContent}
@@ -122,6 +121,28 @@ public enum RedisMessageType {
         this.inline = inline;
     }
 
+    /**
+     *
+     */
+    public static RedisMessageType readFrom(ByteBuf in) {
+        final int initialIndex = in.readerIndex();
+        byte b = in.readByte();
+        RedisMessageType type = of(b);
+        if (type == INLINE_COMMAND) {
+            in.readerIndex(initialIndex);
+        }
+        return type;
+    }
+
+    public static RedisMessageType of(byte b) {
+        for (RedisMessageType v : values()) {
+            if (b == v.value) {
+                return v;
+            }
+        }
+        return INLINE_COMMAND;
+    }
+
     public int length() {
         return dummy() ? 0 : 1;
     }
@@ -138,28 +159,6 @@ public enum RedisMessageType {
             return;
         }
         out.writeByte(value);
-    }
-
-    /**
-     *
-     */
-    public static RedisMessageType readFrom(ByteBuf in) {
-        final int initialIndex = in.readerIndex();
-        byte b = in.readByte();
-        RedisMessageType type = of(b);
-        if (type == INLINE_COMMAND) {
-            in.readerIndex(initialIndex);
-        }
-        return type;
-    }
-    
-    public static RedisMessageType of(byte b){
-        for (RedisMessageType v : values()) {
-            if (b == v.value) {
-                return v;
-            }
-        }
-        return INLINE_COMMAND;
     }
 
 

@@ -33,7 +33,7 @@ public class RedisBulkValueAggregatorTest  extends BaseRedisResp3Test {
 
         assertMsg((FullBulkValueRedisMessage msg) -> {
             assertEquals(msg.type(), RedisMessageType.BLOG_STRING);
-            assertEquals(msg.toString(), "hello \r\nworld");
+            assertEquals(msg.str(), "hello \r\nworld");
         });
     }
 
@@ -45,7 +45,7 @@ public class RedisBulkValueAggregatorTest  extends BaseRedisResp3Test {
 
         assertMsg((FullBulkValueRedisMessage msg) -> {
             assertEquals(msg.type(), RedisMessageType.BLOG_STRING);
-            assertEquals(msg.toString(), "");
+            assertEquals(msg.str(), "");
         });
     }
 
@@ -69,7 +69,7 @@ public class RedisBulkValueAggregatorTest  extends BaseRedisResp3Test {
 
         assertMsg((FullBulkValueRedisMessage msg) -> {
             assertEquals(msg.type(), RedisMessageType.VERBATIM_STRING);
-            assertEquals(msg.toString(), "hello \r\nworld");
+            assertEquals(msg.str(), "hello \r\nworld");
         });
     }
 
@@ -82,7 +82,7 @@ public class RedisBulkValueAggregatorTest  extends BaseRedisResp3Test {
 
         assertMsg((FullBulkValueRedisMessage msg) -> {
             assertEquals(msg.type(), RedisMessageType.BLOG_ERROR);
-            assertEquals(msg.toString(), "hello \r\nworld");
+            assertEquals(msg.str(), "hello \r\nworld");
         });
     }
 
@@ -94,7 +94,7 @@ public class RedisBulkValueAggregatorTest  extends BaseRedisResp3Test {
 
         assertMsg((FullBulkValueRedisMessage msg) -> {
             assertEquals(msg.type(), RedisMessageType.BLOG_ERROR);
-            assertEquals(msg.toString(), "");
+            assertEquals(msg.str(), "");
         });
     }
 

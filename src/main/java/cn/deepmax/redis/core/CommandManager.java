@@ -1,9 +1,13 @@
 package cn.deepmax.redis.core;
 
-import cn.deepmax.redis.type.RedisError;
-import cn.deepmax.redis.type.RedisType;
+import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
+import cn.deepmax.redis.resp3.ListRedisMessage;
+import io.netty.handler.codec.redis.ErrorRedisMessage;
+import io.netty.handler.codec.redis.RedisMessage;
+import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,9 +20,9 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CommandManager {
 
+    public static final RedisCommand UNKNOWN_COMMAND = ((type, ctx, engine) -> new ErrorRedisMessage("ERR unknown command"));
     private final Map<String, Module> modules = new ConcurrentHashMap<>();
     private final Map<String, RedisCommand> commandMap = new ConcurrentHashMap<>();
-    public static final RedisCommand UNKNOWN_COMMAND = ((type, ctx, engine) -> new RedisError("ERR unknown command"));
 
     public void load(Module module) {
         List<RedisCommand> commands = module.commands();
@@ -37,17 +41,21 @@ public class CommandManager {
         }
     }
 
-    public RedisCommand getCommand(RedisType msg) {
-        if (msg.isArray()) {
-            RedisType cmd = msg.get(0);
-            if (cmd.isString()) {
-                String strCmd = cmd.str().toLowerCase();
+    public RedisCommand getCommand(RedisMessage msgo) {
+        if (msgo instanceof ListRedisMessage) {
+            ListRedisMessage msg = (ListRedisMessage) msgo;
+            RedisMessage cmd = msg.children().get(0);
+            if (cmd instanceof FullBulkValueRedisMessage) {
+                FullBulkValueRedisMessage fm = (FullBulkValueRedisMessage) cmd;
+                String strCmd = fm.content().toString(StandardCharsets.UTF_8).toLowerCase();
                 RedisCommand redisCommand = commandMap.get(strCmd);
                 if (redisCommand != null) {
                     return redisCommand;
                 }
             }
+
         }
+        ReferenceCountUtil.release(msgo);
         return UNKNOWN_COMMAND;
     }
 

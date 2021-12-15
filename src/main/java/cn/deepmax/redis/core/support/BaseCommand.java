@@ -4,20 +4,20 @@ import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.api.RedisObject;
 import cn.deepmax.redis.core.RedisCommand;
-import cn.deepmax.redis.type.RedisType;
+import io.netty.handler.codec.redis.RedisMessage;
 
 public abstract class BaseCommand<E extends RedisObject> implements RedisCommand {
     protected RedisEngine engine;
     protected Redis.Client client;
 
     @Override
-    public RedisType response(RedisType type, Redis.Client client, RedisEngine engine) {
+    public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
         this.engine = engine;
         this.client = client;
         return response_(type, client);
     }
 
-    protected abstract RedisType response_(RedisType type, Redis.Client client);
+    protected abstract RedisMessage response_(RedisMessage type, Redis.Client client);
 
     protected E get(byte[] key) {
         RedisObject obj = engine.getDbManager().get(client).get(key);

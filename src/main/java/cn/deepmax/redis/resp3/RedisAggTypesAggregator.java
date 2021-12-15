@@ -18,9 +18,11 @@ package cn.deepmax.redis.resp3;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.CodecException;
 import io.netty.handler.codec.MessageToMessageDecoder;
-import io.netty.handler.codec.redis.*;
+import io.netty.handler.codec.redis.ArrayRedisMessage;
+import io.netty.handler.codec.redis.RedisCodecException;
+import io.netty.handler.codec.redis.RedisDecoder;
+import io.netty.handler.codec.redis.RedisMessage;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.internal.UnstableApi;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -67,7 +69,7 @@ public class RedisAggTypesAggregator extends MessageToMessageDecoder<RedisMessag
                         msg = new AttributeRedisMessage(children);
                         break;
                     default:
-                        throw new RedisCodecException("type invalid " + current.type );
+                        throw new RedisCodecException("type invalid " + current.type);
                 }
                 depths.pop();
             } else {
@@ -80,19 +82,19 @@ public class RedisAggTypesAggregator extends MessageToMessageDecoder<RedisMessag
     }
 
     private RedisMessage decodeRedisArrayHeader(AggRedisTypeHeaderMessage header) {
-         if (header.length() == 0L) {
-             switch (header.getType()) {
-                 case AGG_MAP:
-                     return MapRedisMessage.EMPTY;
-                 case AGG_ARRAY:
-                     return ListRedisMessage.EMPTY_INSTANCE;
-                 case AGG_SET:
-                     return SetRedisMessage.EMPTY_INSTANCE;
-                 case AGG_ATTRIBUTE:
-                     return AttributeRedisMessage.EMPTY;
-                 default:
-                     throw new RedisCodecException("type invalid " + header.getType());
-             }
+        if (header.length() == 0L) {
+            switch (header.getType()) {
+                case AGG_MAP:
+                    return MapRedisMessage.EMPTY;
+                case AGG_ARRAY:
+                    return ListRedisMessage.EMPTY_INSTANCE;
+                case AGG_SET:
+                    return SetRedisMessage.EMPTY_INSTANCE;
+                case AGG_ATTRIBUTE:
+                    return AttributeRedisMessage.EMPTY;
+                default:
+                    throw new RedisCodecException("type invalid " + header.getType());
+            }
         } else if (header.length() > 0L) {
             // Currently, this codec doesn't support `long` length for arrays because Java's List.size() is int.
             if (header.length() > Integer.MAX_VALUE) {

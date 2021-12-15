@@ -11,9 +11,8 @@ import java.util.Objects;
  * @date 2021/5/10
  */
 public class NettyAuthManager implements AuthManager, NettyRedisClientHelper {
-    private String auth;
-
     private static final AttributeKey<String> AUTH_KEY = AttributeKey.newInstance("AUTH");
+    private String auth;
 
     @Override
     public void setAuth(String auth) {
@@ -39,5 +38,5 @@ public class NettyAuthManager implements AuthManager, NettyRedisClientHelper {
     public boolean needAuth() {
         return auth != null && auth.length() > 0;
     }
-    
+
 }

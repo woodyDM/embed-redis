@@ -2,9 +2,8 @@ package cn.deepmax.redis.core.support;
 
 import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.core.CommandManager;
 import cn.deepmax.redis.core.RedisCommand;
-import cn.deepmax.redis.type.RedisType;
+import io.netty.handler.codec.redis.RedisMessage;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,13 +25,14 @@ public class CompositeCommand implements RedisCommand {
     }
 
     @Override
-    public RedisType response(RedisType type, Redis.Client client, RedisEngine engine) {
-        String childCommand = type.get(1).str();
-        RedisCommand c = child.get(childCommand.toLowerCase());
-        if (c == null) {
-            c = CommandManager.UNKNOWN_COMMAND;
-        }
-        return c.response(type, client, engine);
+    public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
+//        String childCommand = type.get(1).str();
+//        RedisCommand c = child.get(childCommand.toLowerCase());
+//        if (c == null) {
+//            c = CommandManager.UNKNOWN_COMMAND;
+//        }
+//        return c.response(type, client, engine);
+        return OK;
     }
 
     @Override

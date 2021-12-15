@@ -9,7 +9,7 @@ import io.netty.handler.codec.redis.RedisMessage;
 public class BulkValueHeaderRedisMessage implements RedisMessage {
     private final int length;
     private final RedisMessageType type;
-    
+
     public BulkValueHeaderRedisMessage(int length, RedisMessageType type) {
         this.length = length;
         this.type = type;

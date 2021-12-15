@@ -3,7 +3,7 @@ package cn.deepmax.redis.core;
 import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisConfiguration;
 import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.type.RedisType;
+import io.netty.handler.codec.redis.RedisMessage;
 
 import java.util.Objects;
 
@@ -31,7 +31,7 @@ public class DefaultRedis implements Redis {
     }
 
     @Override
-    public RedisType exec(RedisType type, Client client) {
+    public RedisMessage exec(RedisMessage type, Client client) {
         return engine.execute(type, client);
     }
 }

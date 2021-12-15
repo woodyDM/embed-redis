@@ -13,9 +13,9 @@ import io.netty.util.AttributeKey;
  */
 public class DefaultDbManager implements DbManager, NettyRedisClientHelper {
 
+    private static final AttributeKey<Integer> IDX = AttributeKey.valueOf("DB_INDEX");
     private final int total;
     private final RedisEngine.Db[] dbs;
-    private static final AttributeKey<Integer> IDX = AttributeKey.valueOf("DB_INDEX");
 
     public DefaultDbManager(int total) {
         this.total = total;

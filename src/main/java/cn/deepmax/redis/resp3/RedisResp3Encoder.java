@@ -33,6 +33,38 @@ import java.util.List;
 @UnstableApi
 public class RedisResp3Encoder extends MessageToMessageEncoder<RedisMessage> {
 
+    private static void writeInlineCommandMessage(ByteBufAllocator allocator, InlineCommandRedisMessage msg,
+                                                  List<Object> out) {
+        writeString(allocator, RedisMessageType.INLINE_COMMAND, msg.content(), out);
+    }
+
+    private static void writeSimpleStringMessage(ByteBufAllocator allocator, SimpleStringRedisMessage msg,
+                                                 List<Object> out) {
+        writeString(allocator, RedisMessageType.SIMPLE_STRING, msg.content(), out);
+    }
+
+    private static void writeErrorMessage(ByteBufAllocator allocator, ErrorRedisMessage msg, List<Object> out) {
+        writeString(allocator, RedisMessageType.SIMPLE_ERROR, msg.content(), out);
+    }
+
+    private static void writeString(ByteBufAllocator allocator, RedisMessageType type, String content,
+                                    List<Object> out) {
+        ByteBuf buf = allocator.ioBuffer(type.length() + ByteBufUtil.utf8MaxBytes(content) +
+                Constants.EOL_LENGTH);
+        type.writeTo(buf);
+        ByteBufUtil.writeUtf8(buf, content);
+        buf.writeShort(Constants.EOL_SHORT);
+        out.add(buf);
+    }
+
+    private static void writeBulkStringContent(ByteBufAllocator allocator, BulkStringRedisContent msg,
+                                               List<Object> out) {
+        out.add(msg.content().retain());
+        if (msg instanceof LastBulkStringRedisContent) {
+            out.add(allocator.ioBuffer(Constants.EOL_LENGTH).writeShort(Constants.EOL_SHORT));
+        }
+    }
+
     @Override
     protected void encode(ChannelHandlerContext ctx, RedisMessage msg, List<Object> out) throws Exception {
         try {
@@ -107,30 +139,6 @@ public class RedisResp3Encoder extends MessageToMessageEncoder<RedisMessage> {
         out.add(buf);
     }
 
-    private static void writeInlineCommandMessage(ByteBufAllocator allocator, InlineCommandRedisMessage msg,
-                                                  List<Object> out) {
-        writeString(allocator, RedisMessageType.INLINE_COMMAND, msg.content(), out);
-    }
-
-    private static void writeSimpleStringMessage(ByteBufAllocator allocator, SimpleStringRedisMessage msg,
-                                                 List<Object> out) {
-        writeString(allocator, RedisMessageType.SIMPLE_STRING, msg.content(), out);
-    }
-
-    private static void writeErrorMessage(ByteBufAllocator allocator, ErrorRedisMessage msg, List<Object> out) {
-        writeString(allocator, RedisMessageType.SIMPLE_ERROR, msg.content(), out);
-    }
-
-    private static void writeString(ByteBufAllocator allocator, RedisMessageType type, String content,
-                                    List<Object> out) {
-        ByteBuf buf = allocator.ioBuffer(type.length() + ByteBufUtil.utf8MaxBytes(content) +
-                Constants.EOL_LENGTH);
-        type.writeTo(buf);
-        ByteBufUtil.writeUtf8(buf, content);
-        buf.writeShort(Constants.EOL_SHORT);
-        out.add(buf);
-    }
-
     private void writeIntegerMessage(ByteBufAllocator allocator, IntegerRedisMessage msg, List<Object> out) {
         ByteBuf buf = allocator.ioBuffer(Constants.TYPE_LENGTH + Constants.LONG_MAX_LENGTH +
                 Constants.EOL_LENGTH);
@@ -160,14 +168,6 @@ public class RedisResp3Encoder extends MessageToMessageEncoder<RedisMessage> {
         buf.writeBytes(numberToBytes(msg.getLength()));
         buf.writeShort(Constants.EOL_SHORT);
         out.add(buf);
-    }
-
-    private static void writeBulkStringContent(ByteBufAllocator allocator, BulkStringRedisContent msg,
-                                               List<Object> out) {
-        out.add(msg.content().retain());
-        if (msg instanceof LastBulkStringRedisContent) {
-            out.add(allocator.ioBuffer(Constants.EOL_LENGTH).writeShort(Constants.EOL_SHORT));
-        }
     }
 
     private void writeFullBulkStringMessage(ByteBufAllocator allocator, FullBulkStringRedisMessage msg,
