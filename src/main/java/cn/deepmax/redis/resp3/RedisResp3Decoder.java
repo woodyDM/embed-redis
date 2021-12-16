@@ -6,6 +6,7 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.redis.*;
 import io.netty.util.ByteProcessor;
 import io.netty.util.CharsetUtil;
+import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.List;
  * @author wudi
  * @date 2021/12/3
  */
+@Slf4j
 public final class RedisResp3Decoder extends ByteToMessageDecoder {
     private final ToPositiveLongProcessor toPositiveLongProcessor = new ToPositiveLongProcessor();
     private final ToPositiveDoubleProcessor toPositiveDoubleProcessor = new ToPositiveDoubleProcessor();
@@ -127,6 +129,7 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
             return false;
         }
         final long length = parseRedisNumber(lineByteBuf);
+        log.debug("Decode length :{}", length);
         if (length < Constants.EMPTY_LENGTH_VALUE) {
             throw new RedisCodecException("length: " + length + " (expected: >= " + Constants.EMPTY_LENGTH_VALUE + ")");
         }

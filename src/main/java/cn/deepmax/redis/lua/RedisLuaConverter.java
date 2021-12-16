@@ -23,6 +23,8 @@ public class RedisLuaConverter {
             return LuaBoolean.valueOf(false);
         } else if (type instanceof IntegerRedisMessage) {
             return LuaValue.valueOf(((IntegerRedisMessage) type).value());
+        } else if (type instanceof FullBulkValueRedisMessage) {
+            return LuaValue.valueOf(((FullBulkValueRedisMessage) type).bytes());
         } else if (RedisMessages.isStr(type)) {
             return LuaString.valueOf(RedisMessages.getStr(type));
         } else if (RedisMessages.isError(type)) {
@@ -54,7 +56,7 @@ public class RedisLuaConverter {
                     int ivalue = (int) v.todouble();
                     return new IntegerRedisMessage(ivalue);
                 case LuaValue.TSTRING:
-                    return FullBulkValueRedisMessage.ofString(v.toString());
+                    return FullBulkValueRedisMessage.ofString(v.strvalue().m_bytes);
                 case LuaValue.TTABLE:
                     LuaTable table = v.checktable();
                     int len = table.keyCount();
@@ -71,7 +73,7 @@ public class RedisLuaConverter {
                     //other
                     List<RedisMessage> r = new ArrayList<>();
                     for (LuaValue key : table.keys()) {
-                        LuaValue argj = table.get(key.toString());
+                        LuaValue argj = table.get(key);
                         //truncated to the first nil inside the Lua array if any
                         if (argj.isnil()) {
                             break;

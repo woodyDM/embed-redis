@@ -6,6 +6,7 @@ import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.api.RedisParamException;
 import cn.deepmax.redis.core.module.AuthModule;
+import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.type.RedisMessages;
 import io.netty.handler.codec.CodecException;
 import io.netty.handler.codec.redis.ArrayRedisMessage;
@@ -59,7 +60,6 @@ public class DefaultRedisExecutor implements RedisExecutor {
         }
         RedisMessage response;
         try {
-
             response = command.response(type, client, engine);
         } catch (RedisParamException e) {
             response = new ErrorRedisMessage(e.getMessage());
@@ -100,10 +100,14 @@ public class DefaultRedisExecutor implements RedisExecutor {
         String word = "";
 
         String space = String.join("", Collections.nCopies(depth, " "));
-        if (RedisMessages.isStr(msg)) {
+        if (RedisMessages.isError(msg)) {
             word = RedisMessages.getStr(msg);
         } else if (RedisMessages.isStr(msg)) {
-            word = RedisMessages.getStr(msg);
+            if (msg instanceof FullBulkValueRedisMessage) {
+                word = msg.toString();
+            }else{
+                word = RedisMessages.getStr(msg);
+            }
         } else if (msg instanceof IntegerRedisMessage) {
             word = "" + ((IntegerRedisMessage) msg).value();
         } else if (msg instanceof ArrayRedisMessage) {

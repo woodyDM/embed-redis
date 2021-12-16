@@ -25,25 +25,37 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
-public abstract class BaseTemplateTest {
+public abstract class BaseTemplateTest extends BaseEngineTest {
 
     public static final String AUTH = "123456";
     public static final String HOST = "localhost";
     public static final int PORT = 6380;
-    public static final Client[] ts = new Client[3];
+    public static Client[] ts;
     protected static RedisServer server;
 
     protected RedisTemplate<String, Object> redisTemplate;
 
     static {
+        try {
+            init();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new IllegalStateException();
+        }
+    }
+
+    private static void init() {
         server = new RedisServer(new RedisConfiguration(PORT, AUTH));
-        server.start();
-        Runtime.getRuntime().addShutdownHook(new Thread(()->{
-            server.stop();
-        }));
-        ts[0] = createJedis();
+        if (PORT != 6379) {
+            server.start();
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                server.stop();
+            }));
+        }
+        ts = new Client[3];
+        ts[0] = createRedisson();
         ts[1] = createLettuce();
-        ts[2] = createRedisson();
+        ts[2] = createJedis();
     }
 
     @Parameterized.Parameters
@@ -61,7 +73,6 @@ public abstract class BaseTemplateTest {
         config.setHostName(HOST);
         config.setPort(PORT);
         config.setPassword(AUTH);
-
         JedisConnectionFactory factory = new JedisConnectionFactory(config);
         return new Client(template(factory), factory);
     }
@@ -84,12 +95,15 @@ public abstract class BaseTemplateTest {
 
     }
 
+
     private static Client createRedisson() {
         Config config = new Config();
         SingleServerConfig c = config.useSingleServer();
-        
+
         c.setAddress("redis://" + HOST + ":" + PORT);
         c.setPassword(AUTH);
+        c.setConnectionPoolSize(1);
+        c.setConnectionMinimumIdleSize(1);
         RedissonConnectionFactory factory = new RedissonConnectionFactory(config);
         return new Client(template(factory), factory);
     }
@@ -106,6 +120,7 @@ public abstract class BaseTemplateTest {
         temp.setConnectionFactory(factory);
         return temp;
     }
+
 
     protected ValueOperations<String, Object> v() {
         return redisTemplate.opsForValue();

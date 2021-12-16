@@ -18,6 +18,7 @@ import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaError;
+import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
@@ -53,16 +54,21 @@ public class LuaModule extends BaseModule {
         try {
             ListRedisMessage msg = (ListRedisMessage) type;
             int keyNum = NumberUtils.parse(msg.getAt(2).str()).intValue();
-            List<String> key = new ArrayList<>();
-            List<String> arg = new ArrayList<>();
+            List<FullBulkValueRedisMessage> key = new ArrayList<>();
+            List<FullBulkValueRedisMessage> arg = new ArrayList<>();
             for (int i = 3; i < 3 + keyNum; i++) {
-                key.add(msg.getAt(i).str());
+                key.add(msg.getAt(i));
             }
             for (int i = 3 + keyNum; i < msg.children().size(); i++) {
-                arg.add(msg.getAt(i).str());
+                arg.add(msg.getAt(i));
             }
-            String fullLua = LuaScript.make(luaScript, key, arg);
+
+            String fullLua = LuaScript.make(luaScript);
+            
             Globals globals = JsePlatform.standardGlobals();
+            globals.set("KEYS", make(key));
+            globals.set("ARGV", make(arg));
+            
             LuaValue lua = globals.load(fullLua);
             LuaValue callResult = lua.call();
             return RedisLuaConverter.toRedis(callResult);
@@ -73,6 +79,15 @@ public class LuaModule extends BaseModule {
             }
             return new ErrorRedisMessage("ERR " + error.getMessage());
         }
+    }
+
+    private LuaTable make(List<FullBulkValueRedisMessage> list) {
+        LuaTable table = LuaTable.tableOf();
+        for (int i = 0; i < list.size(); i++) {
+            FullBulkValueRedisMessage msg = list.get(i);
+            table.set(1 + i, LuaValue.valueOf(msg.bytes()));
+        }
+        return table;
     }
 
     private class Eval implements RedisCommand {

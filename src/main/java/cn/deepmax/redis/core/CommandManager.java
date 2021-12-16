@@ -53,9 +53,7 @@ public class CommandManager {
                     return redisCommand;
                 }
             }
-
         }
-        ReferenceCountUtil.release(msgo);
         return UNKNOWN_COMMAND;
     }
 

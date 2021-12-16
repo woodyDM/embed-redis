@@ -6,6 +6,7 @@ import cn.deepmax.redis.lua.LuaChannelContext;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.redis.RedisMessage;
+import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -26,12 +27,15 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
         RedisMessage response;
         try {
             LuaChannelContext.set(ctx);
-            response = engine.execute(type, new NettyClient(ctx));
+            response = engine.execute(type, new NettyClient(ctx.channel()));
         } finally {
+            ReferenceCountUtil.release(type);
             LuaChannelContext.remove();
         }
         if (response != null) {
             ctx.writeAndFlush(response);
+        } else {
+            log.error("Empty response found! Input is {}", type);
         }
     }
 
@@ -45,7 +49,7 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         System.out.println("Exit channel ");
-        engine.pubsub().quit(new NettyClient(ctx));
+        engine.pubsub().quit(new NettyClient(ctx.channel()));
     }
 
 }

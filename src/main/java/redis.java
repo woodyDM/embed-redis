@@ -83,7 +83,7 @@ public class redis extends TwoArgFunction {
     abstract class TheCall extends VarArgFunction {
         @Override
         public Varargs invoke(Varargs args) {
-            RedisMessage msg = null;
+            RedisMessage msg = RedisLuaConverter.toRedis(args);;
             RedisMessage resp;
             try {
                 // a Redis command call will result in an error, redis.call() will 
@@ -91,7 +91,7 @@ public class redis extends TwoArgFunction {
                 // redis.pcall will trap the error and return a Lua table representing the error.
                 ChannelHandlerContext ctx = LuaChannelContext.get();
                 Objects.requireNonNull(ctx);
-                resp = engine().execute(msg, new NettyClient(ctx));
+                resp = engine().execute(msg, new NettyClient(ctx.channel()));
                 //todo blog error
                 if (resp instanceof ErrorRedisMessage) {
                     resp = onError(resp);

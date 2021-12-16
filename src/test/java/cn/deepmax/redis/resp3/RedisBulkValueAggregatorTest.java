@@ -4,14 +4,15 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.CodecException;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.data.redis.serializer.JdkSerializationRedisSerializer;
 
 import static cn.deepmax.redis.resp3.RedisCodecTestUtil.byteBufOf;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 
-public class RedisBulkValueAggregatorTest  extends BaseRedisResp3Test {
-
-
+public class RedisBulkValueAggregatorTest extends BaseRedisResp3Test {
+    
     @Before
     public void setup() throws Exception {
         channel = newChannel();
@@ -34,6 +35,22 @@ public class RedisBulkValueAggregatorTest  extends BaseRedisResp3Test {
         assertMsg((FullBulkValueRedisMessage msg) -> {
             assertEquals(msg.type(), RedisMessageType.BLOG_STRING);
             assertEquals(msg.str(), "hello \r\nworld");
+        });
+    }
+
+    @Test
+    public void shouldDecodeBlogString2() {
+        JdkSerializationRedisSerializer serializationRedisSerializer = new JdkSerializationRedisSerializer();
+        byte[] myNames = serializationRedisSerializer.serialize("myName");
+
+        assertFalse(channel.writeInbound(byteBufOf("$13")));
+        assertFalse(channel.writeInbound(byteBufOf("\r\n")));
+        assertFalse(channel.writeInbound(byteBufOf(myNames)));
+        assertTrue(channel.writeInbound(byteBufOf("\r\n")));
+
+        assertMsg((FullBulkValueRedisMessage msg) -> {
+            assertEquals(msg.type(), RedisMessageType.BLOG_STRING);
+            assertThat(msg.bytes(), is(myNames));
         });
     }
 
