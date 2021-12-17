@@ -1,8 +1,11 @@
 package cn.deepmax.redis.api;
 
+import cn.deepmax.redis.core.Module;
 import io.netty.handler.codec.redis.RedisMessage;
 
 public interface RedisEngine {
+
+    void loadModule(Module module);
     
     void dataFlush();
 

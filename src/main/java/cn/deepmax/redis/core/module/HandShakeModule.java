@@ -4,14 +4,18 @@ import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.core.RedisCommand;
 import cn.deepmax.redis.core.support.BaseModule;
+import cn.deepmax.redis.type.CallbackRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 import io.netty.handler.codec.redis.SimpleStringRedisMessage;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class HandShakeModule extends BaseModule {
     public HandShakeModule() {
         super("handshake");
         register(new Hello());
         register(new Ping());
+        register(new Quit());
     }
 
     private static class Hello implements RedisCommand {
@@ -37,6 +41,17 @@ public class HandShakeModule extends BaseModule {
         @Override
         public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
             return new SimpleStringRedisMessage("PONG");
+        }
+    }
+
+    private static class Quit implements RedisCommand {
+        @Override
+        public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
+            CallbackRedisMessage.Impl msg = CallbackRedisMessage.of(OK);
+            msg.addHook(c ->
+                    client.channel().close()
+                            .addListener(e -> log.debug("Client quit! {}", client.channel().remoteAddress())));
+            return msg;
         }
     }
 

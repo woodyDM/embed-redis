@@ -9,7 +9,7 @@ import lombok.NonNull;
 public class RedisEngineHolder {
     private static RedisEngine engine;
 
-    public static void set(@NonNull RedisEngine engine) {
+    public static void set(RedisEngine engine) {
         RedisEngineHolder.engine = engine;
     }
 

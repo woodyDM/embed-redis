@@ -11,7 +11,7 @@ import io.netty.util.AttributeKey;
  * @author wudi
  * @date 2021/5/20
  */
-public class DefaultDbManager implements DbManager, NettyRedisClientHelper {
+public class DefaultDbManager implements DbManager {
 
     private static final AttributeKey<Integer> IDX = AttributeKey.valueOf("DB_INDEX");
     private final int total;
@@ -36,7 +36,7 @@ public class DefaultDbManager implements DbManager, NettyRedisClientHelper {
     @Override
     public void switchTo(Redis.Client client, int index) {
         if (index >= 0 && index < total) {
-            channel(client).attr(IDX).set(index);
+            client.channel().attr(IDX).set(index);
         } else {
             throw new RedisParamException("db number out of bound");
         }
@@ -44,7 +44,7 @@ public class DefaultDbManager implements DbManager, NettyRedisClientHelper {
 
     @Override
     public int getIndex(Redis.Client client) {
-        Attribute<Integer> attr = channel(client).attr(IDX);
+        Attribute<Integer> attr = client.channel().attr(IDX);
         attr.setIfAbsent(0);
         return attr.get();
     }

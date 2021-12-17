@@ -2,6 +2,8 @@ package cn.deepmax.redis.base;
 
 import cn.deepmax.redis.RedisServer;
 import cn.deepmax.redis.api.RedisConfiguration;
+import cn.deepmax.redis.api.RedisEngine;
+import cn.deepmax.redis.api.RedisEngineHolder;
 import io.lettuce.core.ClientOptions;
 import io.lettuce.core.protocol.ProtocolVersion;
 import io.lettuce.core.resource.ClientResources;
@@ -29,7 +31,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @RunWith(Parameterized.class)
-public abstract class BaseTemplateTest extends BaseEngineTest {
+public abstract class BaseTemplateTest extends BaseTest {
 
     public static final String AUTH = "123456";
     public static final String HOST = "localhost";
@@ -38,6 +40,16 @@ public abstract class BaseTemplateTest extends BaseEngineTest {
     protected static RedisServer server;
 
     protected RedisTemplate<String, Object> redisTemplate;
+
+    @Override
+    String auth() {
+        return AUTH;
+    }
+
+    @Override
+    public RedisEngine engine() {
+        return RedisEngineHolder.instance();
+    }
 
     static {
         try {
@@ -77,7 +89,7 @@ public abstract class BaseTemplateTest extends BaseEngineTest {
         config.setHostName(HOST);
         config.setPort(PORT);
         config.setPassword(AUTH);
-        
+
         JedisClientConfiguration jedisClientConfiguration = JedisClientConfiguration.defaultConfiguration();
         jedisClientConfiguration.getPoolConfig().ifPresent(c -> {
             c.setMaxIdle(1);
@@ -107,7 +119,7 @@ public abstract class BaseTemplateTest extends BaseEngineTest {
         return new Client(template(factory), factory);
 
     }
-    
+
     private static Client createRedisson() {
         Config config = new Config();
         SingleServerConfig c = config.useSingleServer();
@@ -131,7 +143,7 @@ public abstract class BaseTemplateTest extends BaseEngineTest {
         template.setConnectionFactory(factory);
         return template;
     }
-    
+
     protected ValueOperations<String, Object> v() {
         return redisTemplate.opsForValue();
     }

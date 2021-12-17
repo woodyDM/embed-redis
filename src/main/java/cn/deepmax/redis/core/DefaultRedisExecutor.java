@@ -7,6 +7,7 @@ import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.api.RedisParamException;
 import cn.deepmax.redis.core.module.AuthModule;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
+import cn.deepmax.redis.type.CallbackRedisMessage;
 import cn.deepmax.redis.type.RedisMessages;
 import io.netty.handler.codec.CodecException;
 import io.netty.handler.codec.redis.ArrayRedisMessage;
@@ -97,15 +98,20 @@ public class DefaultRedisExecutor implements RedisExecutor {
     }
 
     private void doPrint(RedisMessage msg, int depth, boolean isLast) {
+        if (msg == null) {
+            return;
+        }
+        if (msg instanceof CallbackRedisMessage) {
+            msg = ((CallbackRedisMessage) msg).unwrap();
+        }
         String word = "";
-
         String space = String.join("", Collections.nCopies(depth, " "));
         if (RedisMessages.isError(msg)) {
             word = RedisMessages.getStr(msg);
         } else if (RedisMessages.isStr(msg)) {
             if (msg instanceof FullBulkValueRedisMessage) {
                 word = msg.toString();
-            }else{
+            } else {
                 word = RedisMessages.getStr(msg);
             }
         } else if (msg instanceof IntegerRedisMessage) {

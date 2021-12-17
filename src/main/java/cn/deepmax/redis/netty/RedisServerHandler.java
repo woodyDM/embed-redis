@@ -3,6 +3,8 @@ package cn.deepmax.redis.netty;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.core.NettyClient;
 import cn.deepmax.redis.lua.LuaChannelContext;
+import cn.deepmax.redis.type.CallbackRedisMessage;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.redis.RedisMessage;
@@ -33,9 +35,11 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
             LuaChannelContext.remove();
         }
         if (response != null) {
-            ctx.writeAndFlush(response);
-        } else {
-            log.error("Empty response found! Input is {}", type);
+            ChannelFuture future = ctx.writeAndFlush(response);
+            if (response instanceof CallbackRedisMessage) {
+                CallbackRedisMessage m = (CallbackRedisMessage) response;
+                future.addListener(e -> m.callback(ctx));
+            }
         }
     }
 
@@ -48,7 +52,7 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        System.out.println("Exit channel ");
+        log.info("Channel exit {}", ctx.channel().remoteAddress());
         engine.pubsub().quit(new NettyClient(ctx.channel()));
     }
 

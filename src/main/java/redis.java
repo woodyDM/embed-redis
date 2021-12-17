@@ -91,7 +91,8 @@ public class redis extends TwoArgFunction {
                 // redis.pcall will trap the error and return a Lua table representing the error.
                 ChannelHandlerContext ctx = LuaChannelContext.get();
                 Objects.requireNonNull(ctx);
-                resp = engine().execute(msg, new NettyClient(ctx.channel()));
+                RedisEngine engine = engine();
+                resp = engine.execute(msg, new NettyClient(ctx.channel()));
                 //todo blog error
                 if (resp instanceof ErrorRedisMessage) {
                     resp = onError(resp);

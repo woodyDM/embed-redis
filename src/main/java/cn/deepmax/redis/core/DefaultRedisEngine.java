@@ -16,7 +16,6 @@ import java.util.Objects;
 @Slf4j
 public class DefaultRedisEngine implements RedisEngine {
 
-    private static final DefaultRedisEngine S = new DefaultRedisEngine();
     private final RedisExecutor executor = new DefaultRedisExecutor();
     private final NettyAuthManager authManager = new NettyAuthManager();
     private final CommandManager commandManager = new CommandManager();
@@ -25,25 +24,32 @@ public class DefaultRedisEngine implements RedisEngine {
     protected TimeProvider timeProvider = new DefaultTimeProvider();
     private Runnable scriptFlushAction;
     private RedisConfiguration configuration;
-    
+
     public DefaultRedisEngine() {
         loadDefaultModules();
     }
-    
-    private void loadDefaultModules() {
-        commandManager.load(new StringModule());
-        commandManager.load(new HandShakeModule());
-        commandManager.load(new CommonModule());
-        LuaModule luaModule = new LuaModule();
-        commandManager.load(luaModule);
-        scriptFlushAction = luaModule::flush;
-        commandManager.load(new AuthModule());
-        commandManager.load(new PubsubModule());
-        commandManager.load(new DatabaseModule());
+
+    public static DefaultRedisEngine defaultEngine() {
+        DefaultRedisEngine e = new DefaultRedisEngine();
+        e.loadDefaultModules();
+        return e;
     }
 
-    public static DefaultRedisEngine instance() {
-        return S;
+    private void loadDefaultModules() {
+        loadModule(new StringModule());
+        loadModule(new HandShakeModule());
+        loadModule(new CommonModule());
+        LuaModule luaModule = new LuaModule();
+        loadModule(luaModule);
+        scriptFlushAction = luaModule::flush;
+        loadModule(new AuthModule());
+        loadModule(new PubsubModule());
+        loadModule(new DatabaseModule());
+    }
+
+    @Override
+    public void loadModule(Module module) {
+        this.commandManager.load(module);
     }
 
     @Override
@@ -54,6 +60,7 @@ public class DefaultRedisEngine implements RedisEngine {
     @Override
     public void setConfiguration(RedisConfiguration configuration) {
         this.configuration = configuration;
+        this.authManager.setAuth(configuration.getAuth());
     }
 
     @Override

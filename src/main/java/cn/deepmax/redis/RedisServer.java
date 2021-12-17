@@ -38,15 +38,14 @@ public class RedisServer {
     public static void main(String[] args) {
         new RedisServer(new RedisConfiguration(6380, null)).start();
     }
-
-
+    
     public void start() {
         int port = configuration.getPort();
         ServerBootstrap boot = new ServerBootstrap();
-        RedisEngine engine = DefaultRedisEngine.instance();
-        RedisEngineHolder.set(engine);
-        engine.authManager().setAuth(configuration.getAuth());
+        RedisEngine engine = DefaultRedisEngine.defaultEngine();
         engine.setConfiguration(configuration);
+        
+        RedisEngineHolder.set(engine);
 
         boss = new NioEventLoopGroup(1);
         workerGroup = new NioEventLoopGroup(1);

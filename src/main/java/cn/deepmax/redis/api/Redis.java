@@ -1,5 +1,6 @@
 package cn.deepmax.redis.api;
 
+import io.netty.channel.Channel;
 import io.netty.handler.codec.redis.RedisMessage;
 
 public interface Redis {
@@ -15,6 +16,8 @@ public interface Redis {
      */
     interface Client {
         Object id();
+
+        Channel channel();
 
         void send(RedisMessage msg);
     }
