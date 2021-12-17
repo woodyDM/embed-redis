@@ -3,6 +3,10 @@ package cn.deepmax.redis.api;
 import io.netty.handler.codec.redis.RedisMessage;
 
 public interface RedisEngine {
+    
+    void dataFlush();
+
+    void scriptFlush();
 
     RedisConfiguration configuration();
 
@@ -25,6 +29,8 @@ public interface RedisEngine {
         RedisObject get(byte[] key);
 
         RedisObject del(byte[] key);
+
+        void flush();
 
     }
 

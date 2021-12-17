@@ -1,4 +1,4 @@
-package cn.deepmax.redis.integration;
+package cn.deepmax.redis.base;
 
 import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
@@ -9,6 +9,7 @@ import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.utils.EmbedClient;
 import io.netty.handler.codec.redis.RedisMessage;
 import io.netty.handler.codec.redis.SimpleStringRedisMessage;
+import org.junit.Before;
 import org.junit.BeforeClass;
 
 import static org.junit.Assert.assertEquals;
@@ -21,6 +22,12 @@ import static org.junit.Assert.assertTrue;
 public class BaseEngineTest {
 
     public static final String AUTH = "123456";
+
+    @Before
+    public void setUp() throws Exception {
+        engine().dataFlush();
+        engine().scriptFlush();
+    }
 
     @BeforeClass
     public static void beforeClass() throws Exception {

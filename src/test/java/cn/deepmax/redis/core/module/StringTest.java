@@ -1,5 +1,6 @@
-package cn.deepmax.redis.integration;
+package cn.deepmax.redis.core.module;
 
+import cn.deepmax.redis.base.BaseTemplateTest;
 import org.junit.Test;
 import org.springframework.data.redis.core.RedisTemplate;
 

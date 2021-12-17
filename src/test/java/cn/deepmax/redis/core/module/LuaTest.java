@@ -1,6 +1,9 @@
-package cn.deepmax.redis.integration;
+package cn.deepmax.redis.core.module;
 
-import org.junit.Ignore;
+import cn.deepmax.redis.base.BaseTemplateTest;
+import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
+import cn.deepmax.redis.resp3.ListRedisMessage;
+import cn.deepmax.redis.utils.SHA1Test;
 import org.junit.Test;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -27,19 +30,19 @@ public class LuaTest extends BaseTemplateTest {
         assertEquals(execute.longValue(), 1L);
         assertEquals(v().get("name"), "myName你👌");
     }
-
-    @Ignore
+    
     @Test
-    public void shouldExec2() {
-
-        byte[] bytes = {5, 11, 2, 3};
-        String sc = "return ARGV[1];";
-
-
-        DefaultRedisScript<byte[]> redisScript = new DefaultRedisScript<>(sc, byte[].class);
-        byte[] results = t().execute(redisScript, Collections.singletonList("name"), bytes);
-
-
+    public void shouldEvalsha() {
+        //first load script to avoid redisson codec error.
+        String script = SHA1Test.SCRIPT;
+        engine().execute(ListRedisMessage.newBuilder()
+                .append(FullBulkValueRedisMessage.ofString("script"))
+                .append(FullBulkValueRedisMessage.ofString("load"))
+                .append(FullBulkValueRedisMessage.ofString(script)).build(), embeddedClient());
+        
+        DefaultRedisScript<byte[]> redisScript = new DefaultRedisScript<>(script, byte[].class);
+        byte[] results = t().execute(redisScript, Collections.singletonList("name"), new byte[]{5, 11, 2, 3});
+        
         assertEquals(results[0], 5);
         assertEquals(results[1], 11);
         assertEquals(results[2], 2);

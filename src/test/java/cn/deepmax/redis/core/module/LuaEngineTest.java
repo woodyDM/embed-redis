@@ -1,6 +1,7 @@
-package cn.deepmax.redis.integration;
+package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.api.Redis;
+import cn.deepmax.redis.base.BaseEngineTest;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.resp3.RedisMessageType;

@@ -14,7 +14,6 @@ public class DatabaseModule extends BaseModule {
     public DatabaseModule() {
         super("database");
         register(new Select());
-
     }
 
     private static class Select implements RedisCommand {

@@ -1,5 +1,6 @@
 package cn.deepmax.redis.utils;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 /**
@@ -20,8 +21,8 @@ public class SHA1 {
     public static String encode(String str) {
         try {
             MessageDigest messageDigest = MessageDigest.getInstance("SHA1");
-            messageDigest.update(str.getBytes());
-            return getFormattedText(messageDigest.digest());
+            messageDigest.update(str.getBytes(StandardCharsets.UTF_8));
+            return getFormattedText(messageDigest.digest()).toLowerCase();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

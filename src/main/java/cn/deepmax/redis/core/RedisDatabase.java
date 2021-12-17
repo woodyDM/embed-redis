@@ -29,4 +29,8 @@ public class RedisDatabase implements RedisEngine.Db {
         return data.remove(new Key(key));
     }
 
+    @Override
+    public void flush() {
+        data.clear();
+    }
 }

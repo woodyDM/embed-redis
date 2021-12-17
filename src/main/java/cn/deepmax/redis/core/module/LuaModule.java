@@ -39,6 +39,10 @@ public class LuaModule extends BaseModule {
         init();
     }
 
+    public void flush() {
+        scriptCache.clear();
+    }
+    
     private void init() {
         CompositeCommand script = new CompositeCommand("script");
         script.add(new Load());
@@ -102,7 +106,7 @@ public class LuaModule extends BaseModule {
         @Override
         public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
             String sha1 = cast(type).getAt(1).str();
-            String lua = scriptCache.get(sha1);
+            String lua = scriptCache.get(sha1.toLowerCase());
             if (lua != null) {
                 return LuaModule.this.response(lua, type, client, engine);
             } else {
