@@ -18,6 +18,11 @@ public class NettyClient implements Redis.Client {
     }
 
     @Override
+    public Redis.Protocol resp() {
+        return Redis.Protocol.RESP2;
+    }
+
+    @Override
     public Channel channel() {
         return channel;
     }

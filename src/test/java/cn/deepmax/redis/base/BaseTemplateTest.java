@@ -13,6 +13,8 @@ import org.junit.runners.Parameterized;
 import org.redisson.config.Config;
 import org.redisson.config.SingleServerConfig;
 import org.redisson.spring.data.connection.RedissonConnectionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
@@ -29,17 +31,17 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-@Slf4j
 @RunWith(Parameterized.class)
 public abstract class BaseTemplateTest extends BaseTest {
 
     public static final String AUTH = "123456";
     public static final String HOST = "localhost";
-    public static final int PORT = 6380;
+    public static final int PORT = 6381;
     public static Client[] ts;
     protected static RedisServer server;
 
     protected RedisTemplate<String, Object> redisTemplate;
+    public static final Logger log = LoggerFactory.getLogger(BaseTemplateTest.class);
 
     @Override
     String auth() {
@@ -56,7 +58,7 @@ public abstract class BaseTemplateTest extends BaseTest {
             init();
         } catch (Exception e) {
             log.error("启动失败", e);
-            throw new IllegalStateException();
+            throw new IllegalStateException(e);
         }
     }
 

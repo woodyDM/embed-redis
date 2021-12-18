@@ -26,6 +26,7 @@ public class PubsubModule extends BaseModule {
         register(new Publish());
         register(new Subscribe());
         register(new PSubscribe());
+        register(new Unsubscribe());
     }
 
     private static class Publish implements RedisCommand {
@@ -89,6 +90,25 @@ public class PubsubModule extends BaseModule {
         abstract PubsubManager.Pubsub select(PubsubManager manager);
 
     }
+
+    private static class Unsubscribe implements RedisCommand {
+        @Override
+        public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
+            //todo
+//            ListRedisMessage msg = cast(type);
+//            List<RedisMessage> children = msg.children();
+//            if (children.size() <= 1) {
+//                return new ErrorRedisMessage("invalid unsub size");
+//            }
+//            Key[] channels = new Key[children.size() - 1];
+//            for (int i = 1; i < children.size(); i++) {
+//                channels[i - 1] = new Key(msg.getAt(i).bytes());
+//            }
+            return null;
+
+        }
+    }
+
 
 
 }

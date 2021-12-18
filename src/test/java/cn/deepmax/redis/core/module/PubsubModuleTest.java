@@ -6,12 +6,14 @@ import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.type.CompositeRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
+import io.netty.handler.codec.redis.SimpleStringRedisMessage;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static cn.deepmax.redis.resp3.RedisCodecTestUtil.readAllMessage;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
@@ -76,6 +78,30 @@ public class PubsubModuleTest extends BaseEngineTest {
         assertEquals(((ListRedisMessage) msg1.get(0)).getAt(0).str(), "message");
         assertEquals(((ListRedisMessage) msg1.get(0)).getAt(1).str(), "123");
         assertThat(((ListRedisMessage) msg1.get(0)).getAt(2).bytes(), is("hahaha😯".getBytes(StandardCharsets.UTF_8)));
+        //assert sub msg 2
+        assertThat(msg2.size(),is(3));
+        assertTrue(msg2.get(0) instanceof ListRedisMessage);
+        assertEquals(((ListRedisMessage) msg2.get(0)).getAt(0).str(), "pmessage");
+        assertEquals(((ListRedisMessage) msg2.get(0)).getAt(1).str(), "12?");
+        assertEquals(((ListRedisMessage) msg2.get(0)).getAt(2).str(), "123");
+        assertThat(((ListRedisMessage) msg2.get(0)).getAt(3).bytes(), is("hahaha😯".getBytes(StandardCharsets.UTF_8)));
+        assertTrue(msg2.get(1) instanceof ListRedisMessage);
+        assertEquals(((ListRedisMessage) msg2.get(1)).getAt(0).str(), "pmessage");
+        assertEquals(((ListRedisMessage) msg2.get(1)).getAt(1).str(), "1[24]3");
+        assertEquals(((ListRedisMessage) msg2.get(1)).getAt(2).str(), "123");
+        assertThat(((ListRedisMessage) msg2.get(1)).getAt(3).bytes(), is("hahaha😯".getBytes(StandardCharsets.UTF_8)));
+        assertTrue(msg2.get(2) instanceof ListRedisMessage);
+        assertEquals(((ListRedisMessage) msg2.get(2)).getAt(0).str(), "pmessage");
+        assertEquals(((ListRedisMessage) msg2.get(2)).getAt(1).str(), "1*23");
+        assertEquals(((ListRedisMessage) msg2.get(2)).getAt(2).str(), "123");
+        assertThat(((ListRedisMessage) msg2.get(2)).getAt(3).bytes(), is("hahaha😯".getBytes(StandardCharsets.UTF_8)));
+        //then unsub
+        //todo
+        RedisMessage m11 = engine().execute(ListRedisMessage.ofString("unsubscribe 123"), c1);
+        RedisMessage m22 = engine().execute(ListRedisMessage.ofString("punsubscribe 12? 1[24]3"), c2);
+        RedisMessage m33 = engine().execute(ListRedisMessage.ofString("publish 123 hahaha😯"), c3);
+        //assert unsub m11
+//        assertThat(m11 ,is(instanceOf(SimpleStringRedisMessage.class)));
 
 
     }

@@ -15,11 +15,18 @@ public interface Redis {
      * unique client Identification,client must override equals and hashCode;
      */
     interface Client {
+
+        Protocol resp();
+
         Object id();
 
         Channel channel();
 
         void send(RedisMessage msg);
+    }
+
+    enum Protocol {
+        RESP2, RESP3
     }
 
 }
