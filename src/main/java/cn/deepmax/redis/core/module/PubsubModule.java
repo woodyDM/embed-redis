@@ -3,10 +3,17 @@ package cn.deepmax.redis.core.module;
 import cn.deepmax.redis.api.PubsubManager;
 import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
+import cn.deepmax.redis.core.Key;
 import cn.deepmax.redis.core.RedisCommand;
 import cn.deepmax.redis.core.support.BaseModule;
+import cn.deepmax.redis.resp3.ListRedisMessage;
+import cn.deepmax.redis.type.CompositeRedisMessage;
+import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author wudi
@@ -24,14 +31,13 @@ public class PubsubModule extends BaseModule {
     private static class Publish implements RedisCommand {
         @Override
         public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
-//            byte[] bytes = type.get(1).bytes();
-//            Key channel = new Key(bytes);
-//            byte[] message = type.get(2).bytes();
-//            int num = engine.pubsub().pub(channel, message);
-//            return new RedisInteger(num);
-            return new IntegerRedisMessage(1);
+            ListRedisMessage msg = cast(type);
+            byte[] bytes = msg.getAt(1).bytes();
+            Key channel = new Key(bytes);
+            byte[] message = msg.getAt(2).bytes();
+            int num = engine.pubsub().pub(channel, message);
+            return new IntegerRedisMessage(num);
         }
-
     }
 
     private static class Subscribe extends BaseSubscribe {
@@ -57,27 +63,27 @@ public class PubsubModule extends BaseModule {
 
         @Override
         public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
-//            if (type.size() <= 1) {
-//                return new RedisError("invalid sub size");
-//            }
-//            Key[] channels = new Key[type.size() - 1];
-//            for (int i = 1; i < type.size(); i++) {
-//                channels[i - 1] = new Key(type.get(i).bytes());
-//            }
-//            select(engine.pubsub()).sub(client, channels);
-//            CompositeRedisType composite = new CompositeRedisType();
-//            for (int i = 0; i < channels.length; i++) {
-//                Key k = channels[i];
-//                RedisArray ar = new RedisArray();
-//                composite.add(ar);
-//
-//                ar.add(RedisBulkString.of(name));
-//                ar.add(RedisBulkString.of(k.getContent()));
-//                ar.add(new RedisInteger(i + 1));
-//
-//            }
-//            return composite;
-            return OK;
+            ListRedisMessage msg = cast(type);
+            List<RedisMessage> children = msg.children();
+            if (children.size() <= 1) {
+                return new ErrorRedisMessage("invalid sub size");
+            }
+            Key[] channels = new Key[children.size() - 1];
+            for (int i = 1; i < children.size(); i++) {
+                channels[i - 1] = new Key(msg.getAt(i).bytes());
+            }
+            List<Integer> number = select(engine.pubsub()).sub(client, channels);
+            List<RedisMessage> composite = new ArrayList<>();
+
+            for (int i = 0, channelsLength = channels.length; i < channelsLength; i++) {
+                Key k = channels[i];
+                ListRedisMessage oneMsg = ListRedisMessage.newBuilder()
+                        .append(name)
+                        .append(k.getContent())
+                        .append(new IntegerRedisMessage(number.get(i))).build();
+                composite.add(oneMsg);
+            }             
+            return CompositeRedisMessage.of(composite);
         }
 
         abstract PubsubManager.Pubsub select(PubsubManager manager);

@@ -15,7 +15,6 @@ public class CommonModule extends BaseModule {
     public CommonModule() {
         super("common");
         register(new Del());
-
     }
 
     private static class Del implements RedisCommand {

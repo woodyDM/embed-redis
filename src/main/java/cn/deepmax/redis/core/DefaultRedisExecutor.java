@@ -8,6 +8,7 @@ import cn.deepmax.redis.api.RedisParamException;
 import cn.deepmax.redis.core.module.AuthModule;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.type.CallbackRedisMessage;
+import cn.deepmax.redis.type.CompositeRedisMessage;
 import cn.deepmax.redis.type.RedisMessages;
 import io.netty.handler.codec.CodecException;
 import io.netty.handler.codec.redis.ArrayRedisMessage;
@@ -124,7 +125,15 @@ public class DefaultRedisExecutor implements RedisExecutor {
                 doPrint(children.get(i), depth + 1, i == children.size() - 1);
             }
             return;
-        } else {
+        } else if(msg instanceof CompositeRedisMessage){
+            log.debug("{}-[{}] ", space,
+                    msg.getClass().getSimpleName());
+            List<RedisMessage> children = ((CompositeRedisMessage) msg).children();
+            for (int i = 0; i < children.size(); i++) {
+                doPrint(children.get(i), depth + 1, i == children.size() - 1);
+            }
+            return;
+        }else {
             throw new CodecException("unknown message type: " + msg);
         }
         String corner = (isLast ? "└" : "├");

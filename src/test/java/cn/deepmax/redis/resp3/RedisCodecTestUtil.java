@@ -18,15 +18,38 @@ package cn.deepmax.redis.resp3;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.handler.codec.redis.RedisMessage;
+import io.netty.handler.ssl.ReferenceCountedOpenSslEngine;
 import io.netty.util.CharsetUtil;
+import io.netty.util.ReferenceCountUtil;
 
-final class RedisCodecTestUtil {
+import java.util.ArrayList;
+import java.util.List;
+
+public final class RedisCodecTestUtil {
 
     private RedisCodecTestUtil() {
     }
 
-    static ByteBuf readAll(EmbeddedChannel channel) {
+    public static void release(List<RedisMessage> msg){
+        for (RedisMessage m : msg) {
+            ReferenceCountUtil.release(m);
+        }
+    }
+
+    public static List<RedisMessage> readAllMessage(Channel channel) {
+        List<RedisMessage> r = new ArrayList<>();
+        EmbeddedChannel ch = (EmbeddedChannel) channel;
+        RedisMessage read;
+        while ((read = ch.readOutbound()) != null) {
+            r.add(read);
+        }
+        return r;
+    }
+
+    public static ByteBuf readAll(EmbeddedChannel channel) {
         ByteBuf buf = Unpooled.buffer();
         ByteBuf read;
         while ((read = channel.readOutbound()) != null) {

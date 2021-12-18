@@ -8,6 +8,9 @@ import cn.deepmax.redis.resp3.ListRedisMessage;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.redis.RedisMessage;
 import io.netty.handler.codec.redis.SimpleStringRedisMessage;
+import io.netty.util.ReferenceCountUtil;
+
+import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

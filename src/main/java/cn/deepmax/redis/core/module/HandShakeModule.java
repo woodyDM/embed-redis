@@ -47,7 +47,7 @@ public class HandShakeModule extends BaseModule {
     private static class Quit implements RedisCommand {
         @Override
         public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
-            CallbackRedisMessage.Impl msg = CallbackRedisMessage.of(OK);
+            CallbackRedisMessage msg = CallbackRedisMessage.of(OK);
             msg.addHook(c ->
                     client.channel().close()
                             .addListener(e -> log.debug("Client quit! {}", client.channel().remoteAddress())));

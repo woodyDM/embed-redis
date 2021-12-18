@@ -65,5 +65,5 @@ public class BaseEngineTest extends BaseTest{
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
         return client;
     }
-
+    
 }

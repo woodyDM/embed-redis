@@ -4,6 +4,7 @@ import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.core.NettyClient;
 import cn.deepmax.redis.lua.LuaChannelContext;
 import cn.deepmax.redis.type.CallbackRedisMessage;
+import cn.deepmax.redis.type.CompositeRedisMessage;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -35,11 +36,21 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
             LuaChannelContext.remove();
         }
         if (response != null) {
-            ChannelFuture future = ctx.writeAndFlush(response);
-            if (response instanceof CallbackRedisMessage) {
-                CallbackRedisMessage m = (CallbackRedisMessage) response;
-                future.addListener(e -> m.callback(ctx));
+            if (response instanceof CompositeRedisMessage) {
+                for (RedisMessage child : ((CompositeRedisMessage) response).children()) {
+                    doWriteMessage(ctx, child);
+                }
+            } else {
+                doWriteMessage(ctx, response);
             }
+        }
+    }
+
+    private void doWriteMessage(ChannelHandlerContext ctx, RedisMessage response) {
+        ChannelFuture future = ctx.writeAndFlush(response);
+        if (response instanceof CallbackRedisMessage) {
+            CallbackRedisMessage m = (CallbackRedisMessage) response;
+            future.addListener(e -> m.callback(ctx));
         }
     }
 

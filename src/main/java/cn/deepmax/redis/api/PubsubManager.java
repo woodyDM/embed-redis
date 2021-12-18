@@ -3,6 +3,7 @@ package cn.deepmax.redis.api;
 import cn.deepmax.redis.core.Key;
 import io.netty.handler.codec.redis.RedisMessage;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -16,11 +17,9 @@ public interface PubsubManager {
     Pubsub regex();
 
     default int pub(Key channel, byte[] message) {
-        Set<PubPair> p1 = normal().matches(channel, message);
-
-        Set<PubPair> p2 = regex().matches(channel, message);
-        p2.removeAll(p1);
-
+        List<PubPair> p1 = normal().matches(channel, message);
+        List<PubPair> p2 = regex().matches(channel, message);
+        
         p1.forEach(p -> normal().pub(p));
         p2.forEach(p -> regex().pub(p));
 
@@ -34,11 +33,11 @@ public interface PubsubManager {
 
     interface Pubsub {
 
-        Set<PubPair> matches(Key channel, byte[] msg);
+        List<PubPair> matches(Key channel, byte[] msg);
 
         void pub(PubPair pubPair);
 
-        void sub(Redis.Client client, Key... channel);
+        List<Integer> sub(Redis.Client client, Key... channel);
 
         void unsub(Redis.Client client, Key... channel);
 
