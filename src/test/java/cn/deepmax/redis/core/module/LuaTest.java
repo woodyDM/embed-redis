@@ -34,14 +34,16 @@ public class LuaTest extends BaseTemplateTest {
     @Test
     public void shouldEvalsha() {
         //first load script to avoid redisson codec error.
-        String script = SHA1Test.SCRIPT;
-        engine().execute(ListRedisMessage.newBuilder()
-                .append(FullBulkValueRedisMessage.ofString("script"))
-                .append(FullBulkValueRedisMessage.ofString("load"))
-                .append(FullBulkValueRedisMessage.ofString(script)).build(), embeddedClient());
-        
+//        engine().execute(ListRedisMessage.newBuilder()
+//                .append(FullBulkValueRedisMessage.ofString("script"))
+//                .append(FullBulkValueRedisMessage.ofString("load"))
+//                .append(FullBulkValueRedisMessage.ofString(script)).build(), embeddedClient());
+//
+
+        RedisTemplate<String, Object> redisTemplate = t();
+        String script = "return ARGV[1];";
         DefaultRedisScript<byte[]> redisScript = new DefaultRedisScript<>(script, byte[].class);
-        byte[] results = t().execute(redisScript, Collections.singletonList("name"), new byte[]{5, 11, 2, 3});
+        byte[] results = redisTemplate.execute(redisScript, Collections.singletonList("any"), new byte[]{5, 11, 2, 3});
         
         assertEquals(results[0], 5);
         assertEquals(results[1], 11);

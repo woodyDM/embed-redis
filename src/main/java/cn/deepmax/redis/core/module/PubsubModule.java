@@ -12,7 +12,6 @@ import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -44,23 +43,18 @@ public class PubsubModule extends BaseModule {
     private static class Subscribe extends BaseSubscribe {
         @Override
         PubsubManager.Pubsub select(PubsubManager manager) {
-            return manager.normal();
+            return manager.direct();
         }
     }
 
     private static class PSubscribe extends BaseSubscribe {
         @Override
         PubsubManager.Pubsub select(PubsubManager manager) {
-            return manager.regex();
+            return manager.pattern();
         }
     }
 
     abstract static class BaseSubscribe implements RedisCommand {
-        protected String name;
-
-        BaseSubscribe() {
-            this.name = this.getClass().getSimpleName().toLowerCase();
-        }
 
         @Override
         public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
@@ -73,18 +67,8 @@ public class PubsubModule extends BaseModule {
             for (int i = 1; i < children.size(); i++) {
                 channels[i - 1] = new Key(msg.getAt(i).bytes());
             }
-            List<Integer> number = select(engine.pubsub()).sub(client, channels);
-            List<RedisMessage> composite = new ArrayList<>();
-
-            for (int i = 0, channelsLength = channels.length; i < channelsLength; i++) {
-                Key k = channels[i];
-                ListRedisMessage oneMsg = ListRedisMessage.newBuilder()
-                        .append(name)
-                        .append(k.getContent())
-                        .append(new IntegerRedisMessage(number.get(i))).build();
-                composite.add(oneMsg);
-            }             
-            return CompositeRedisMessage.of(composite);
+            List<RedisMessage> list = select(engine.pubsub()).sub(client, channels);
+            return CompositeRedisMessage.of(list);
         }
 
         abstract PubsubManager.Pubsub select(PubsubManager manager);
