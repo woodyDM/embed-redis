@@ -11,16 +11,16 @@ import java.util.Map;
  */
 public class NavMap<T> {
     private final Map<Key, Node<T>> container = new HashMap<>();
-    private final Map<Integer, Node<T>> numberContainer = new HashMap<>();
-    private Node<T> lastNode;
-    private int index = 0;
+    private final Map<Long, Node<T>> numberContainer = new HashMap<>();
+    Node<T> lastNode;
+    private long index = 0L;
 
     public T get(Key key) {
         Node<T> n = container.get(key);
         return n == null ? null : n.value;
     }
 
-    public Node<T> get(Integer idx) {
+    public Node<T> get(Long idx) {
         return numberContainer.get(idx);
     }
 
@@ -39,7 +39,7 @@ public class NavMap<T> {
         removeOld(old);
     }
 
-    void removeOld(Node<T> old) {
+    private void removeOld(Node<T> old) {
         if (old.pre != null) {
             old.pre.next = old.next;
         }
@@ -53,31 +53,36 @@ public class NavMap<T> {
 
     public T set(Key key, T t) {
         index++;
+        //append node to last
         Node<T> node = new Node<>(t, index);
         node.pre = lastNode;
-
+        if (lastNode != null) {
+            lastNode.next = node;
+        }
+        lastNode = node;
+        
         numberContainer.put(index, node);
+        //remove old if need
         Node<T> old = container.put(key, node);
         if (old != null) {
             removeOld(old);
-        } else {
-            if (lastNode != null) {
-                lastNode.next = node;
-            }
         }
-        lastNode = node;
         return old == null ? null : old.value;
     }
 
     public static class Node<T> {
         final T value;
-        final Integer idx;
+        final long idx;
         Node<T> pre;
         Node<T> next;
 
-        private Node(T value, Integer idx) {
+        private Node(T value, long idx) {
             this.value = value;
             this.idx = idx;
+        }
+
+        public long getIdx() {
+            return idx;
         }
 
         public Node<T> getPre() {
@@ -92,15 +97,13 @@ public class NavMap<T> {
             return value;
         }
 
-        public Integer getIdx() {
-            return idx;
-        }
 
         @Override
         public String toString() {
             final StringBuffer sb = new StringBuffer("Node{");
             sb.append("value=").append(value);
             sb.append(", idx=").append(idx);
+            sb.append(", next=").append(next == null ? "null" : next.value);
             sb.append('}');
             return sb.toString();
         }
