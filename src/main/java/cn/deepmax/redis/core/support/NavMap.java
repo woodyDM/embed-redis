@@ -28,15 +28,16 @@ public class NavMap<T> {
         return container.size();
     }
 
-    public void delete(Key key) {
+    public Node<T> delete(Key key) {
         Node<T> old = container.remove(key);
         if (old == null) {
-            return;
+            return null;
         }
         if (old == lastNode) {
             lastNode = old.pre;
         }
         removeOld(old);
+        return old;
     }
 
     private void removeOld(Node<T> old) {
