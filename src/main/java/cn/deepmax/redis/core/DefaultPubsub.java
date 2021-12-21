@@ -5,6 +5,7 @@ import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.utils.RegexUtils;
+import io.netty.handler.codec.redis.FullBulkStringRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 
@@ -38,6 +39,11 @@ public class DefaultPubsub implements PubsubManager {
         }
 
         @Override
+        protected String unname() {
+            return "unsubscribe";
+        }
+
+        @Override
         public List<PubPair> matches(Key channel, byte[] message) {
             List<Redis.Client> channels = container.get(channel);
             if (channels == null) {
@@ -59,6 +65,11 @@ public class DefaultPubsub implements PubsubManager {
         @Override
         protected String name() {
             return "psubscribe";
+        }
+
+        @Override
+        protected String unname() {
+            return "punsubscribe";
         }
 
         @Override
@@ -99,9 +110,16 @@ public class DefaultPubsub implements PubsubManager {
 
         /**
          * message name : subscribe / psubscribe
+         *
          * @return
          */
         abstract protected String name();
+
+        /**
+         * message name : unsubscribe / punsubscribe
+         * @return
+         */
+        abstract protected String unname();
 
         @Override
         public void pub(PubPair pubPair) {
@@ -109,12 +127,12 @@ public class DefaultPubsub implements PubsubManager {
         }
 
         @Override
-        public List<RedisMessage> sub(Redis.Client client, Key... channel) {
-            if (inValidChannels(channel)) {
+        public List<RedisMessage> sub(Redis.Client client, List<Key> patternChannel) {
+            if (inValidChannels(patternChannel)) {
                 return Collections.emptyList();
             }
             List<RedisMessage> result = new ArrayList<>();
-            for (Key ch : channel) {
+            for (Key ch : patternChannel) {
                 List<Redis.Client> old = container.computeIfAbsent(ch, k -> new LinkedList<>());
                 boolean exist = old.stream().anyMatch(i -> i.equals(client));
                 if (!exist) {
@@ -130,16 +148,52 @@ public class DefaultPubsub implements PubsubManager {
             return result;
         }
 
-        protected void postSub(Redis.Client client, Key channel) {}
-
-        @Override
-        public List<RedisMessage> unsubAll(Redis.Client client) {
-            return null;
+        protected void postSub(Redis.Client client, Key channel) {
         }
 
         @Override
-        public List<RedisMessage> unsub(Redis.Client client, Key... channel) {
-            return Collections.emptyList();
+        public List<RedisMessage> unsubAll(Redis.Client client) {
+            List<RedisMessage> msg = new ArrayList<>();
+            container.forEach((k, v) -> {
+                Iterator<Redis.Client> it = v.iterator();
+                while (it.hasNext()) {
+                    Redis.Client c = it.next();
+                    if (c == client) {
+                        it.remove();
+                        msg.add(createUnsubMessage(c, k)); 
+                        break;
+                    }
+                }
+            });
+            if (msg.isEmpty()) {
+                return Collections.singletonList(createUnsubMessage(client, null));
+            } else {
+                return msg;
+            }
+        }
+
+        @Override
+        public List<RedisMessage> unsub(Redis.Client client, List<Key> channel) {
+            List<RedisMessage> result = new ArrayList<>();
+            for (Key key : channel) {
+                List<Redis.Client> list = container.get(key);
+                if (list != null) {
+                    list.remove(client);
+                }
+                result.add(createUnsubMessage(client, key));
+            }
+            return result;
+        }
+
+        private RedisMessage createUnsubMessage(Redis.Client client, Key key) {
+            RedisMessage m = key == null ? FullBulkStringRedisMessage.NULL_INSTANCE :
+                    FullBulkValueRedisMessage.ofString(key.getContent());
+            long count = DefaultPubsub.this.subscribeCount(client);
+            return ListRedisMessage.newBuilder()
+                    .append(unname())
+                    .append(m)
+                    .append(new IntegerRedisMessage(count))
+                    .build();
         }
 
         @Override
@@ -156,8 +210,8 @@ public class DefaultPubsub implements PubsubManager {
             return c;
         }
 
-        private boolean inValidChannels(Key... channel) {
-            return channel == null || channel.length == 0;
+        private boolean inValidChannels(List<Key> channel) {
+            return channel == null || channel.size() == 0;
         }
     }
 }

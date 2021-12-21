@@ -12,18 +12,21 @@ import java.util.List;
 public interface PubsubManager {
     /**
      * subscribe / unsubscribe
+     *
      * @return
      */
     Pubsub direct();
 
     /**
      * psubscribe / punsubscribe
+     *
      * @return
      */
     Pubsub pattern();
 
     /**
      * publish message to channel
+     *
      * @param channel
      * @param message
      * @return
@@ -40,6 +43,7 @@ public interface PubsubManager {
 
     /**
      * total client sub channel.
+     *
      * @param client
      * @return
      */
@@ -49,6 +53,7 @@ public interface PubsubManager {
 
     /**
      * called when client disconnect
+     *
      * @param client
      */
     default void quit(Redis.Client client) {
@@ -62,6 +67,7 @@ public interface PubsubManager {
     interface Pubsub {
         /**
          * msg matches client
+         *
          * @param channel
          * @param msg
          * @return
@@ -70,28 +76,32 @@ public interface PubsubManager {
 
         /**
          * publish message
+         *
          * @param pubPair
          */
         void pub(PubPair pubPair);
 
         /**
          * subscribe
+         *
          * @param client
          * @param channel
          * @return
          */
-        List<RedisMessage> sub(Redis.Client client, Key... channel);
+        List<RedisMessage> sub(Redis.Client client, List<Key> channel);
 
         /**
          * unsubscribe
+         *
          * @param client
          * @param channel
          * @return
          */
-        List<RedisMessage> unsub(Redis.Client client, Key... channel);
+        List<RedisMessage> unsub(Redis.Client client, List<Key> channel);
 
         /**
          * unsubscribe all
+         *
          * @param client
          * @return
          */
@@ -99,6 +109,7 @@ public interface PubsubManager {
 
         /**
          * query total client sub count
+         *
          * @param client
          * @return
          */
@@ -106,6 +117,7 @@ public interface PubsubManager {
 
         /**
          * called when disconnect
+         *
          * @param client
          */
         void quit(Redis.Client client);

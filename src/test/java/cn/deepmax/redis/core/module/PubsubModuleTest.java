@@ -6,14 +6,13 @@ import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.type.CompositeRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
-import io.netty.handler.codec.redis.SimpleStringRedisMessage;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static cn.deepmax.redis.resp3.RedisCodecTestUtil.readAllMessage;
-import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
@@ -73,7 +72,7 @@ public class PubsubModuleTest extends BaseEngineTest {
         //assert psub 2
         assertTrue(m2_2 instanceof CompositeRedisMessage);
         List<RedisMessage> ml2_2 = ((CompositeRedisMessage) m2_2).children();
-        assertThat(ml2_2.size(),is(1));
+        assertThat(ml2_2.size(), is(1));
         assertTrue(ml2_2.get(0) instanceof ListRedisMessage);
         assertEquals(((ListRedisMessage) ml2_2.get(0)).getAt(0).str(), "psubscribe");
         assertEquals(((ListRedisMessage) ml2_2.get(0)).getAt(1).str(), "abc");
@@ -83,13 +82,13 @@ public class PubsubModuleTest extends BaseEngineTest {
         assertTrue(m3 instanceof IntegerRedisMessage);
         assertEquals(((IntegerRedisMessage) m3).value(), 4);
         //assert sub msg 1
-        assertThat(msg1.size(),is(1));
+        assertThat(msg1.size(), is(1));
         assertTrue(msg1.get(0) instanceof ListRedisMessage);
         assertEquals(((ListRedisMessage) msg1.get(0)).getAt(0).str(), "message");
         assertEquals(((ListRedisMessage) msg1.get(0)).getAt(1).str(), "123");
         assertThat(((ListRedisMessage) msg1.get(0)).getAt(2).bytes(), is("hahaha😯".getBytes(StandardCharsets.UTF_8)));
         //assert sub msg 2
-        assertThat(msg2.size(),is(3));
+        assertThat(msg2.size(), is(3));
         assertTrue(msg2.get(0) instanceof ListRedisMessage);
         assertEquals(((ListRedisMessage) msg2.get(0)).getAt(0).str(), "pmessage");
         assertEquals(((ListRedisMessage) msg2.get(0)).getAt(1).str(), "12?");
@@ -105,14 +104,75 @@ public class PubsubModuleTest extends BaseEngineTest {
         assertEquals(((ListRedisMessage) msg2.get(2)).getAt(1).str(), "1[24]3");
         assertEquals(((ListRedisMessage) msg2.get(2)).getAt(2).str(), "123");
         assertThat(((ListRedisMessage) msg2.get(2)).getAt(3).bytes(), is("hahaha😯".getBytes(StandardCharsets.UTF_8)));
-        //then unsub
-        //todo
-        RedisMessage m11 = engine().execute(ListRedisMessage.ofString("unsubscribe 123"), c1);
-        RedisMessage m22 = engine().execute(ListRedisMessage.ofString("punsubscribe 12? 1[24]3"), c2);
-        RedisMessage m33 = engine().execute(ListRedisMessage.ofString("publish 123 hahaha😯"), c3);
-        //assert unsub m11
-        //assertThat(m11 ,is(instanceOf(SimpleStringRedisMessage.class)));
+        //then unsub not exist
+        RedisMessage m11 = engine().execute(ListRedisMessage.ofString("unsubscribe bc"), c1);
+        RedisMessage m22 = engine().execute(ListRedisMessage.ofString("punsubscribe dd"), c2);
+        //assert unsub 
+        CompositeRedisMessage mc11 = (CompositeRedisMessage) m11;
+        assertThat(mc11.children().size(), is(1));
+        assertThat(((ListRedisMessage) mc11.children().get(0)).getAt(0).str(), equalTo("unsubscribe"));
+        assertThat(((ListRedisMessage) mc11.children().get(0)).getAt(1).str(), equalTo("bc"));
+        RedisMessage mc113 = ((ListRedisMessage) mc11.children().get(0)).children().get(2);
+        assertThat(((IntegerRedisMessage) mc113).value(), equalTo(2L));
+
+        CompositeRedisMessage mc22 = (CompositeRedisMessage) m22;
+        assertThat(mc22.children().size(), is(1));
+        assertThat(((ListRedisMessage) mc22.children().get(0)).getAt(0).str(), equalTo("punsubscribe"));
+        assertThat(((ListRedisMessage) mc22.children().get(0)).getAt(1).str(), equalTo("dd"));
+        RedisMessage mc223 = ((ListRedisMessage) mc22.children().get(0)).children().get(2);
+        assertThat(((IntegerRedisMessage) mc223).value(), equalTo(4L));
+
+        //then unsub exist
+        RedisMessage m12 = engine().execute(ListRedisMessage.ofString("unsubscribe abc"), c1);
+        RedisMessage mp12 = engine().execute(ListRedisMessage.ofString("punsubscribe 12?"), c2);
+        //assert unsub 
+        CompositeRedisMessage mc12 = (CompositeRedisMessage) m12;
+        assertThat(mc12.children().size(), is(1));
+        assertThat(((ListRedisMessage) mc12.children().get(0)).getAt(0).str(), equalTo("unsubscribe"));
+        assertThat(((ListRedisMessage) mc12.children().get(0)).getAt(1).str(), equalTo("abc"));
+        RedisMessage mc123 = ((ListRedisMessage) mc12.children().get(0)).children().get(2);
+        assertThat(((IntegerRedisMessage) mc123).value(), equalTo(1L));
+
+        CompositeRedisMessage mcp12 = (CompositeRedisMessage) mp12;
+        assertThat(mcp12.children().size(), is(1));
+        assertThat(((ListRedisMessage) mcp12.children().get(0)).getAt(0).str(), equalTo("punsubscribe"));
+        assertThat(((ListRedisMessage) mcp12.children().get(0)).getAt(1).str(), equalTo("12?"));
+        RedisMessage mcp123 = ((ListRedisMessage) mcp12.children().get(0)).children().get(2);
+        assertThat(((IntegerRedisMessage) mcp123).value(), equalTo(3L));
+        //publish 2
+        RedisMessage mpb2 = engine().execute(ListRedisMessage.ofString("publish 123 hahaha😯"), c3);
+        assertTrue(mpb2 instanceof IntegerRedisMessage);
+        assertEquals(((IntegerRedisMessage) mpb2).value(), 3);
+        List<RedisMessage> mpbr1 = readAllMessage(c1.channel());
+        List<RedisMessage> mpbr2 = readAllMessage(c2.channel());
+        assertEquals(mpbr1.size(), 1);
+        assertEquals(mpbr2.size(), 2);
+        //unsub all
+        RedisMessage mun1 = engine().execute(ListRedisMessage.ofString("unsubscribe"), c1);
+        RedisMessage mun2 = engine().execute(ListRedisMessage.ofString("punsubscribe"), c2);
+
+        CompositeRedisMessage mcun1 = (CompositeRedisMessage) mun1;
+        assertThat(mcun1.children().size(), is(1));
+        assertThat(((ListRedisMessage) mcun1.children().get(0)).getAt(0).str(), equalTo("unsubscribe"));
+        assertThat(((ListRedisMessage) mcun1.children().get(0)).getAt(1).str(), equalTo("123"));
+        RedisMessage mcun13 = ((ListRedisMessage) mcun1.children().get(0)).children().get(2);
+        assertThat(((IntegerRedisMessage) mcun13).value(), equalTo(0L));
 
 
+        CompositeRedisMessage mcun2 = (CompositeRedisMessage) mun2;
+        assertThat(mcun2.children().size(), is(3));
+        assertThat(((ListRedisMessage) mcun2.children().get(0)).getAt(0).str(), equalTo("punsubscribe"));
+        assertThat(((ListRedisMessage) mcun2.children().get(1)).getAt(0).str(), equalTo("punsubscribe"));
+        assertThat(((ListRedisMessage) mcun2.children().get(2)).getAt(0).str(), equalTo("punsubscribe"));
+        RedisMessage mcun231 = ((ListRedisMessage) mcun2.children().get(0)).children().get(2);
+        RedisMessage mcun232 = ((ListRedisMessage) mcun2.children().get(1)).children().get(2);
+        RedisMessage mcun233 = ((ListRedisMessage) mcun2.children().get(2)).children().get(2);
+        assertThat(((IntegerRedisMessage) mcun231).value(), equalTo(2L));
+        assertThat(((IntegerRedisMessage) mcun232).value(), equalTo(1L));
+        assertThat(((IntegerRedisMessage) mcun233).value(), equalTo(0L));
+        //publish 3
+        RedisMessage mpb3 = engine().execute(ListRedisMessage.ofString("publish 123 hahaha😯"), c3);
+        assertTrue(mpb3 instanceof IntegerRedisMessage);
+        assertEquals(((IntegerRedisMessage) mpb3).value(), 0);
     }
 }
