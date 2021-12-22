@@ -30,21 +30,21 @@ public class RedisServer {
     private EventLoopGroup boss = null;
     private EventLoopGroup workerGroup = null;
     private Channel serverChannel = null;
+    private final RedisEngine engine;
 
-    public RedisServer(@NonNull RedisConfiguration configuration) {
+    public RedisServer(@NonNull RedisEngine engine, @NonNull RedisConfiguration configuration) {
+        this.engine = engine;
         this.configuration = configuration;
     }
 
     public static void main(String[] args) {
-        new RedisServer(new RedisConfiguration(6380, null)).start();
+        new RedisServer(DefaultRedisEngine.defaultEngine(), new RedisConfiguration(6380, null)).start();
     }
-    
+
     public void start() {
         int port = configuration.getPort();
         ServerBootstrap boot = new ServerBootstrap();
-        RedisEngine engine = DefaultRedisEngine.defaultEngine();
         engine.setConfiguration(configuration);
-        
         RedisEngineHolder.set(engine);
 
         boss = new NioEventLoopGroup(1);

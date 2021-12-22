@@ -10,12 +10,12 @@ public class NumberUtils {
 
     public static Long parse(String s) {
         if (s == null || s.isEmpty()) {
-            throw RedisParamException.SYNTAX_ERR;
+            throw RedisParamException.SYNTAX_ERR_NUMBER;
         }
         try {
             return Long.valueOf(s);
         } catch (NumberFormatException e) {
-            throw RedisParamException.SYNTAX_ERR;
+            throw RedisParamException.SYNTAX_ERR_NUMBER;
         }
     }
 }

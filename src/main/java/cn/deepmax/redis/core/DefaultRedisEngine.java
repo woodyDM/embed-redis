@@ -3,10 +3,8 @@ package cn.deepmax.redis.core;
 import cn.deepmax.redis.api.*;
 import cn.deepmax.redis.core.module.*;
 import io.netty.handler.codec.redis.RedisMessage;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
-import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
@@ -24,11 +22,7 @@ public class DefaultRedisEngine implements RedisEngine {
     protected TimeProvider timeProvider = new DefaultTimeProvider();
     private Runnable scriptFlushAction;
     private RedisConfiguration configuration;
-
-    public DefaultRedisEngine() {
-        loadDefaultModules();
-    }
-
+    
     public static DefaultRedisEngine defaultEngine() {
         DefaultRedisEngine e = new DefaultRedisEngine();
         e.loadDefaultModules();
@@ -38,7 +32,7 @@ public class DefaultRedisEngine implements RedisEngine {
     private void loadDefaultModules() {
         loadModule(new StringModule());
         loadModule(new HandShakeModule());
-        loadModule(new CommonModule());
+        loadModule(new KeyCommonModule());
         LuaModule luaModule = new LuaModule();
         loadModule(luaModule);
         scriptFlushAction = luaModule::flush;
@@ -73,18 +67,17 @@ public class DefaultRedisEngine implements RedisEngine {
     }
 
     @Override
+    public TimeProvider timeProvider() {
+        return timeProvider;
+    }
+
+    @Override
     public RedisMessage execute(RedisMessage type, Redis.Client client) {
         return executor.execute(type, this, client);
     }
 
     public void setTimeProvider(TimeProvider timeProvider) {
         this.timeProvider = Objects.requireNonNull(timeProvider);
-    }
-
-    @Override
-    public boolean isExpire(@NonNull RedisObject v) {
-        LocalDateTime time = v.expireTime();
-        return time != null && timeProvider.now().isAfter(time);
     }
 
     @Override

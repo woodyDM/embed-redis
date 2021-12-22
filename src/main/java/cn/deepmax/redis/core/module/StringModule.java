@@ -43,7 +43,7 @@ public class StringModule extends BaseModule {
             }
             byte[] key = msg.getAt(1).bytes();
             byte[] value = msg.getAt(2).bytes();
-            set(key, new RString(value));
+            set(key, new RString(engine.timeProvider(), value));
             return OK;
         }
     }

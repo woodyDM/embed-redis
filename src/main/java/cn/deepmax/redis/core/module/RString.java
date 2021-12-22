@@ -1,46 +1,22 @@
 package cn.deepmax.redis.core.module;
 
-import cn.deepmax.redis.api.RedisObject;
-
-import java.time.LocalDateTime;
+import cn.deepmax.redis.api.TimeProvider;
+import cn.deepmax.redis.core.support.AbstractRedisObject;
 
 /**
  * @author wudi
  * @date 2021/4/30
  */
-class RString implements RedisObject {
+class RString extends AbstractRedisObject {
 
     private final byte[] s;
 
-    private final LocalDateTime expire;
-
-    public RString(byte[] v) {
-        this(v, null);
-    }
-
-    public RString(byte[] v, LocalDateTime expire) {
-        this.s = v;
-
-        this.expire = expire;
-    }
-
-    @Override
-    public LocalDateTime expireTime() {
-        return expire;
+    public RString(TimeProvider timeProvider, byte[] s) {
+        super(timeProvider);
+        this.s = s;
     }
 
     public byte[] getS() {
         return s;
-    }
-
-
-    @Override
-    public long ttl() {
-        return 0;
-    }
-
-    @Override
-    public void setTtl(long ttl) {
-
     }
 }

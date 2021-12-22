@@ -8,11 +8,15 @@ import cn.deepmax.redis.core.DefaultRedisEngine;
 import cn.deepmax.redis.core.NettyClient;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
+import cn.deepmax.redis.utils.MockTimeProvider;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.redis.RedisMessage;
 import io.netty.handler.codec.redis.SimpleStringRedisMessage;
 import org.junit.After;
 import org.junit.Before;
+
+import java.time.LocalDateTime;
+import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -21,7 +25,7 @@ import static org.junit.Assert.assertTrue;
  * @author wudi
  * @date 2021/12/16
  */
-public class BaseEngineTest extends BaseTest{
+public class BaseEngineTest extends BaseTest {
 
     public static final String AUTH = "123456";
     protected DefaultRedisEngine e;
@@ -35,9 +39,16 @@ public class BaseEngineTest extends BaseTest{
     @Before
     public void setUp() throws Exception {
         e = DefaultRedisEngine.defaultEngine();
+        e.setTimeProvider(timeProvider);
         e.setConfiguration(new RedisConfiguration(6379, AUTH));
         old = RedisEngineHolder.instance();
         RedisEngineHolder.set(e);
+    }
+
+    @Override
+    protected void mockTime(LocalDateTime time) {
+        Objects.requireNonNull(time);
+        timeProvider.time = time;
     }
 
     @After
@@ -65,5 +76,5 @@ public class BaseEngineTest extends BaseTest{
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
         return client;
     }
-    
+
 }

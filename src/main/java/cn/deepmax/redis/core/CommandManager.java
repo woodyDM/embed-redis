@@ -4,7 +4,6 @@ import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
-import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
@@ -20,7 +19,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CommandManager {
 
-    public static final RedisCommand UNKNOWN_COMMAND = ((type, ctx, engine) -> new ErrorRedisMessage("ERR unknown command"));
+    public static final RedisCommand UNKNOWN_COMMAND = ((type, ctx, engine) -> new ErrorRedisMessage("Embed-redis does not support this command"));
     private final Map<String, Module> modules = new ConcurrentHashMap<>();
     private final Map<String, RedisCommand> commandMap = new ConcurrentHashMap<>();
 

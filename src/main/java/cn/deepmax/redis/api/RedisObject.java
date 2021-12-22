@@ -12,6 +12,16 @@ public interface RedisObject {
 
     long ttl();
 
-    void setTtl(long ttl);
+    long pttl();
+
+    void expire(long ttl);
+
+    void pexpire(long pttl);
+
+    boolean isExpire();
+
+    void expireAt(LocalDateTime time);
+
+    void persist();
 
 }

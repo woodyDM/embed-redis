@@ -3,11 +3,10 @@ package cn.deepmax.redis.base;
 import cn.deepmax.redis.RedisServer;
 import cn.deepmax.redis.api.RedisConfiguration;
 import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.api.RedisEngineHolder;
+import cn.deepmax.redis.core.DefaultRedisEngine;
 import io.lettuce.core.ClientOptions;
 import io.lettuce.core.protocol.ProtocolVersion;
 import io.lettuce.core.resource.ClientResources;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.redisson.config.Config;
@@ -39,7 +38,7 @@ public abstract class BaseTemplateTest extends BaseTest {
     public static final int PORT = 6381;
     public static Client[] ts;
     protected static RedisServer server;
-
+    protected static DefaultRedisEngine engine;
     protected RedisTemplate<String, Object> redisTemplate;
     public static final Logger log = LoggerFactory.getLogger(BaseTemplateTest.class);
 
@@ -50,7 +49,7 @@ public abstract class BaseTemplateTest extends BaseTest {
 
     @Override
     public RedisEngine engine() {
-        return RedisEngineHolder.instance();
+        return engine;
     }
 
     static {
@@ -63,7 +62,9 @@ public abstract class BaseTemplateTest extends BaseTest {
     }
 
     private static void init() {
-        server = new RedisServer(new RedisConfiguration(PORT, AUTH));
+        engine = DefaultRedisEngine.defaultEngine();
+        engine.setTimeProvider(timeProvider);
+        server = new RedisServer(engine, new RedisConfiguration(PORT, AUTH));
         if (PORT != 6379) {
             server.start();
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {

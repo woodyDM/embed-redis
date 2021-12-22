@@ -55,7 +55,7 @@ public class FullBulkValueRedisMessage extends FullBulkStringRedisMessage {
 
     @Override
     public String toString() {
-        return "FullBulkValueRedisMessage:[" + content().toString(Charset.defaultCharset()) + "]\n" + Arrays.toString(bytes());
+        return "[" + content().toString(Charset.defaultCharset()) + "]\n" + Arrays.toString(bytes());
     }
 
 }

@@ -11,6 +11,8 @@ public interface RedisEngine {
 
     void scriptFlush();
 
+    TimeProvider timeProvider();
+
     RedisConfiguration configuration();
 
     void setConfiguration(RedisConfiguration configuration);
@@ -19,12 +21,14 @@ public interface RedisEngine {
 
     DbManager getDbManager();
 
+    default RedisEngine.Db getDb(Redis.Client client){
+        return getDbManager().get(client);
+    }
+
     AuthManager authManager();
 
     PubsubManager pubsub();
-
-    boolean isExpire(RedisObject obj);
-
+    
     interface Db {
 
         RedisObject set(byte[] key, RedisObject newValue);

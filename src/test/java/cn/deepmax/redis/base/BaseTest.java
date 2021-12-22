@@ -5,12 +5,14 @@ import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.core.NettyClient;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
+import cn.deepmax.redis.utils.MockTimeProvider;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.redis.RedisMessage;
 import io.netty.handler.codec.redis.SimpleStringRedisMessage;
-import io.netty.util.ReferenceCountUtil;
+import org.junit.Before;
 
-import java.util.function.Consumer;
+import java.time.LocalDateTime;
+import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -21,7 +23,20 @@ import static org.junit.Assert.assertTrue;
  */
 public abstract class BaseTest {
 
+    public static final LocalDateTime BASE = LocalDateTime.of(2021, 9, 5, 12, 8, 0);
+    protected final static MockTimeProvider timeProvider = new MockTimeProvider();
+
     abstract String auth();
+    
+    static {
+        timeProvider.time = BASE;
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        engine().scriptFlush();
+        engine().dataFlush();
+    }
 
     abstract public RedisEngine engine();
 
@@ -39,6 +54,10 @@ public abstract class BaseTest {
         assertTrue(msg instanceof SimpleStringRedisMessage);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
         return client;
+    }
+
+    protected void mockTime(LocalDateTime time) {
+        timeProvider.time = Objects.requireNonNull(time);
     }
 
 }
