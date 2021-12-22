@@ -2,7 +2,7 @@ package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.api.RedisParamException;
+import cn.deepmax.redis.api.RedisServerException;
 import cn.deepmax.redis.core.RedisCommand;
 import cn.deepmax.redis.core.support.BaseModule;
 import cn.deepmax.redis.core.support.CompositeCommand;
@@ -120,7 +120,7 @@ public class LuaModule extends BaseModule {
         public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
             String script = cast(type).getAt(2).str();
             if (script == null || script.length() == 0) {
-                throw new RedisParamException("invalid lua script");
+                throw new RedisServerException("invalid lua script");
             }
             String v = SHA1.encode(script);
             scriptCache.put(v, script);

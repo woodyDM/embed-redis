@@ -1,6 +1,6 @@
 package cn.deepmax.redis.resp3;
 
-import cn.deepmax.redis.api.RedisParamException;
+import cn.deepmax.redis.api.RedisServerException;
 import io.netty.handler.codec.redis.ArrayRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 
@@ -14,7 +14,7 @@ public class ListRedisMessage extends ArrayRedisMessage implements RedisMessage 
 
     public FullBulkValueRedisMessage getAt(int i) {
         if (i < 0 || i >= children().size()) {
-            throw new RedisParamException("ERR wrong number of arguments ");
+            throw new RedisServerException("ERR wrong number of arguments ");
         }
         return (FullBulkValueRedisMessage) children().get(i);
     }

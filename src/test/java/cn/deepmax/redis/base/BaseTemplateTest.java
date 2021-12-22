@@ -40,6 +40,7 @@ public abstract class BaseTemplateTest extends BaseTest {
     protected static RedisServer server;
     protected static DefaultRedisEngine engine;
     protected RedisTemplate<String, Object> redisTemplate;
+    protected JdkSerializationRedisSerializer serializer = new JdkSerializationRedisSerializer();
     public static final Logger log = LoggerFactory.getLogger(BaseTemplateTest.class);
 
     @Override
@@ -173,5 +174,9 @@ public abstract class BaseTemplateTest extends BaseTest {
             }
             t.afterPropertiesSet();
         }
+    }
+    
+    protected byte[] serialize(String s){
+        return serializer.serialize(s);
     }
 }

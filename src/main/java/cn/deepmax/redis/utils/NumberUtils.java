@@ -1,6 +1,7 @@
 package cn.deepmax.redis.utils;
 
-import cn.deepmax.redis.api.RedisParamException;
+import cn.deepmax.redis.Constants;
+import cn.deepmax.redis.api.RedisServerException;
 
 /**
  * @author wudi
@@ -10,12 +11,12 @@ public class NumberUtils {
 
     public static Long parse(String s) {
         if (s == null || s.isEmpty()) {
-            throw RedisParamException.SYNTAX_ERR_NUMBER;
+            throw new RedisServerException(Constants.ERR_SYNTAX_NUMBER);
         }
         try {
             return Long.valueOf(s);
         } catch (NumberFormatException e) {
-            throw RedisParamException.SYNTAX_ERR_NUMBER;
+            throw new RedisServerException(Constants.ERR_SYNTAX_NUMBER);
         }
     }
 }

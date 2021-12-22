@@ -15,7 +15,19 @@ class RString extends AbstractRedisObject {
         super(timeProvider);
         this.s = s;
     }
-
+    
+    public RString append(byte[] a){
+        if (a == null || a.length == 0) {
+            return this;
+        }
+        byte[] c = new byte[s.length + a.length];
+        System.arraycopy(s,0,c,0,s.length);
+        System.arraycopy(a,0,c,s.length,a.length);
+        RString rString = new RString(timeProvider, c);
+        rString.expireAt(this.expireTime());
+        return rString;
+    }
+    
     public byte[] getS() {
         return s;
     }

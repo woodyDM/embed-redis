@@ -4,7 +4,7 @@ import cn.deepmax.redis.Constants;
 import cn.deepmax.redis.api.AuthManager;
 import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.api.RedisParamException;
+import cn.deepmax.redis.api.RedisServerException;
 import cn.deepmax.redis.core.module.AuthModule;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.type.CallbackRedisMessage;
@@ -63,10 +63,10 @@ public class DefaultRedisExecutor implements RedisExecutor {
         RedisMessage response;
         try {
             response = command.response(type, client, engine);
-        } catch (RedisParamException e) {
-            response = new ErrorRedisMessage(e.getMessage());
+        } catch (RedisServerException e) {
+            response = e.getMsg();
         } catch (Exception e) {
-            response = new ErrorRedisMessage("ERR internal server error");
+            response = new ErrorRedisMessage("ERR internal redis server error!");
             log.error("Embed server error, may be bug! ", e);
         }
         log.debug("[{}]Response", responseCounter.getAndIncrement());
@@ -88,7 +88,7 @@ public class DefaultRedisExecutor implements RedisExecutor {
                     en.authManager().alreadyAuth(client)) {
                 return command.response(type, client, en);
             } else {
-                return Constants.NO_AUTH_ERROR;
+                return Constants.ERR_NO_AUTH;
             }
         });
     }

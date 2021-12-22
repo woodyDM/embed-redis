@@ -3,7 +3,7 @@ package cn.deepmax.redis.core;
 import cn.deepmax.redis.api.DbManager;
 import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.api.RedisParamException;
+import cn.deepmax.redis.api.RedisServerException;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 
@@ -30,7 +30,7 @@ public class DefaultDbManager implements DbManager {
         if (index >= 0 && index < total) {
             return dbs[index];
         }
-        throw new RedisParamException("db number out of bound");
+        throw new RedisServerException("db number out of bound");
     }
 
     @Override
@@ -38,7 +38,7 @@ public class DefaultDbManager implements DbManager {
         if (index >= 0 && index < total) {
             client.channel().attr(IDX).set(index);
         } else {
-            throw new RedisParamException("db number out of bound");
+            throw new RedisServerException("db number out of bound");
         }
     }
 

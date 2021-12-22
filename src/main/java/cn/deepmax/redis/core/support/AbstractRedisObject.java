@@ -5,7 +5,6 @@ import cn.deepmax.redis.api.TimeProvider;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 /**
  * @author wudi
@@ -14,7 +13,7 @@ import java.util.Objects;
 public abstract class AbstractRedisObject implements RedisObject {
 
     private LocalDateTime expire;
-    private final TimeProvider timeProvider;
+    protected final TimeProvider timeProvider;
 
     public AbstractRedisObject(TimeProvider timeProvider) {
         this.timeProvider = timeProvider;
@@ -57,7 +56,6 @@ public abstract class AbstractRedisObject implements RedisObject {
 
     @Override
     public void expireAt(LocalDateTime time) {
-        Objects.requireNonNull(time);
         this.expire = time;
     }
 
