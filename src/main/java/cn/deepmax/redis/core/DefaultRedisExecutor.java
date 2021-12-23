@@ -64,7 +64,7 @@ public class DefaultRedisExecutor implements RedisExecutor {
         try {
             response = command.response(type, client, engine);
         } catch (RedisServerException e) {
-            response = e.getMsg();
+            response = e.getMsg() == null ? new ErrorRedisMessage(e.getMessage()) : e.getMsg();
         } catch (Exception e) {
             response = new ErrorRedisMessage("ERR internal redis server error!");
             log.error("Embed server error, may be bug! ", e);
@@ -125,7 +125,7 @@ public class DefaultRedisExecutor implements RedisExecutor {
                 doPrint(children.get(i), depth + 1, i == children.size() - 1);
             }
             return;
-        } else if(msg instanceof CompositeRedisMessage){
+        } else if (msg instanceof CompositeRedisMessage) {
             log.debug("{}-[{}] ", space,
                     msg.getClass().getSimpleName());
             List<RedisMessage> children = ((CompositeRedisMessage) msg).children();
@@ -133,7 +133,7 @@ public class DefaultRedisExecutor implements RedisExecutor {
                 doPrint(children.get(i), depth + 1, i == children.size() - 1);
             }
             return;
-        }else {
+        } else {
             throw new CodecException("unknown message type: " + msg);
         }
         String corner = (isLast ? "└" : "├");

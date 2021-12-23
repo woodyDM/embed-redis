@@ -1,5 +1,6 @@
 package cn.deepmax.redis.resp3;
 
+import cn.deepmax.redis.utils.NumberUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.redis.FullBulkStringRedisMessage;
@@ -51,6 +52,10 @@ public class FullBulkValueRedisMessage extends FullBulkStringRedisMessage {
 
     public String str() {
         return content().toString(StandardCharsets.UTF_8);
+    }
+
+    public Long val() {
+        return NumberUtils.parse(str());
     }
 
     @Override

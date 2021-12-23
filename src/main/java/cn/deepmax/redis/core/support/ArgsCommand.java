@@ -18,13 +18,19 @@ import java.lang.reflect.Type;
  * @date 2021/12/21
  */
 public abstract class ArgsCommand<T extends RedisObject> implements RedisCommand {
-
+    //min command args
     protected int limit;
     protected RedisEngine engine;
     protected Redis.Client client;
+    private final boolean exact;
 
     public ArgsCommand(int limit) {
+        this(limit, false);
+    }
+
+    public ArgsCommand(int limit, boolean exact) {
         this.limit = limit;
+        this.exact = false;
     }
 
     @Override
@@ -33,15 +39,17 @@ public abstract class ArgsCommand<T extends RedisObject> implements RedisCommand
         this.engine = engine;
         this.client = client;
         ListRedisMessage msg = cast(type);
-        if (msg.children().size() < limit) {
+        if (msg.children().size() < limit || (exact && msg.children().size() != limit)) {
             return new ErrorRedisMessage("ERR wrong number of arguments for '"
                     + this.getClass().getSimpleName().toLowerCase() + "' command");
         }
+
         return doResponse(msg, client, engine);
     }
 
     /**
      * helper method for types
+     *
      * @param key
      * @return
      */
@@ -63,10 +71,23 @@ public abstract class ArgsCommand<T extends RedisObject> implements RedisCommand
     }
 
     abstract protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine);
-    
+
+    /*  Helper classes */
+    public abstract static class TwoExWith<T extends RedisObject> extends ArgsCommand<T> {
+        public TwoExWith() {
+            super(2, true);
+        }
+    }
+
     public abstract static class TwoWith<T extends RedisObject> extends ArgsCommand<T> {
         public TwoWith() {
             super(2);
+        }
+    }
+
+    public abstract static class ThreeExWith<T extends RedisObject> extends ArgsCommand<T> {
+        public ThreeExWith() {
+            super(3, true);
         }
     }
 
@@ -82,12 +103,30 @@ public abstract class ArgsCommand<T extends RedisObject> implements RedisCommand
         }
     }
 
+    public abstract static class FourExWith<T extends RedisObject> extends ArgsCommand<T> {
+        public FourExWith() {
+            super(4, true);
+        }
+    }
+
+    public abstract static class TwoEx extends ArgsCommand<RVoid> {
+        public TwoEx() {
+            super(2, true);
+        }
+    }
+
     public abstract static class Two extends ArgsCommand<RVoid> {
         public Two() {
             super(2);
         }
     }
-    
+
+    public abstract static class ThreeEx extends ArgsCommand<RVoid> {
+        public ThreeEx() {
+            super(3, true);
+        }
+    }
+
     public abstract static class Three extends ArgsCommand<RVoid> {
         public Three() {
             super(3);

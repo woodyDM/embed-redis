@@ -11,7 +11,6 @@ import cn.deepmax.redis.lua.LuaScript;
 import cn.deepmax.redis.lua.RedisLuaConverter;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
-import cn.deepmax.redis.utils.NumberUtils;
 import cn.deepmax.redis.utils.SHA1;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
@@ -42,7 +41,7 @@ public class LuaModule extends BaseModule {
     public void flush() {
         scriptCache.clear();
     }
-    
+
     private void init() {
         CompositeCommand script = new CompositeCommand("script");
         script.add(new Load());
@@ -57,7 +56,7 @@ public class LuaModule extends BaseModule {
     private RedisMessage response(String luaScript, RedisMessage type, Redis.Client client, RedisEngine engine) {
         try {
             ListRedisMessage msg = (ListRedisMessage) type;
-            int keyNum = NumberUtils.parse(msg.getAt(2).str()).intValue();
+            int keyNum = msg.getAt(2).val().intValue();
             List<FullBulkValueRedisMessage> key = new ArrayList<>();
             List<FullBulkValueRedisMessage> arg = new ArrayList<>();
             for (int i = 3; i < 3 + keyNum; i++) {
@@ -68,11 +67,11 @@ public class LuaModule extends BaseModule {
             }
 
             String fullLua = LuaScript.make(luaScript);
-            
+
             Globals globals = JsePlatform.standardGlobals();
             globals.set("KEYS", make(key));
             globals.set("ARGV", make(arg));
-            
+
             LuaValue lua = globals.load(fullLua);
             LuaValue callResult = lua.call();
             return RedisLuaConverter.toRedis(callResult);

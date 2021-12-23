@@ -11,6 +11,7 @@ import io.netty.handler.codec.redis.RedisMessage;
 import io.netty.handler.codec.redis.SimpleStringRedisMessage;
 import org.junit.Before;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -26,11 +27,11 @@ public abstract class BaseTest {
     public static final LocalDateTime BASE = LocalDateTime.of(2021, 9, 5, 12, 8, 0);
     protected final static MockTimeProvider timeProvider = new MockTimeProvider();
 
-    abstract String auth();
-    
     static {
         timeProvider.time = BASE;
     }
+
+    abstract String auth();
 
     @Before
     public void setUp() throws Exception {
@@ -54,6 +55,10 @@ public abstract class BaseTest {
         assertTrue(msg instanceof SimpleStringRedisMessage);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
         return client;
+    }
+
+    protected byte[] bytes(String k) {
+        return k.getBytes(StandardCharsets.UTF_8);
     }
 
     protected void mockTime(LocalDateTime time) {
