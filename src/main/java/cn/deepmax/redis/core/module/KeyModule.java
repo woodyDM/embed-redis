@@ -14,10 +14,10 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
-public class KeyCommonModule extends BaseModule {
+public class KeyModule extends BaseModule {
 
-    public KeyCommonModule() {
-        super("key common");
+    public KeyModule() {
+        super("key");
         register(new Del());
         register(new Exists());
         register(new Expire());

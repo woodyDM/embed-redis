@@ -31,14 +31,14 @@ public class DefaultRedisEngine implements RedisEngine {
 
     private void loadDefaultModules() {
         loadModule(new StringModule());
-        loadModule(new HandShakeModule());
-        loadModule(new KeyCommonModule());
-        LuaModule luaModule = new LuaModule();
+        loadModule(new BitMapModule());
+        loadModule(new ConnectionModule());
+        loadModule(new KeyModule());
+        ScriptingModule luaModule = new ScriptingModule();
         loadModule(luaModule);
         scriptFlushAction = luaModule::flush;
-        loadModule(new AuthModule());
+        loadModule(new ConnectionModule());
         loadModule(new PubsubModule());
-        loadModule(new DatabaseModule());
     }
 
     @Override

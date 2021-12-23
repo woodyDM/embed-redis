@@ -30,11 +30,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author wudi
  * @date 2021/5/7
  */
-public class LuaModule extends BaseModule {
+public class ScriptingModule extends BaseModule {
     private final Map<String, String> scriptCache = new ConcurrentHashMap<>();
 
-    public LuaModule() {
-        super("lua");
+    public ScriptingModule() {
+        super("Scripting");
         init();
     }
 
@@ -97,7 +97,7 @@ public class LuaModule extends BaseModule {
         @Override
         public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
             String lua = cast(type).getAt(1).str();
-            return LuaModule.this.response(lua, type, client, engine);
+            return ScriptingModule.this.response(lua, type, client, engine);
         }
     }
 
@@ -107,7 +107,7 @@ public class LuaModule extends BaseModule {
             String sha1 = cast(type).getAt(1).str();
             String lua = scriptCache.get(sha1.toLowerCase());
             if (lua != null) {
-                return LuaModule.this.response(lua, type, client, engine);
+                return ScriptingModule.this.response(lua, type, client, engine);
             } else {
                 return new ErrorRedisMessage("NOSCRIPT No matching script. Please use EVAL.");
             }

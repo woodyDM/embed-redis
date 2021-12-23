@@ -5,7 +5,7 @@ import cn.deepmax.redis.api.AuthManager;
 import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.api.RedisServerException;
-import cn.deepmax.redis.core.module.AuthModule;
+import cn.deepmax.redis.core.module.ConnectionModule;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.type.CallbackRedisMessage;
 import cn.deepmax.redis.type.CompositeRedisMessage;
@@ -83,7 +83,7 @@ public class DefaultRedisExecutor implements RedisExecutor {
      */
     private RedisCommand wrapAuth(RedisCommand command) {
         return ((type, client, en) -> {
-            if (command instanceof AuthModule.Auth ||
+            if (command instanceof ConnectionModule.Auth ||
                     command == CommandManager.UNKNOWN_COMMAND ||
                     en.authManager().alreadyAuth(client)) {
                 return command.response(type, client, en);
