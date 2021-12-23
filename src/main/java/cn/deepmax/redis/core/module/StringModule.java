@@ -470,7 +470,9 @@ public class StringModule extends BaseModule {
             byte[] key = msg.getAt(1).bytes();
             String value = msg.getAt(2).str();
             Double d = NumberUtils.parseDouble(value);
-
+            if (d.isInfinite() || d.isNaN()) {
+                throw new RedisServerException("increment would produce NaN or Infinity");
+            }
             RString exist = get(key);
             if (exist == null) {
                 String s = NumberUtils.formatDouble(d);
@@ -479,6 +481,9 @@ public class StringModule extends BaseModule {
                 return FullBulkValueRedisMessage.ofString(s);
             } else {
                 Double newD = NumberUtils.parseDouble(exist.str()) + d;
+                if (newD.isInfinite() || newD.isNaN()) {
+                    throw new RedisServerException("increment would produce NaN or Infinity");
+                }
                 String s = NumberUtils.formatDouble(newD);
                 exist.setS(s.getBytes(StandardCharsets.UTF_8));
                 return FullBulkValueRedisMessage.ofString(s);

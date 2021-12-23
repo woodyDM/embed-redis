@@ -1,6 +1,7 @@
 package cn.deepmax.redis.utils;
 
 import cn.deepmax.redis.Constants;
+import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisServerException;
 
 import java.text.NumberFormat;
