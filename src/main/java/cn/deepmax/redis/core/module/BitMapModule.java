@@ -8,6 +8,8 @@ import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.core.support.BaseModule;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
+import cn.deepmax.redis.utils.NumberUtils;
+import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 
@@ -25,6 +27,8 @@ public class BitMapModule extends BaseModule {
         register(new GetBit());
         register(new BitCount());
         register(new BitOp());
+        register(new BitPos());
+        register(new BitField());
     }
 
     public static class SetBit extends ArgsCommand.FourExWith<RString> {
@@ -119,4 +123,35 @@ public class BitMapModule extends BaseModule {
             }
         }
     }
+
+    public static class BitPos extends ArgsCommand.ThreeWith<RString> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            String bit = msg.getAt(2).str();
+            if (!"0".equals(bit) && !"1".equals(bit)) {
+                return new ErrorRedisMessage("The bit argument must be 1 or 0.");
+            }
+            RString obj = get(key);
+            if (obj == null) {
+                return "0".equals(bit) ? Constants.INT_ZERO : Constants.INT_ONE_NEG;
+            }
+            int start = msg.children().size() > 3 ? NumberUtils.parse(msg.getAt(3).str()).intValue() : 0;
+            int end = msg.children().size() > 4 ? NumberUtils.parse(msg.getAt(4).str()).intValue() : -1;
+            boolean endGiven = msg.children().size() == 5;
+            long v = obj.bitPos(start, end, Integer.parseInt(bit), endGiven);
+            return new IntegerRedisMessage(v);
+        }
+    }
+
+    //todo
+    public static class BitField extends ArgsCommand.ThreeWith<RString> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+
+            return new ErrorRedisMessage("not not support");
+        }
+    }
+
+
 }

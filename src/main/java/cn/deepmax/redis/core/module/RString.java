@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 
 /**
  * @author wudi
- * @date 2021/4/30
  */
 class RString extends AbstractRedisObject {
     /**
@@ -278,5 +277,28 @@ class RString extends AbstractRedisObject {
             grow(desireLen);
         }
         System.arraycopy(value, 0, s, offset, value.length);
+    }
+
+    public long bitPos(int start, int end, int bit, boolean endGiven) {
+        start = tranStart(start);
+        end = tranEnd(end);
+        if (start > end) {
+            return -1L;
+        }
+        long c = start * 8;
+        for (int i = start; i <= end; i++) {
+            for (int j = 7; j >= 0; j--) {
+                if ((s[i] & (1 << j) ^ (bit << j)) == 0) {
+                    return c + (7 - j);
+                }
+            }
+            c += 8;
+        }
+        if (endGiven) {
+            return -1;
+        } else if (bit == 1) {
+            return -1;
+        }
+        return c;
     }
 }

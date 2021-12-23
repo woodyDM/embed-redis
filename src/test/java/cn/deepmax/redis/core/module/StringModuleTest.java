@@ -8,6 +8,7 @@ import io.netty.handler.codec.redis.*;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.springframework.data.domain.Range;
 import org.springframework.data.redis.connection.RedisStringCommands;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -832,6 +833,62 @@ public class StringModuleTest extends BaseTemplateTest {
 
         Long result2 = v().increment("key", 1);
         assertEquals(result2.longValue(), 3L);
+    }
+
+    @Test
+    public void shouldBitPos() {
+        set(bytes("key"), new byte[]{(byte) 0B00110000, (byte) 0xff});
+        Long pos = t().execute((RedisCallback<Long>) con -> con.bitPos(bytes("key"), true));
+
+        assertEquals(pos.longValue(), 2L);
+    }
+
+    @Test
+    public void shouldBitPos1() {
+        set(bytes("key"), new byte[]{(byte) 0B11111000, (byte) 0xff});
+        Long pos = t().execute((RedisCallback<Long>) con -> con.bitPos(bytes("key"), false));
+
+        assertEquals(pos.longValue(), 5L);
+    }
+
+    @Test
+    public void shouldBitPos3() {
+        set(bytes("key"), new byte[]{(byte) 0B11111000, (byte) 0B11100000, (byte) 0xff});
+        Long pos = t().execute((RedisCallback<Long>) con -> con.bitPos(bytes("key"), false, Range.closed(1L, 2L)));
+
+        assertEquals(pos.longValue(), 8 + 3);
+    }
+
+    @Test
+    public void shouldBitPos4() {
+        set(bytes("key"), new byte[]{(byte) 0B11111000, (byte) 0B00011111, (byte) 0xff});
+        Long pos = t().execute((RedisCallback<Long>) con -> con.bitPos(bytes("key"), true, Range.closed(1L, -1L)));
+
+        assertEquals(pos.longValue(), 8 + 3);
+    }
+
+    @Test
+    public void shouldBitPos5() {
+        set(bytes("key"), new byte[]{(byte) 0xff, (byte) 0xff, (byte) 0xff});
+        Long pos = t().execute((RedisCallback<Long>) con -> con.bitPos(bytes("key"), false, Range.closed(1L, -1L)));
+
+        assertEquals(pos.longValue(), -1L);
+    }
+
+    @Test
+    public void shouldBitPos5_2() {
+        set(bytes("key"), new byte[]{(byte) 0xff, (byte) 0xff, (byte) 0xff});
+        Long pos = t().execute((RedisCallback<Long>) con -> con.bitPos(bytes("key"), false));
+
+        assertEquals(pos.longValue(), 24L);
+    }
+
+    @Test
+    public void shouldBitPos6() {
+        set(bytes("key"), new byte[]{(byte) 0, (byte) 0, (byte) 0});
+        Long pos = t().execute((RedisCallback<Long>) con -> con.bitPos(bytes("key"), true, Range.closed(1L, -1L)));
+
+        assertEquals(pos.longValue(), -1L);
     }
 
     boolean set(byte[] key, byte[] value) {

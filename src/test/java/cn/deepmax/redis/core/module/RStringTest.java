@@ -416,4 +416,92 @@ public class RStringTest {
         s.setRange(new byte[]{5, 6, 7, 8}, 3);
         assertTrue(Arrays.equals(s.getS(), new byte[]{1, 2, 3, 5, 6, 7, 8}));
     }
+
+    @Test
+    public void shouldBitPos() {
+        byte[] data = new byte[]{(byte) 0xff,(byte) 0xf0,(byte) 0x00,};
+        RString s = new RString(new MockTimeProvider(), data);
+
+        assertEquals(s.bitPos(0, -1, 0, false), 12);
+    }
+
+    @Test
+    public void shouldBitPos2() {
+        byte[] data = new byte[]{(byte) 0B10111111,(byte) 0xf0,(byte) 0x00,};
+        RString s = new RString(new MockTimeProvider(), data);
+
+        assertEquals(s.bitPos(0, -1, 0, false), 1);
+    }
+
+    @Test
+    public void shouldBitPos3() {
+        byte[] data = new byte[]{(byte) 0B11111111,(byte) 0B10110101,(byte) 0x00,};
+        RString s = new RString(new MockTimeProvider(), data);
+
+        assertEquals(s.bitPos(0, -1, 0, false), 9);
+    }
+
+    @Test
+    public void shouldBitPos4() {
+        byte[] data = new byte[]{(byte) 0x00,(byte) 0B00110000,(byte) 0x00,};
+        RString s = new RString(new MockTimeProvider(), data);
+
+        assertEquals(s.bitPos(0, -1, 1, false), 10);
+    }
+
+    @Test
+    public void shouldBitPos5() {
+        byte[] data = new byte[]{(byte) 0xff,(byte) 0B00110000,(byte) 0x00,};
+        RString s = new RString(new MockTimeProvider(), data);
+
+        assertEquals(s.bitPos(1, -1, 1, false), 10);
+    }
+
+    @Test
+    public void shouldBitPos6() {
+        byte[] data = new byte[]{(byte) 0x00,(byte) 0B11100000,(byte) 0x00,};
+        RString s = new RString(new MockTimeProvider(), data);
+
+        assertEquals(s.bitPos(1, -1, 0, false), 11);
+    }
+    
+    @Test
+    public void shouldBitPos7() {
+        byte[] data = new byte[]{(byte) 0x00,(byte) 0x00,(byte) 0x00,};
+        RString s = new RString(new MockTimeProvider(), data);
+
+        assertEquals(s.bitPos(1, -1, 0, true), 8);
+    }
+
+    @Test
+    public void shouldBitPos8() {
+        byte[] data = new byte[]{(byte) 0x00,(byte) 0x00,(byte) 0x00,};
+        RString s = new RString(new MockTimeProvider(), data);
+
+        assertEquals(s.bitPos(1, -1, 1, true), -1);
+    }
+
+    @Test
+    public void shouldBitPos9() {
+        byte[] data = new byte[]{(byte) 0x00,(byte) 0x00,(byte) 0x00,};
+        RString s = new RString(new MockTimeProvider(), data);
+
+        assertEquals(s.bitPos(0, -1, 1, false), -1);
+    }
+
+    @Test
+    public void shouldBitPos10() {
+        byte[] data = new byte[]{(byte) 0xff,(byte) 0xff,(byte) 0xff,};
+        RString s = new RString(new MockTimeProvider(), data);
+
+        assertEquals(s.bitPos(0, -1, 0, false), 24);
+    }
+
+    @Test
+    public void shouldBitPos11() {
+        byte[] data = new byte[]{(byte) 0x00,(byte) 0x00,(byte) 0xff,};
+        RString s = new RString(new MockTimeProvider(), data);
+
+        assertEquals(s.bitPos(0, 1, 1, true), -1);
+    }
 }
