@@ -890,20 +890,5 @@ public class StringModuleTest extends BaseTemplateTest {
 
         assertEquals(pos.longValue(), -1L);
     }
-
-    boolean set(byte[] key, byte[] value) {
-        return t().execute((RedisCallback<Boolean>) con -> con.set(key, value));
-    }
-
-    byte[] get(byte[] key) {
-        return t().execute((RedisCallback<byte[]>) con -> con.get(key));
-    }
-
-    protected Long bitCount(byte[] key, long start, long end) {
-        return t().execute((RedisCallback<Long>) cn -> cn.bitCount(key, start, end));
-    }
-
-    protected Long bitCount(byte[] key) {
-        return t().execute((RedisCallback<Long>) cn -> cn.bitCount(key, 0, -1L));
-    }
+    
 }

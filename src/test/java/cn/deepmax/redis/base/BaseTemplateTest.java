@@ -21,6 +21,7 @@ import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.serializer.JdkSerializationRedisSerializer;
@@ -178,5 +179,21 @@ public abstract class BaseTemplateTest extends BaseTest {
     
     protected byte[] serialize(String s){
         return serializer.serialize(s);
+    }
+
+    protected boolean set(byte[] key, byte[] value) {
+        return t().execute((RedisCallback<Boolean>) con -> con.set(key, value));
+    }
+
+    protected byte[] get(byte[] key) {
+        return t().execute((RedisCallback<byte[]>) con -> con.get(key));
+    }
+
+    protected Long bitCount(byte[] key, long start, long end) {
+        return t().execute((RedisCallback<Long>) cn -> cn.bitCount(key, start, end));
+    }
+
+    protected Long bitCount(byte[] key) {
+        return t().execute((RedisCallback<Long>) cn -> cn.bitCount(key, 0, -1L));
     }
 }

@@ -50,7 +50,7 @@ public class DefaultRedisExecutor implements RedisExecutor {
     public RedisMessage execute(RedisMessage type, RedisEngine engine, Redis.Client client) {
         Objects.requireNonNull(client);
         log.debug("[{}]Request", requestCounter.getAndIncrement());
-        printRedisMessage(type);
+        printRedisMessage(type, client.queued());
         return doExec(type, engine, client);
     }
 
@@ -74,7 +74,7 @@ public class DefaultRedisExecutor implements RedisExecutor {
             log.error("Embed server error, may be bug! ", e);
         }
         log.debug("[{}]Response", responseCounter.getAndIncrement());
-        printRedisMessage(response);
+        printRedisMessage(response, client.queued());
         return response;
     }
 
@@ -99,12 +99,12 @@ public class DefaultRedisExecutor implements RedisExecutor {
             }
         });
     }
-    
-    private void printRedisMessage(RedisMessage msg) {
-        doPrint(msg, 0, false);
+
+    private void printRedisMessage(RedisMessage msg, boolean queued) {
+        doPrint(msg, 0, false, queued);
     }
 
-    private void doPrint(RedisMessage msg, int depth, boolean isLast) {
+    private void doPrint(RedisMessage msg, int depth, boolean isLast, boolean queued) {
         if (msg == null) {
             return;
         }
@@ -128,7 +128,7 @@ public class DefaultRedisExecutor implements RedisExecutor {
                     msg.getClass().getSimpleName());
             List<RedisMessage> children = ((ArrayRedisMessage) msg).children();
             for (int i = 0; i < children.size(); i++) {
-                doPrint(children.get(i), depth + 1, i == children.size() - 1);
+                doPrint(children.get(i), depth + 1, i == children.size() - 1, queued);
             }
             return;
         } else if (msg instanceof CompositeRedisMessage) {
@@ -136,14 +136,15 @@ public class DefaultRedisExecutor implements RedisExecutor {
                     msg.getClass().getSimpleName());
             List<RedisMessage> children = ((CompositeRedisMessage) msg).children();
             for (int i = 0; i < children.size(); i++) {
-                doPrint(children.get(i), depth + 1, i == children.size() - 1);
+                doPrint(children.get(i), depth + 1, i == children.size() - 1, queued);
             }
             return;
         } else {
             throw new CodecException("unknown message type: " + msg);
         }
         String corner = (isLast ? "└" : "├");
-        log.debug("{}{}-[{}]{}", corner, space,
+        String q = queued ? "[Q]" : "";
+        log.debug("{}{}-[{}{}]{}", corner, space, q,
                 msg.getClass().getSimpleName(), word);
     }
 }

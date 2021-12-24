@@ -10,7 +10,6 @@ import cn.deepmax.redis.core.support.BaseModule;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.utils.NumberUtils;
-import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.redis.FullBulkStringRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
@@ -118,7 +117,7 @@ public class StringModule extends BaseModule {
                 return FullBulkStringRedisMessage.NULL_INSTANCE;
             }
             RString s = get(key);
-            return new FullBulkStringRedisMessage(Unpooled.wrappedBuffer(s.getS()));
+            return FullBulkValueRedisMessage.ofString(s.getS());
         }
     }
 
