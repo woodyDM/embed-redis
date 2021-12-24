@@ -123,7 +123,7 @@ public class DefaultPubsub implements PubsubManager {
 
         @Override
         public void pub(PubPair pubPair) {
-            pubPair.getClient().send(pubPair.getMsg());
+            pubPair.getClient().pub(pubPair.getMsg());
         }
 
         @Override

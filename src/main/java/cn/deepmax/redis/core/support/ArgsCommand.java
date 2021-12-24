@@ -5,13 +5,17 @@ import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.api.RedisObject;
 import cn.deepmax.redis.api.RedisServerException;
+import cn.deepmax.redis.core.Key;
 import cn.deepmax.redis.core.RedisCommand;
+import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author wudi
@@ -70,6 +74,19 @@ public abstract class ArgsCommand<T extends RedisObject> implements RedisCommand
         }
     }
 
+    /**
+     * keys helper 
+     * @param children
+     * @return
+     */
+    protected List<Key> genKeys(List<RedisMessage> children,int start) {
+        List<Key> channels = new ArrayList<>(children.size() - 1);
+        for (int i = start; i < children.size(); i++) {
+            channels.add(new Key(((FullBulkValueRedisMessage) children.get(i)).bytes()));
+        }
+        return channels;
+    }
+
     abstract protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine);
 
     /*  Helper classes */
@@ -115,9 +132,21 @@ public abstract class ArgsCommand<T extends RedisObject> implements RedisCommand
         }
     }
 
+    public abstract static class OneEx extends ArgsCommand<RVoid> {
+        public OneEx() {
+            super(1,true);
+        }
+    }
+    
     public abstract static class Two extends ArgsCommand<RVoid> {
         public Two() {
             super(2);
+        }
+    }
+
+    public abstract static class One extends ArgsCommand<RVoid> {
+        public One() {
+            super(1);
         }
     }
 

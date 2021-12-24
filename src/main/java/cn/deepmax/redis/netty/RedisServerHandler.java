@@ -64,7 +64,9 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         log.info("Channel exit {}", ctx.channel().remoteAddress());
-        engine.pubsub().quit(new NettyClient(ctx.channel()));
+        NettyClient client = new NettyClient(ctx.channel());
+        engine.pubsub().quit(client);
+        engine.transactionManager().unwatch(client);
     }
 
 }

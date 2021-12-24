@@ -28,9 +28,11 @@ public interface RedisEngine {
     AuthManager authManager();
 
     PubsubManager pubsub();
+
+    TransactionManager transactionManager();
     
     interface Db {
-
+        
         RedisObject set(byte[] key, RedisObject newValue);
 
         RedisObject get(byte[] key);

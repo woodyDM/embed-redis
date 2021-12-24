@@ -15,14 +15,15 @@ import java.util.Objects;
 public class DefaultRedisEngine implements RedisEngine {
 
     private final RedisExecutor executor = new DefaultRedisExecutor();
-    private final NettyAuthManager authManager = new NettyAuthManager();
-    private final CommandManager commandManager = new CommandManager();
-    private final PubsubManager pubsubManager = new DefaultPubsub();
+    private NettyAuthManager authManager = new NettyAuthManager();
+    private CommandManager commandManager = new CommandManager();
+    private PubsubManager pubsubManager = new DefaultPubsub();
+    private TransactionManager transactionManager = new DefaultTransactionManager(this);
     private final DbManager dbManager = new DefaultDbManager(16);
     protected TimeProvider timeProvider = new DefaultTimeProvider();
     private Runnable scriptFlushAction;
     private RedisConfiguration configuration;
-    
+
     public static DefaultRedisEngine defaultEngine() {
         DefaultRedisEngine e = new DefaultRedisEngine();
         e.loadDefaultModules();
@@ -39,6 +40,7 @@ public class DefaultRedisEngine implements RedisEngine {
         scriptFlushAction = luaModule::flush;
         loadModule(new ConnectionModule());
         loadModule(new PubsubModule());
+        loadModule(new TransactionModule());
     }
 
     @Override
@@ -96,6 +98,11 @@ public class DefaultRedisEngine implements RedisEngine {
         for (int i = 0; i < dbManager.getTotal(); i++) {
             dbManager.get(i).flush();
         }
+    }
+
+    @Override
+    public TransactionManager transactionManager() {
+        return transactionManager;
     }
 
     @Override

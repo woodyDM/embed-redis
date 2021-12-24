@@ -4,6 +4,7 @@ package cn.deepmax.redis;
 import cn.deepmax.redis.api.RedisServerException;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
+import io.netty.handler.codec.redis.SimpleStringRedisMessage;
 import lombok.NonNull;
 
 /**
@@ -18,6 +19,8 @@ public class Constants {
     public static final IntegerRedisMessage INT_ZERO = new IntegerRedisMessage(0);
     public static final IntegerRedisMessage INT_ONE_NEG = new IntegerRedisMessage(-1);
     public static final IntegerRedisMessage INT_ONE = new IntegerRedisMessage(1);
+    
+    public static final SimpleStringRedisMessage QUEUED = new SimpleStringRedisMessage("QUEUED");
     
     public static final RedisServerException EX_SYNTAX = new RedisServerException(Constants.ERR_SYNTAX);
 

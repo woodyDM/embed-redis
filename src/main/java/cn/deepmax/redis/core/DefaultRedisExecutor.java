@@ -26,11 +26,17 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Slf4j
 public class DefaultRedisExecutor implements RedisExecutor {
-    static Set<String> whiteList = new HashSet<>();
+    static Set<String> authWhiteList = new HashSet<>();
+    static Set<String> txWhiteList = new HashSet<>();
 
     static {
-        whiteList.add("hello");
-        whiteList.add("ping");
+        authWhiteList.add("hello");
+        authWhiteList.add("ping");
+        txWhiteList.add("exec");
+        txWhiteList.add("discard");
+        txWhiteList.add("multi");
+        txWhiteList.add("watch");
+        txWhiteList.add("unwatch");
     }
 
     private final AtomicLong requestCounter = new AtomicLong();
@@ -55,10 +61,12 @@ public class DefaultRedisExecutor implements RedisExecutor {
     private RedisMessage doExec(RedisMessage type, RedisEngine engine, Redis.Client client) {
         AuthManager auth = engine.authManager();
         RedisCommand command = ((DefaultRedisEngine) engine).getCommandManager().getCommand(type);
-        String cmdName = command.name();
+        String cmdName = command.name().toLowerCase();
 
-        if (auth.needAuth() && !auth.alreadyAuth(client) && !whiteList.contains(cmdName.toLowerCase())) {
+        if (auth.needAuth() && !auth.alreadyAuth(client) && !authWhiteList.contains(cmdName)) {
             command = wrapAuth(command);
+        } else if (client.queued() && !txWhiteList.contains(cmdName)) {
+            command = wrapTx(command);
         }
         RedisMessage response;
         try {
@@ -74,6 +82,9 @@ public class DefaultRedisExecutor implements RedisExecutor {
         return response;
     }
 
+    private RedisCommand wrapTx(RedisCommand command) {
+        return ((msg, client, en) -> en.transactionManager().queue(client, msg));
+    }
 
     /**
      * wrap for auth
@@ -92,8 +103,7 @@ public class DefaultRedisExecutor implements RedisExecutor {
             }
         });
     }
-
-
+    
     private void printRedisMessage(RedisMessage msg) {
         doPrint(msg, 0, false);
     }
@@ -139,7 +149,6 @@ public class DefaultRedisExecutor implements RedisExecutor {
         String corner = (isLast ? "└" : "├");
         log.debug("{}{}-[{}]{}", corner, space,
                 msg.getClass().getSimpleName(), word);
-
     }
 }
 

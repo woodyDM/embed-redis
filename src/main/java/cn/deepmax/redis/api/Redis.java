@@ -16,13 +16,21 @@ public interface Redis {
      */
     interface Client {
 
+        void setQueue(boolean queue);
+
+        void setScripting(boolean scripting);
+
+        boolean scripting();
+        
+        boolean queued();
+
         Protocol resp();
 
         Object id();
 
         Channel channel();
 
-        void send(RedisMessage msg);
+        void pub(RedisMessage msg);
     }
 
     enum Protocol {

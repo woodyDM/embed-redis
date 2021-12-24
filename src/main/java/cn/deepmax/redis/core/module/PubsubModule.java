@@ -5,15 +5,13 @@ import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.core.Key;
 import cn.deepmax.redis.core.RedisCommand;
+import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.core.support.BaseModule;
-import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.type.CompositeRedisMessage;
-import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -57,30 +55,17 @@ public class PubsubModule extends BaseModule {
         }
     }
 
-    abstract static class BaseSubscribe implements RedisCommand {
+    abstract static class BaseSubscribe extends ArgsCommand.Two {
 
         @Override
-        public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
-            ListRedisMessage msg = cast(type);
-            List<RedisMessage> children = msg.children();
-            if (children.size() <= 1) {
-                return new ErrorRedisMessage("invalid sub size");
-            }
-            List<Key> channels = genKeys(children);
+        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+            List<Key> channels = genKeys(msg.children(), 1);
             List<RedisMessage> list = select(engine.pubsub()).sub(client, channels);
             return CompositeRedisMessage.of(list);
         }
 
         abstract PubsubManager.Pubsub select(PubsubManager manager);
 
-    }
-
-    private static List<Key> genKeys(List<RedisMessage> children) {
-        List<Key> channels = new ArrayList<>(children.size() - 1);
-        for (int i = 1; i < children.size(); i++) {
-            channels.add(new Key(((FullBulkValueRedisMessage) children.get(i)).bytes()));
-        }
-        return channels;
     }
 
     private static class Unsubscribe extends BaseUnsubscribe {
@@ -99,24 +84,23 @@ public class PubsubModule extends BaseModule {
         }
     }
 
-    private static abstract class BaseUnsubscribe implements RedisCommand {
+    private static abstract class BaseUnsubscribe extends ArgsCommand.One {
 
         abstract protected PubsubManager.Pubsub select(PubsubManager pubsub);
 
         @Override
-        public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
-            //todo
-            ListRedisMessage msg = cast(type);
+        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
             List<RedisMessage> children = msg.children();
             List<RedisMessage> result;
             if (children.size() == 1) {
                 result = select(engine.pubsub()).unsubAll(client);
             } else {
-                List<Key> keys = genKeys(msg.children());
+                List<Key> keys = genKeys(msg.children(), 1);
                 result = select(engine.pubsub()).unsub(client, keys);
             }
             return CompositeRedisMessage.of(result);
         }
+
     }
     
 }
