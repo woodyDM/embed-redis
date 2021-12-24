@@ -3,7 +3,7 @@ package cn.deepmax.redis.core.module;
 import cn.deepmax.redis.api.AuthManager;
 import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.core.RedisCommand;
+import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.core.support.BaseModule;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.type.CallbackRedisMessage;
@@ -27,11 +27,9 @@ public class ConnectionModule extends BaseModule {
         register(new Select());
     }
 
-    public static class Auth implements RedisCommand {
+    public static class Auth extends ArgsCommand.Two {
         @Override
-        public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
-            ListRedisMessage msg = cast(type);
-
+        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
             if (msg.children().size() > 2) {
                 return new ErrorRedisMessage("Redis6 ACL is not supported");
             }
@@ -43,13 +41,14 @@ public class ConnectionModule extends BaseModule {
                 return new ErrorRedisMessage("WRONGPASS invalid username-password pair");
             }
         }
+
     }
 
 
-    private static class Hello implements RedisCommand {
+    private static class Hello extends ArgsCommand.One {
         @Override
-        public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
-//            if (type.size() == 1) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+            //            if (type.size() == 1) {
 //                RedisArray array = new RedisArray();
 //                array.add(RedisBulkString.of("server"));
 //                array.add(RedisBulkString.of("redis"));
@@ -62,35 +61,36 @@ public class ConnectionModule extends BaseModule {
 //            }
             return OK;
         }
-
     }
 
-    private static class Ping implements RedisCommand {
+    private static class Ping extends ArgsCommand.OneEx {
         @Override
-        public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
             return new SimpleStringRedisMessage("PONG");
         }
     }
 
-    private static class Quit implements RedisCommand {
+    private static class Quit extends ArgsCommand.OneEx {
         @Override
-        public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage type, Redis.Client client, RedisEngine engine) {
             CallbackRedisMessage msg = CallbackRedisMessage.of(OK);
             msg.addHook(c ->
                     client.channel().close()
                             .addListener(e -> log.debug("Client quit! {}", client.channel().remoteAddress())));
             return msg;
         }
+
     }
 
-    private static class Select implements RedisCommand {
+    private static class Select extends ArgsCommand.TwoEx {
         @Override
-        public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
-            String idx = cast(type).getAt(1).str();
+        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+            String idx = msg.getAt(1).str();
             int i = Integer.parseInt(idx);
             engine.getDbManager().switchTo(client, i);
             return OK;
         }
+
     }
 
 }

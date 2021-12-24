@@ -16,7 +16,7 @@ public class DefaultRedisEngine implements RedisEngine {
 
     private final RedisExecutor executor = new DefaultRedisExecutor();
     private NettyAuthManager authManager = new NettyAuthManager();
-    private CommandManager commandManager = new CommandManager();
+    private final DefaultCommandManager commandManager = new DefaultCommandManager();
     private PubsubManager pubsubManager = new DefaultPubsub();
     private TransactionManager transactionManager = new DefaultTransactionManager(this);
     private final DbManager dbManager = new DefaultDbManager(16);
@@ -64,7 +64,8 @@ public class DefaultRedisEngine implements RedisEngine {
         return dbManager;
     }
 
-    public CommandManager getCommandManager() {
+    @Override
+    public CommandManager commandManager() {
         return commandManager;
     }
 

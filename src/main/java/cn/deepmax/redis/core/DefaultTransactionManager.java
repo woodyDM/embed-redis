@@ -5,6 +5,7 @@ import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.api.RedisObject;
 import cn.deepmax.redis.api.TransactionManager;
+import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.FullBulkStringRedisMessage;
@@ -22,6 +23,14 @@ public class DefaultTransactionManager implements TransactionManager {
     private final Map<Redis.Client, Set<WatchKey>> watchKeys = new HashMap<>();
     private final Map<Redis.Client, List<RedisMessage>> commands = new HashMap<>();
     private final Set<Redis.Client> errorClient = new HashSet<>();
+    private static final Set<String> txWhiteList = new HashSet<>();
+
+    static {
+        txWhiteList.add("discard");
+        txWhiteList.add("multi");
+        txWhiteList.add("watch");
+        txWhiteList.add("unwatch");
+    }
 
     public DefaultTransactionManager(RedisEngine engine) {
         this.engine = engine;
@@ -52,13 +61,34 @@ public class DefaultTransactionManager implements TransactionManager {
             unwatch(client);
         }
     }
-
-    //todo test exec if any syntx error. or return QUEUED
+    
+    /**
+     * Intercept all command (except exec)
+     * test exec if any syntax error. or return QUEUED
+     */
     @Override
     public RedisMessage queue(Redis.Client client, RedisMessage msg) {
-        ReferenceCountUtil.retain(msg);
-        List<RedisMessage> list = commands.computeIfAbsent(client, k -> new LinkedList<>());
-        list.add(msg);
+        RedisCommand cmd = engine.commandManager().getCommand(msg);
+        if (cmd == Constants.UNKNOWN_COMMAND) {
+            errorClient.add(client);
+            return cmd.response(msg, client, engine);
+        }
+        if (cmd instanceof ArgsCommand<?>) {
+            Optional<ErrorRedisMessage> error = ((ArgsCommand<?>) cmd).preCheckLength(msg);
+            if (error.isPresent()) {
+                errorClient.add(client);
+                return error.get();
+            }
+        }
+        if (txWhiteList.contains(cmd.name())) {
+            return cmd.response(msg, client, engine);
+        }
+        //Only add messages when no error
+        if (!errorClient.contains(client)) {
+            ReferenceCountUtil.retain(msg);
+            List<RedisMessage> list = commands.computeIfAbsent(client, k -> new LinkedList<>());
+            list.add(msg);
+        }
         return Constants.QUEUED;
     }
 

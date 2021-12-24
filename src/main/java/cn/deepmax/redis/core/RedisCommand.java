@@ -3,7 +3,6 @@ package cn.deepmax.redis.core;
 import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.resp3.ListRedisMessage;
-import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 import io.netty.handler.codec.redis.SimpleStringRedisMessage;
 
@@ -13,7 +12,6 @@ import io.netty.handler.codec.redis.SimpleStringRedisMessage;
  */
 public interface RedisCommand {
     RedisMessage OK = new SimpleStringRedisMessage("OK");
-    RedisMessage NOT_SUPPORT = new ErrorRedisMessage("Embed-redis does not support this command");
 
     /**
      * command for search

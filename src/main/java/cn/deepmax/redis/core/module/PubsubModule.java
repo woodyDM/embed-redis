@@ -4,7 +4,6 @@ import cn.deepmax.redis.api.PubsubManager;
 import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.core.Key;
-import cn.deepmax.redis.core.RedisCommand;
 import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.core.support.BaseModule;
 import cn.deepmax.redis.resp3.ListRedisMessage;
@@ -29,10 +28,9 @@ public class PubsubModule extends BaseModule {
         register(new Punsubscribe());
     }
 
-    private static class Publish implements RedisCommand {
+    private static class Publish extends ArgsCommand.ThreeEx {
         @Override
-        public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
-            ListRedisMessage msg = cast(type);
+        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
             byte[] bytes = msg.getAt(1).bytes();
             Key channel = new Key(bytes);
             byte[] message = msg.getAt(2).bytes();
@@ -100,7 +98,6 @@ public class PubsubModule extends BaseModule {
             }
             return CompositeRedisMessage.of(result);
         }
-
     }
     
 }

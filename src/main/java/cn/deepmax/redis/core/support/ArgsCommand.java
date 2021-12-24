@@ -16,13 +16,13 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author wudi
  * @date 2021/12/21
  */
 public abstract class ArgsCommand<T extends RedisObject> implements RedisCommand {
-    //min command args
     protected int limit;
     protected RedisEngine engine;
     protected Redis.Client client;
@@ -34,7 +34,7 @@ public abstract class ArgsCommand<T extends RedisObject> implements RedisCommand
 
     public ArgsCommand(int limit, boolean exact) {
         this.limit = limit;
-        this.exact = false;
+        this.exact = exact;
     }
 
     @Override
@@ -43,12 +43,21 @@ public abstract class ArgsCommand<T extends RedisObject> implements RedisCommand
         this.engine = engine;
         this.client = client;
         ListRedisMessage msg = cast(type);
-        if (msg.children().size() < limit || (exact && msg.children().size() != limit)) {
-            return new ErrorRedisMessage("ERR wrong number of arguments for '"
-                    + this.getClass().getSimpleName().toLowerCase() + "' command");
+        Optional<ErrorRedisMessage> err = preCheckLength(msg);
+        if (err.isPresent()) {
+            return err.get();
         }
-
         return doResponse(msg, client, engine);
+    }
+
+    public Optional<ErrorRedisMessage> preCheckLength(RedisMessage type) {
+        ListRedisMessage msg = cast(type);
+        if (msg.children().size() < limit || (exact && msg.children().size() != limit)) {
+            ErrorRedisMessage errorRedisMessage = new ErrorRedisMessage("ERR wrong number of arguments for '"
+                    + this.getClass().getSimpleName().toLowerCase() + "' command");
+            return Optional.of(errorRedisMessage);
+        }
+        return Optional.empty();
     }
 
     /**

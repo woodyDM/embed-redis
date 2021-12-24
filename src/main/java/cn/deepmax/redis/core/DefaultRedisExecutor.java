@@ -33,10 +33,6 @@ public class DefaultRedisExecutor implements RedisExecutor {
         authWhiteList.add("hello");
         authWhiteList.add("ping");
         txWhiteList.add("exec");
-        txWhiteList.add("discard");
-        txWhiteList.add("multi");
-        txWhiteList.add("watch");
-        txWhiteList.add("unwatch");
     }
 
     private final AtomicLong requestCounter = new AtomicLong();
@@ -60,7 +56,7 @@ public class DefaultRedisExecutor implements RedisExecutor {
 
     private RedisMessage doExec(RedisMessage type, RedisEngine engine, Redis.Client client) {
         AuthManager auth = engine.authManager();
-        RedisCommand command = ((DefaultRedisEngine) engine).getCommandManager().getCommand(type);
+        RedisCommand command = engine.commandManager().getCommand(type);
         String cmdName = command.name().toLowerCase();
 
         if (auth.needAuth() && !auth.alreadyAuth(client) && !authWhiteList.contains(cmdName)) {
@@ -95,7 +91,7 @@ public class DefaultRedisExecutor implements RedisExecutor {
     private RedisCommand wrapAuth(RedisCommand command) {
         return ((type, client, en) -> {
             if (command instanceof ConnectionModule.Auth ||
-                    command == CommandManager.UNKNOWN_COMMAND ||
+                    command == Constants.UNKNOWN_COMMAND ||
                     en.authManager().alreadyAuth(client)) {
                 return command.response(type, client, en);
             } else {

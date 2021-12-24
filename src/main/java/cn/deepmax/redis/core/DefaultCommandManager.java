@@ -1,8 +1,9 @@
 package cn.deepmax.redis.core;
 
+import cn.deepmax.redis.Constants;
+import cn.deepmax.redis.api.CommandManager;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
-import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,9 +18,8 @@ import java.util.stream.Collectors;
  * @date 2021/4/30
  */
 @Slf4j
-public class CommandManager {
+public class DefaultCommandManager implements CommandManager {
 
-    public static final RedisCommand UNKNOWN_COMMAND = ((type, ctx, engine) -> new ErrorRedisMessage("Embed-redis does not support this command"));
     private final Map<String, Module> modules = new ConcurrentHashMap<>();
     private final Map<String, RedisCommand> commandMap = new ConcurrentHashMap<>();
 
@@ -40,6 +40,7 @@ public class CommandManager {
         }
     }
 
+    @Override
     public RedisCommand getCommand(RedisMessage msgo) {
         if (msgo instanceof ListRedisMessage) {
             ListRedisMessage msg = (ListRedisMessage) msgo;
@@ -53,7 +54,7 @@ public class CommandManager {
                 }
             }
         }
-        return UNKNOWN_COMMAND;
+        return Constants.UNKNOWN_COMMAND;
     }
 
 }

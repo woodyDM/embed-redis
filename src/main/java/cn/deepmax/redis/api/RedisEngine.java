@@ -21,7 +21,7 @@ public interface RedisEngine {
 
     DbManager getDbManager();
 
-    default RedisEngine.Db getDb(Redis.Client client){
+    default RedisEngine.Db getDb(Redis.Client client) {
         return getDbManager().get(client);
     }
 
@@ -30,9 +30,11 @@ public interface RedisEngine {
     PubsubManager pubsub();
 
     TransactionManager transactionManager();
-    
+
+    CommandManager commandManager();
+
     interface Db {
-        
+
         RedisObject set(byte[] key, RedisObject newValue);
 
         RedisObject get(byte[] key);
