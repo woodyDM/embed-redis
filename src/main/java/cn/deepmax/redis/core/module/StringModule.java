@@ -1,10 +1,7 @@
 package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.Constants;
-import cn.deepmax.redis.api.Redis;
-import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.api.RedisObject;
-import cn.deepmax.redis.api.RedisServerException;
+import cn.deepmax.redis.api.*;
 import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.core.support.BaseModule;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
@@ -83,6 +80,7 @@ public class StringModule extends BaseModule {
         }
         px.ifPresent(newV::pexpire);
         engine.getDb(client).set(key, newV);
+        engine.fireChangeEvent(client, key, DbManager.EventType.NEW);
         return successReply.get();
     }
 
@@ -95,6 +93,7 @@ public class StringModule extends BaseModule {
         if (r == null) {
             RString old = new RString(engine.timeProvider(), Long.valueOf(number).toString().getBytes(StandardCharsets.UTF_8));
             engine.getDb(client).set(key, old);
+            engine.fireChangeEvent(client, key, DbManager.EventType.NEW);
             return new IntegerRedisMessage(number);
         } else {
             RString old = (RString) r;
@@ -104,6 +103,7 @@ public class StringModule extends BaseModule {
             }
             long v = oldV.get() + number;
             old.setS(Long.valueOf(v).toString().getBytes(StandardCharsets.UTF_8));
+            engine.fireChangeEvent(client, key, DbManager.EventType.UPDATE);
             return new IntegerRedisMessage(v);
         }
     }

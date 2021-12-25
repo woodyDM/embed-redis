@@ -22,10 +22,11 @@ public class Key {
         return content;
     }
 
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null) return false;
         Key key = (Key) o;
         return Arrays.equals(content, key.content);
     }

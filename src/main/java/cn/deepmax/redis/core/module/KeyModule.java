@@ -1,5 +1,6 @@
 package cn.deepmax.redis.core.module;
 
+import cn.deepmax.redis.api.DbManager;
 import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.api.RedisObject;
@@ -13,6 +14,8 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
 
 public class KeyModule extends BaseModule {
 
@@ -33,12 +36,18 @@ public class KeyModule extends BaseModule {
 
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
-            int c = 0;
+            List<DbManager.KeyEvent> eventList = new ArrayList<>();
+            LocalDateTime now = LocalDateTime.now();
+            int db = engine.getDbManager().getIndex(client);
             for (int i = 1; i < msg.children().size(); i++) {
-                RedisObject old = engine.getDb(client).del(msg.getAt(i).bytes());
-                if (old != null) c++;
+                byte[] key = msg.getAt(i).bytes();
+                RedisObject old = engine.getDb(client).del(key);
+                if (old != null) {
+                    eventList.add(new DbManager.KeyEvent(key, db, DbManager.EventType.DEL, now));
+                }
             }
-            return new IntegerRedisMessage(c);
+            engine.getDbManager().fireChangeEvents(client, eventList);
+            return new IntegerRedisMessage(eventList.size());
         }
     }
 

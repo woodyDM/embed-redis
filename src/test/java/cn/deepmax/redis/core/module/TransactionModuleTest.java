@@ -111,6 +111,31 @@ public class TransactionModuleTest extends BaseTemplateTest {
     }
 
     @Test
+    public void shouldTxError2() {
+        Redis.Client client = embeddedClient();
+        RedisMessage msg = engine().execute(ListRedisMessage.ofString("set k old"), client);
+        assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
+
+        msg = engine().execute(ListRedisMessage.ofString("multi"), client);
+        assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
+
+        msg = engine().execute(ListRedisMessage.ofString("set k 2"), client);
+        assertEquals(((SimpleStringRedisMessage) msg).content(), "QUEUED");
+
+        msg = engine().execute(ListRedisMessage.ofString("somenot Now"), client);
+        assertTrue(((ErrorRedisMessage) msg).content().contains("Embed-redis does not support this command"));
+
+        msg = engine().execute(ListRedisMessage.ofString("incr k"), client);
+        assertEquals(((SimpleStringRedisMessage) msg).content(), "QUEUED");
+
+        msg = engine().execute(ListRedisMessage.ofString("exec"), client);
+        assertTrue(((ErrorRedisMessage) msg).content().contains("EXECABORT Transaction discarded because of previous errors."));
+
+        msg = engine().execute(ListRedisMessage.ofString("get k"), client);
+        assertEquals(((FullBulkValueRedisMessage) msg).str(), "old");
+    }
+
+    @Test
     public void shouldTxWatchErrorButExec() {
         Redis.Client client = embeddedClient();
         RedisMessage msg = engine().execute(ListRedisMessage.ofString("set k old"), client);
@@ -315,6 +340,9 @@ public class TransactionModuleTest extends BaseTemplateTest {
         msg = engine().execute(ListRedisMessage.ofString("watch k 2 3"), client);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
 
+        msg = engine().execute(ListRedisMessage.ofString("watch k 2 3 1 3 5"), client);
+        assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
+
         msg = engine().execute(ListRedisMessage.ofString("multi"), client);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
 
@@ -362,7 +390,7 @@ public class TransactionModuleTest extends BaseTemplateTest {
         assertEquals(((FullBulkValueRedisMessage) msg).str(), "old");
     }
     
-    @Ignore("to fix this ,use new key modify events")
+//    @Ignore("to fix this ,use new key modify events")
     @Test
     public void shouldWatchTxErrorWatchNilSetAndDel() {
         Redis.Client client = embeddedClient();
@@ -385,9 +413,9 @@ public class TransactionModuleTest extends BaseTemplateTest {
 
         msg = engine().execute(ListRedisMessage.ofString("exec"), client);
 
-//        assertSame(msg, FullBulkStringRedisMessage.NULL_INSTANCE);
+        assertSame(msg, FullBulkStringRedisMessage.NULL_INSTANCE);
         assertFalse(client.queued());
-        msg = engine().execute(ListRedisMessage.ofString("get k2"), client);
+        msg = engine().execute(ListRedisMessage.ofString("get k"), client);
         assertSame(FullBulkStringRedisMessage.NULL_INSTANCE, msg);
     }
 

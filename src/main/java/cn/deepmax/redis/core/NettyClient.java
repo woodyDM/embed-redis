@@ -54,30 +54,30 @@ public class NettyClient implements Redis.Client {
     public int hashCode() {
         return channel.hashCode();
     }
-
+    
     @Override
-    public boolean scripting() {
-        return (getFlag() & MASK_SCRIPTING) > 0;
+    public boolean queryFlag(int f) {
+        return (getFlag() & f) > 0;
     }
 
     @Override
     public boolean queued() {
-        return (getFlag() & MASK_QUEUE) > 0;
+        return queryFlag(FLAG_QUEUE);
     }
 
     @Override
     public void setQueue(boolean queue) {
+        setFlag(FLAG_QUEUE,queue);
+    }
+    
+    @Override
+    public void setFlag(int f, boolean value) {
         int flag = getFlag();
-        int f = queue ? (flag | MASK_QUEUE) : (flag & (~MASK_QUEUE));
-        channel.attr(ATT_FLAG).set(f);
+        int v = value ? (flag | f) : (flag & (~f));
+        channel.attr(ATT_FLAG).set(v);
     }
 
-    @Override
-    public void setScripting(boolean scripting) {
-        int flag = getFlag();
-        int f = scripting ? (flag | MASK_SCRIPTING) : (flag & (~MASK_SCRIPTING));
-        channel.attr(ATT_FLAG).set(f);
-    }
+
 
     private int getFlag() {
         Attribute<Integer> attr = channel.attr(ATT_FLAG);

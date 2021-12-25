@@ -23,9 +23,5 @@ public interface RedisObject {
     void expireAt(LocalDateTime time);
 
     void persist();
-    
-    long version();
-
-    void incrVersion();
 
 }

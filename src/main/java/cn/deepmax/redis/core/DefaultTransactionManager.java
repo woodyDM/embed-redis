@@ -1,9 +1,9 @@
 package cn.deepmax.redis.core;
 
 import cn.deepmax.redis.Constants;
+import cn.deepmax.redis.api.DbManager;
 import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.api.RedisObject;
 import cn.deepmax.redis.api.TransactionManager;
 import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.resp3.ListRedisMessage;
@@ -20,7 +20,8 @@ import java.util.stream.Collectors;
  */
 public class DefaultTransactionManager implements TransactionManager {
     private final RedisEngine engine;
-    private final Map<Redis.Client, Set<WatchKey>> watchKeys = new HashMap<>();
+    private final Map<Redis.Client, Boolean> watchKeys = new HashMap<>();
+    private final Map<Redis.Client, List<DbManager.KeyEventListener>> listHashMap = new HashMap<>();
     private final Map<Redis.Client, List<RedisMessage>> commands = new HashMap<>();
     private final Set<Redis.Client> errorClient = new HashSet<>();
     private static final Set<String> txWhiteList = new HashSet<>();
@@ -44,20 +45,24 @@ public class DefaultTransactionManager implements TransactionManager {
     @Override
     public RedisMessage exec(Redis.Client client) {
         try {
+            //set queue to false to allow engine to exec command. Otherwise, command will be queued!
+            client.setQueue(false);
             if (errorClient.contains(client)) {
                 return new ErrorRedisMessage("EXECABORT Transaction discarded because of previous errors.");
             }
             if (!inspect(client)) {
                 return FullBulkStringRedisMessage.NULL_INSTANCE;
             }
-            //set queue to false to allow engine.execute
-            client.setQueue(false);
+            //set queue_exec to true to allow queued events.
+            client.setFlag(Redis.Client.FLAG_QUEUE_EXEC, true);
             List<RedisMessage> cmds = commands.getOrDefault(client, Collections.emptyList());
             List<RedisMessage> resps = cmds.stream().map(c -> engine.execute(c, client))
                     .collect(Collectors.toList());
+            client.setFlag(Redis.Client.FLAG_QUEUE_EXEC, false);
+            //fire all queued key events;
+            engine.getDbManager().fireChangeQueuedEvents(client);
             return new ListRedisMessage(resps);
         } finally {
-            client.setQueue(false);
             unwatch(client);
         }
     }
@@ -94,22 +99,29 @@ public class DefaultTransactionManager implements TransactionManager {
 
     @Override
     public void watch(Redis.Client client, List<Key> keys) {
-        Set<WatchKey> set = watchKeys.computeIfAbsent(client, k -> new HashSet<>());
-        int dbIdx = engine.getDbManager().getIndex(client);
-        RedisEngine.Db db = engine.getDb(client);
-        for (Key key : keys) {
-            RedisObject obj = db.get(key.getContent());
-            OptionalLong l = obj == null ? OptionalLong.empty() : OptionalLong.of(obj.version());
-            set.add(new WatchKey(key, dbIdx, l));
-        }
+        watchKeys.computeIfAbsent(client, k -> true);
+        listHashMap.computeIfAbsent(client, k -> new ArrayList<>());
+        DbManager.KeyEventListener theListener = (k, listener) -> {
+            watchKeys.put(client, false);
+            removeListeners(client);
+        };
+        listHashMap.get(client).add(theListener);
+        engine.getDbManager().addListener(client, keys, theListener);
     }
 
     @Override
     public void unwatch(Redis.Client client) {
         watchKeys.remove(client);
         errorClient.remove(client);
+        removeListeners(client);
         List<RedisMessage> remove = commands.remove(client);
         if (remove != null) remove.forEach(ReferenceCountUtil::release);
+    }
+
+    private void removeListeners(Redis.Client client) {
+        listHashMap.getOrDefault(client, Collections.emptyList())
+                .forEach(inner -> engine.getDbManager().removeListener(inner));
+        listHashMap.remove(client);
     }
 
     /**
@@ -120,22 +132,8 @@ public class DefaultTransactionManager implements TransactionManager {
      */
     @Override
     public boolean inspect(Redis.Client client) {
-        Set<WatchKey> keys = this.watchKeys.get(client);
-        if (keys == null || keys.isEmpty()) {
-            return true;
-        }
-        for (WatchKey key : keys) {
-            RedisEngine.Db db = engine.getDbManager().get(key.db);
-            RedisObject obj = db.get(key.key.getContent());
-            if (obj == null && !key.version.isPresent()) {
-                continue;
-            }
-            if (obj != null && key.version.isPresent() && obj.version() == key.version.getAsLong()) {
-                continue;
-            }
-            return false;
-        }
-        return true;
+        Boolean valid = this.watchKeys.get(client);
+        return valid == null || valid;
     }
 
     @Override
@@ -143,32 +141,4 @@ public class DefaultTransactionManager implements TransactionManager {
         return engine;
     }
 
-    /**
-     * version not include to identify a unique watch.
-     */
-    static class WatchKey {
-        final Key key;
-        final int db;
-        final OptionalLong version;
-
-        public WatchKey(Key key, int db, OptionalLong version) {
-            this.key = key;
-            this.db = db;
-            this.version = version;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            WatchKey watchKey = (WatchKey) o;
-            return db == watchKey.db &&
-                    Objects.equals(key, watchKey.key);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(key, db);
-        }
-    }
 }

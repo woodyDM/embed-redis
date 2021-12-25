@@ -14,13 +14,9 @@ public abstract class AbstractRedisObject implements RedisObject {
 
     private LocalDateTime expire;
     protected final TimeProvider timeProvider;
-    protected long version;
-    private static long mainVersion = 0;
 
     public AbstractRedisObject(TimeProvider timeProvider) {
         this.timeProvider = timeProvider;
-        mainVersion++;
-        this.version = mainVersion << 32;
     }
 
     @Override
@@ -73,13 +69,4 @@ public abstract class AbstractRedisObject implements RedisObject {
         this.expire = null;
     }
 
-    @Override
-    public long version() {
-        return version;
-    }
-
-    @Override
-    public void incrVersion() {
-        version++;
-    }
 }

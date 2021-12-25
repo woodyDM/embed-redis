@@ -25,6 +25,11 @@ public interface RedisEngine {
         return getDbManager().get(client);
     }
 
+    default void fireChangeEvent(Redis.Client client, byte[] key, DbManager.EventType type) {
+        int index = getDbManager().getIndex(client);
+        getDbManager().fireChangeEvent(client, new DbManager.KeyEvent(key, index, type));
+    }
+
     AuthManager authManager();
 
     PubsubManager pubsub();

@@ -16,11 +16,15 @@ public interface Redis {
      */
     interface Client {
 
+        int FLAG_QUEUE = 1;
+        int FLAG_QUEUE_EXEC = 1 << 1;
+        int FLAG_SCRIPTING = 1 << 2;
+        
         void setQueue(boolean queue);
 
-        void setScripting(boolean scripting);
+        void setFlag(int f, boolean value);
 
-        boolean scripting();
+        boolean queryFlag(int f);
         
         boolean queued();
 

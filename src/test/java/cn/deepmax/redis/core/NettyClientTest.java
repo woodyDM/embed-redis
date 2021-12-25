@@ -3,7 +3,8 @@ package cn.deepmax.redis.core;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author wudi
@@ -15,32 +16,21 @@ public class NettyClientTest {
     public void shouldQueue() {
         NettyClient client = new NettyClient(new EmbeddedChannel());
         
-        assertFalse(client.scripting());
         assertFalse(client.queued());
         
         client.setQueue(false);
-        client.setScripting(false);
-        assertFalse(client.scripting());
         assertFalse(client.queued());
         
         client.setQueue(true);
-        client.setScripting(true);
-        assertTrue(client.scripting());
         assertTrue(client.queued());
 
         client.setQueue(true);
-        client.setScripting(true);
-        assertTrue(client.scripting());
         assertTrue(client.queued());
 
         client.setQueue(false);
-        client.setScripting(false);
-        assertFalse(client.scripting());
         assertFalse(client.queued());
 
         client.setQueue(false);
-        client.setScripting(false);
-        assertFalse(client.scripting());
         assertFalse(client.queued());
     }
 }
