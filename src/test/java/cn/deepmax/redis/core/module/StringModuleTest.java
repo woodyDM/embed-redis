@@ -834,7 +834,7 @@ public class StringModuleTest extends BaseTemplateTest {
         Long result2 = v().increment("key", 1);
         assertEquals(result2.longValue(), 3L);
     }
-
+    
     @Test
     public void shouldBitPos() {
         set(bytes("key"), new byte[]{(byte) 0B00110000, (byte) 0xff});

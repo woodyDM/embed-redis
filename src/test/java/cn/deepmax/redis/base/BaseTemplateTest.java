@@ -7,6 +7,7 @@ import cn.deepmax.redis.core.DefaultRedisEngine;
 import io.lettuce.core.ClientOptions;
 import io.lettuce.core.protocol.ProtocolVersion;
 import io.lettuce.core.resource.ClientResources;
+import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.redisson.config.Config;
@@ -21,6 +22,7 @@ import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
@@ -29,6 +31,8 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
@@ -43,6 +47,18 @@ public abstract class BaseTemplateTest extends BaseTest {
     protected RedisTemplate<String, Object> redisTemplate;
     protected JdkSerializationRedisSerializer serializer = new JdkSerializationRedisSerializer();
     public static final Logger log = LoggerFactory.getLogger(BaseTemplateTest.class);
+    protected static ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private static final int POOL_SIZE = 4;
+
+    static {
+        scheduler.submit(() -> System.out.println("warn up"));
+    }
+
+    @Override
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
+    }
 
     @Override
     String auth() {
@@ -97,9 +113,9 @@ public abstract class BaseTemplateTest extends BaseTest {
 
         JedisClientConfiguration jedisClientConfiguration = JedisClientConfiguration.defaultConfiguration();
         jedisClientConfiguration.getPoolConfig().ifPresent(c -> {
-            c.setMaxIdle(1);
-            c.setMaxTotal(1);
-            c.setMinIdle(1);
+            c.setMaxIdle(POOL_SIZE);
+            c.setMaxTotal(POOL_SIZE);
+            c.setMinIdle(POOL_SIZE);
         });
         JedisConnectionFactory factory = new JedisConnectionFactory(config, jedisClientConfiguration);
         return new Client(template(factory), factory);
@@ -131,8 +147,8 @@ public abstract class BaseTemplateTest extends BaseTest {
 
         c.setAddress("redis://" + HOST + ":" + PORT);
         c.setPassword(AUTH);
-        c.setConnectionPoolSize(1);
-        c.setConnectionMinimumIdleSize(1);
+        c.setConnectionPoolSize(POOL_SIZE);
+        c.setConnectionMinimumIdleSize(POOL_SIZE);
         RedissonConnectionFactory factory = new RedissonConnectionFactory(config);
         return new Client(template(factory), factory);
     }
@@ -155,6 +171,10 @@ public abstract class BaseTemplateTest extends BaseTest {
 
     protected RedisTemplate<String, Object> t() {
         return redisTemplate;
+    }
+
+    protected ListOperations<String, Object> l() {
+        return redisTemplate.opsForList();
     }
 
     static class Client {

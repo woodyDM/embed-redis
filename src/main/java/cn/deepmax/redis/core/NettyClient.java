@@ -1,6 +1,7 @@
 package cn.deepmax.redis.core;
 
 import cn.deepmax.redis.api.Client;
+import cn.deepmax.redis.utils.MessagePrinter;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.redis.RedisMessage;
 import io.netty.util.Attribute;
@@ -14,8 +15,7 @@ import java.util.Objects;
  */
 public class NettyClient implements Client {
     private final Channel channel;
-    private static final int MASK_QUEUE = 1;
-    private static final int MASK_SCRIPTING = 1 << 2;
+
     private static final AttributeKey<Integer> ATT_FLAG = AttributeKey.newInstance("STATUS_FLAG");
 
     public NettyClient(Channel channel) {
@@ -39,6 +39,8 @@ public class NettyClient implements Client {
 
     @Override
     public void pub(RedisMessage msg) {
+        MessagePrinter.responseStart();
+        MessagePrinter.printMessage(msg, queued());
         channel.writeAndFlush(msg);
     }
 
@@ -76,9 +78,7 @@ public class NettyClient implements Client {
         int v = value ? (flag | f) : (flag & (~f));
         channel.attr(ATT_FLAG).set(v);
     }
-
-
-
+    
     private int getFlag() {
         Attribute<Integer> attr = channel.attr(ATT_FLAG);
         attr.setIfAbsent(0);

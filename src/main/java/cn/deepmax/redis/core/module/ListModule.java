@@ -21,6 +21,7 @@ import java.util.Optional;
  * @date 2021/12/27
  */
 public class ListModule extends BaseModule {
+
     public ListModule() {
         super("list");
         register(new LPush());
@@ -38,8 +39,10 @@ public class ListModule extends BaseModule {
                 engine.getDb(client).set(client, key, list);
             }
             keys.forEach(list::addFirst);
+            //should get size before fire events
+            long size = list.size();
             engine.fireChangeEvent(client, key, DbManager.EventType.UPDATE);
-            return new IntegerRedisMessage(list.size());
+            return new IntegerRedisMessage(size);
         }
     }
 
@@ -66,12 +69,15 @@ public class ListModule extends BaseModule {
             return exist.map(k -> {
                 RList obj = get(exist.get().getContent());
                 Key value = obj.lPop();
+                ListRedisMessage.Builder builder = ListRedisMessage.newBuilder();
                 if (value == null) {
                     engine.getDb(client).del(client, k.getContent());
-                    return FullBulkStringRedisMessage.NULL_INSTANCE;
+                    return builder.append(FullBulkStringRedisMessage.NULL_INSTANCE).build();
                 } else {
                     engine.fireChangeEvent(client, k.getContent(), DbManager.EventType.UPDATE);
-                    return FullBulkValueRedisMessage.ofString(value.getContent());
+                    builder.append(FullBulkValueRedisMessage.ofString(k.getContent()));
+                    builder.append(FullBulkValueRedisMessage.ofString(value.getContent()));
+                    return builder.build();
                 }
             });
         }

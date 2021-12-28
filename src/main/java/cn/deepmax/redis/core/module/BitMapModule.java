@@ -118,8 +118,9 @@ public class BitMapModule extends BaseModule {
                 return Constants.INT_ZERO;
             } else {
                 engine.getDb(client).set(client, dest, r);
+                int length = r.length();
                 engine.fireChangeEvent(client, dest, DbManager.EventType.NEW_OR_REPLACE);
-                return new IntegerRedisMessage(r.length());
+                return new IntegerRedisMessage(length);
             }
         }
     }

@@ -68,7 +68,7 @@ public class RedisServer {
         serverChannel = channelFuture.channel();
         log.info("Redis start at port [{}] !", port);
     }
-
+    
     public void stop() {
         if (serverChannel != null)
             serverChannel.close();

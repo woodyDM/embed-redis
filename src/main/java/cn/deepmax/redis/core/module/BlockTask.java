@@ -39,7 +39,7 @@ public class BlockTask {
         DbManager.KeyEventListener outListener = (modified, listener) -> {
             Optional<RedisMessage> redisMessage = success.get();
             if (redisMessage.isPresent()) {
-                client.channel().writeAndFlush(redisMessage.get());
+                client.pub(redisMessage.get());
                 engine.getDbManager().removeListener(listener);
                 if (this.future != null) {
                     this.future.cancel(true);
@@ -50,7 +50,7 @@ public class BlockTask {
         if (timeout > 0) {
             this.future = client.channel().eventLoop().schedule(() -> {
                 engine.getDbManager().removeListener(outListener);
-                client.channel().writeAndFlush(fail.get());
+                client.pub(fail.get());
             }, timeout, TimeUnit.SECONDS);
         }
     }

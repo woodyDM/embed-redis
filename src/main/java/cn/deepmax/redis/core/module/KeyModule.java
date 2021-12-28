@@ -43,8 +43,10 @@ public class KeyModule extends BaseModule {
                     eventList.add(new DbManager.KeyEvent(key, db, DbManager.EventType.DEL, now));
                 }
             }
+            int size = eventList.size();
+            //should get size before fire events
             engine.getDbManager().fireChangeEvents(client, eventList);
-            return new IntegerRedisMessage(eventList.size());
+            return new IntegerRedisMessage(size);
         }
     }
 
