@@ -1,6 +1,7 @@
 package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.Constants;
+import cn.deepmax.redis.api.DbManager;
 import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.api.RedisServerException;
@@ -40,9 +41,10 @@ public class BitMapModule extends BaseModule {
             RString obj = get(key);
             if (obj == null) {
                 obj = new RString(engine.timeProvider());
-                engine.getDb(client).set(key, obj);
+                engine.getDb(client).set(client, key, obj);
             }
             int i = obj.setBit(offset, value);
+            engine.fireChangeEvent(client, key, DbManager.EventType.UPDATE);
             return i == 1 ? Constants.INT_ONE : Constants.INT_ZERO;
         }
     }
@@ -115,10 +117,11 @@ public class BitMapModule extends BaseModule {
                     throw new RedisServerException(Constants.ERR_SYNTAX);
             }
             if (r == null) {
-                engine.getDb(client).del(dest);
+                engine.getDb(client).del(client, dest);
                 return Constants.INT_ZERO;
             } else {
-                engine.getDb(client).set(dest, r);
+                engine.getDb(client).set(client, dest, r);
+                engine.fireChangeEvent(client, dest, DbManager.EventType.NEW_OR_REPLACE);
                 return new IntegerRedisMessage(r.length());
             }
         }

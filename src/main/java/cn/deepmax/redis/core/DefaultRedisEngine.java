@@ -19,7 +19,7 @@ public class DefaultRedisEngine implements RedisEngine {
     private final DefaultCommandManager commandManager = new DefaultCommandManager();
     private PubsubManager pubsubManager = new DefaultPubsub();
     private TransactionManager transactionManager = new DefaultTransactionManager(this);
-    private final DbManager dbManager = new DefaultDbManager(16);
+    private final DbManager dbManager = new DefaultDbManager(this, 16);
     protected TimeProvider timeProvider = new DefaultTimeProvider();
     private Runnable scriptFlushAction;
     private RedisConfiguration configuration;
@@ -41,6 +41,7 @@ public class DefaultRedisEngine implements RedisEngine {
         loadModule(new ConnectionModule());
         loadModule(new PubsubModule());
         loadModule(new TransactionModule());
+        loadModule(new ListModule());
     }
 
     @Override

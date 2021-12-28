@@ -1,12 +1,16 @@
 package cn.deepmax.redis.api;
 
+import cn.deepmax.redis.core.Key;
 import cn.deepmax.redis.core.Module;
 import io.netty.handler.codec.redis.RedisMessage;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public interface RedisEngine {
 
     void loadModule(Module module);
-    
+
     void dataFlush();
 
     void scriptFlush();
@@ -30,6 +34,12 @@ public interface RedisEngine {
         getDbManager().fireChangeEvent(client, new DbManager.KeyEvent(key, index, type));
     }
 
+    default void fireChangeEvents(Redis.Client client, List<Key> keys, DbManager.EventType type) {
+        int index = getDbManager().getIndex(client);
+        List<DbManager.KeyEvent> events = keys.stream().map(k -> new DbManager.KeyEvent(k.getContent(), index, type)).collect(Collectors.toList());
+        getDbManager().fireChangeEvents(client, events);
+    }
+
     AuthManager authManager();
 
     PubsubManager pubsub();
@@ -40,11 +50,17 @@ public interface RedisEngine {
 
     interface Db {
 
-        RedisObject set(byte[] key, RedisObject newValue);
+        DbManager getDbManager();
 
-        RedisObject get(byte[] key);
+        int selfIndex();
 
-        RedisObject del(byte[] key);
+        RedisObject set(Redis.Client client, byte[] key, RedisObject newValue);
+
+        void multiSet(Redis.Client client, List<Key> keys, List<RedisObject> newValues);
+
+        RedisObject get(Redis.Client client, byte[] key);
+
+        RedisObject del(Redis.Client client, byte[] key);
 
         void flush();
 

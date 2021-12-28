@@ -7,7 +7,6 @@ import io.netty.handler.codec.redis.FullBulkStringRedisMessage;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 public class FullBulkValueRedisMessage extends FullBulkStringRedisMessage {
     private final RedisMessageType type;
@@ -60,7 +59,7 @@ public class FullBulkValueRedisMessage extends FullBulkStringRedisMessage {
 
     @Override
     public String toString() {
-        return "[" + content().toString(Charset.defaultCharset()) + "]\n" + Arrays.toString(bytes());
+        return "[" + content().toString(Charset.defaultCharset()) + "]";
     }
 
 }

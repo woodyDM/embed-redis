@@ -241,15 +241,14 @@ class RString extends AbstractRedisObject {
         return new String(s, StandardCharsets.UTF_8);
     }
 
-    public RString append(byte[] a) {
+    public void append(byte[] a) {
         if (a == null || a.length == 0) {
-            return this;
+            return;
         }
         byte[] c = new byte[s.length + a.length];
         System.arraycopy(s, 0, c, 0, s.length);
         System.arraycopy(a, 0, c, s.length, a.length);
         setS(c);
-        return this;
     }
 
     public byte[] getS() {

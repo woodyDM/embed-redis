@@ -1,7 +1,6 @@
 package cn.deepmax.redis.utils;
 
 import cn.deepmax.redis.Constants;
-import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisServerException;
 
 import java.text.NumberFormat;
@@ -15,6 +14,18 @@ public class NumberUtils {
 
     public static Long parse(String s) {
         return parseO(s).orElseThrow(() -> new RedisServerException(Constants.ERR_SYNTAX_NUMBER));
+    }
+
+    public static Long parseTimeout(String s) {
+        Long t = parseO(s).orElseThrow(() -> new RedisServerException("ERR timeout is not a float or out of range"));
+        if (t < 0) {
+            throw new RedisServerException("ERR timeout is negative");
+        }
+        return t;
+    }
+
+    public static Long parse(String s, String errorMessage) {
+        return parseO(s).orElseThrow(() -> new RedisServerException(errorMessage));
     }
 
     public static Double parseDouble(String s) {

@@ -129,7 +129,6 @@ public final class RedisResp3Decoder extends ByteToMessageDecoder {
             return false;
         }
         final long length = parseRedisNumber(lineByteBuf);
-        log.debug("Decode length :{}", length);
         if (length < Constants.EMPTY_LENGTH_VALUE) {
             throw new RedisCodecException("length: " + length + " (expected: >= " + Constants.EMPTY_LENGTH_VALUE + ")");
         }

@@ -68,7 +68,7 @@ public abstract class ArgsCommand<T extends RedisObject> implements RedisCommand
      */
     @SuppressWarnings("unchecked")
     protected T get(byte[] key) {
-        RedisObject obj = engine.getDb(client).get(key);
+        RedisObject obj = engine.getDb(client).get(client, key);
         if (obj == null) {
             return null;
         }
@@ -84,13 +84,24 @@ public abstract class ArgsCommand<T extends RedisObject> implements RedisCommand
     }
 
     /**
-     * keys helper 
+     * keys helper
+     *
      * @param children
      * @return
      */
-    protected List<Key> genKeys(List<RedisMessage> children,int start) {
+    protected List<Key> genKeys(List<RedisMessage> children, int start) {
+        return genKeys(children, start, children.size());
+    }
+
+    /**
+     * keys helper
+     *
+     * @param children
+     * @return
+     */
+    protected List<Key> genKeys(List<RedisMessage> children, int start, int endEx) {
         List<Key> channels = new ArrayList<>(children.size() - 1);
-        for (int i = start; i < children.size(); i++) {
+        for (int i = start; i < endEx; i++) {
             channels.add(new Key(((FullBulkValueRedisMessage) children.get(i)).bytes()));
         }
         return channels;

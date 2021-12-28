@@ -21,17 +21,24 @@ public class DefaultDbManager implements DbManager {
 
     private static final AttributeKey<Integer> IDX = AttributeKey.valueOf("DB_INDEX");
     private static final AttributeKey<List<KeyEvent>> EVENTS = AttributeKey.valueOf("EVENTS");
+    private final RedisEngine engine;
     private final int total;
     private final RedisEngine.Db[] dbs;
     //for simplify , use List for listeners.
     private final LinkedList<ListenerWrapper> listeners = new LinkedList<>();
 
-    public DefaultDbManager(int total) {
+    public DefaultDbManager(RedisEngine engine, int total) {
+        this.engine = engine;
         this.total = total;
         this.dbs = new RedisDatabase[total];
         for (int i = 0; i < total; i++) {
-            dbs[i] = new RedisDatabase();
+            dbs[i] = new RedisDatabase(this, i);
         }
+    }
+
+    @Override
+    public RedisEngine engine() {
+        return engine;
     }
 
     @Override

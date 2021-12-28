@@ -13,6 +13,8 @@ import java.util.List;
  */
 public interface DbManager {
 
+    RedisEngine engine();
+
     default RedisEngine.Db get(Redis.Client client) {
         return get(getIndex(client));
     }
@@ -46,7 +48,7 @@ public interface DbManager {
     }
 
     enum EventType {
-        DEL, NEW,UPDATE
+        DEL, NEW_OR_REPLACE, UPDATE, EXPIRE
     }
 
     class KeyEvent extends DbKey {

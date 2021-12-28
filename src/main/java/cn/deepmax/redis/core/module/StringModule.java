@@ -2,6 +2,7 @@ package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.Constants;
 import cn.deepmax.redis.api.*;
+import cn.deepmax.redis.core.Key;
 import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.core.support.BaseModule;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
@@ -12,6 +13,7 @@ import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -47,11 +49,16 @@ public class StringModule extends BaseModule {
 
     static void multiSet(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
         int len = msg.children().size();
+        List<Key> keys = new ArrayList<>();
+        List<RedisObject> obj = new ArrayList<>();
         for (int i = 1; i < len; i += 2) {
             byte[] key = msg.getAt(i).bytes();
+            keys.add(new Key(key));
             byte[] value = msg.getAt(i + 1).bytes();
-            engine.getDb(client).set(key, new RString(engine.timeProvider(), value));
+            RString newValue = new RString(engine.timeProvider(), value);
+            obj.add(newValue);
         }
+        engine.getDb(client).multiSet(client, keys, obj);
     }
 
     static RedisMessage genericSet(RedisEngine engine, Redis.Client client,
@@ -66,7 +73,7 @@ public class StringModule extends BaseModule {
             throw Constants.EX_SYNTAX;
         }
         //set
-        RedisObject r = engine.getDb(client).get(key);
+        RedisObject r = engine.getDb(client).get(client, key);
         if (r != null && !(r instanceof RString)) {
             throw new RedisServerException(Constants.ERR_TYPE);
         }
@@ -79,21 +86,19 @@ public class StringModule extends BaseModule {
             newV.expireAt(old.expireTime());
         }
         px.ifPresent(newV::pexpire);
-        engine.getDb(client).set(key, newV);
-        engine.fireChangeEvent(client, key, DbManager.EventType.NEW);
+        engine.getDb(client).set(client, key, newV);
         return successReply.get();
     }
 
     static RedisMessage genericIncre(RedisEngine engine, Redis.Client client,
                                      byte[] key, long number) {
-        RedisObject r = engine.getDb(client).get(key);
+        RedisObject r = engine.getDb(client).get(client, key);
         if (r != null && !(r instanceof RString)) {
             throw new RedisServerException(Constants.ERR_TYPE);
         }
         if (r == null) {
             RString old = new RString(engine.timeProvider(), Long.valueOf(number).toString().getBytes(StandardCharsets.UTF_8));
-            engine.getDb(client).set(key, old);
-            engine.fireChangeEvent(client, key, DbManager.EventType.NEW);
+            engine.getDb(client).set(client, key, old);
             return new IntegerRedisMessage(number);
         } else {
             RString old = (RString) r;
@@ -112,7 +117,7 @@ public class StringModule extends BaseModule {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
-            RedisObject obj = engine.getDb(client).get(key);
+            RedisObject obj = engine.getDb(client).get(client, key);
             if (obj == null) {
                 return FullBulkStringRedisMessage.NULL_INSTANCE;
             }
@@ -215,10 +220,11 @@ public class StringModule extends BaseModule {
             RString old = get(key);
             if (old == null) {
                 old = new RString(engine.timeProvider(), value);
+                engine.getDb(client).set(client, key, old);
             } else {
-                old = old.append(value);
+                old.append(value);
+                engine.fireChangeEvent(client, key, DbManager.EventType.UPDATE);
             }
-            engine.getDb(client).set(key, old);
             return new IntegerRedisMessage(old.length());
         }
     }
@@ -295,10 +301,11 @@ public class StringModule extends BaseModule {
             byte[] value = msg.getAt(3).bytes();
             if (obj == null) {
                 RString s = RString.of(engine.timeProvider(), value, (int) offset);
-                engine.getDb(client).set(key, s);
+                engine.getDb(client).set(client, key, s);
                 return new IntegerRedisMessage(s.length());
             } else {
                 obj.setRange(value, (int) offset);
+                engine.fireChangeEvent(client, key, DbManager.EventType.UPDATE);
                 return new IntegerRedisMessage(obj.length());
             }
         }
@@ -310,7 +317,7 @@ public class StringModule extends BaseModule {
             byte[] key = msg.getAt(1).bytes();
             byte[] value = msg.getAt(2).bytes();
             RString obj = get(key);
-            engine.getDb(client).set(key, new RString(engine.timeProvider(), value));
+            engine.getDb(client).set(client, key, new RString(engine.timeProvider(), value));
             if (obj == null) {
                 return FullBulkStringRedisMessage.NULL_INSTANCE;
             } else {
@@ -324,7 +331,7 @@ public class StringModule extends BaseModule {
         protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
             List<RedisMessage> result = msg.children().stream().skip(1)
                     .map(k -> (FullBulkValueRedisMessage) k)
-                    .map(k -> engine.getDb(client).get(k.bytes()))
+                    .map(k -> engine.getDb(client).get(client, k.bytes()))
                     .map(v -> {
                         if (v instanceof RString) {
                             return FullBulkValueRedisMessage.ofString(((RString) v).getS());
@@ -357,7 +364,7 @@ public class StringModule extends BaseModule {
             }
             for (int i = 1; i < len; i += 2) {
                 byte[] key = msg.getAt(i).bytes();
-                RedisObject exist = engine.getDb(client).get(key);
+                RedisObject exist = engine.getDb(client).get(client, key);
                 if (exist != null) {
                     return Constants.INT_ZERO;
                 }
@@ -380,7 +387,7 @@ public class StringModule extends BaseModule {
             if (exist == null) {
                 String s = NumberUtils.formatDouble(d);
                 RString obj = new RString(engine.timeProvider(), s.getBytes(StandardCharsets.UTF_8));
-                engine.getDb(client).set(key, obj);
+                engine.getDb(client).set(client, key, obj);
                 return FullBulkValueRedisMessage.ofString(s);
             } else {
                 Double newD = NumberUtils.parseDouble(exist.str()) + d;
@@ -389,6 +396,7 @@ public class StringModule extends BaseModule {
                 }
                 String s = NumberUtils.formatDouble(newD);
                 exist.setS(s.getBytes(StandardCharsets.UTF_8));
+                engine.fireChangeEvent(client, key, DbManager.EventType.UPDATE);
                 return FullBulkValueRedisMessage.ofString(s);
             }
         }
