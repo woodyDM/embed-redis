@@ -47,7 +47,7 @@ public interface PubsubManager {
      * @param client
      * @return
      */
-    default long subscribeCount(Redis.Client client) {
+    default long subscribeCount(Client client) {
         return direct().subCount(client) + pattern().subCount(client);
     }
 
@@ -56,7 +56,7 @@ public interface PubsubManager {
      *
      * @param client
      */
-    default void quit(Redis.Client client) {
+    default void quit(Client client) {
         direct().quit(client);
         pattern().quit(client);
     }
@@ -88,7 +88,7 @@ public interface PubsubManager {
          * @param channel
          * @return
          */
-        List<RedisMessage> sub(Redis.Client client, List<Key> channel);
+        List<RedisMessage> sub(Client client, List<Key> channel);
 
         /**
          * unsubscribe
@@ -97,7 +97,7 @@ public interface PubsubManager {
          * @param channel
          * @return
          */
-        List<RedisMessage> unsub(Redis.Client client, List<Key> channel);
+        List<RedisMessage> unsub(Client client, List<Key> channel);
 
         /**
          * unsubscribe all
@@ -105,7 +105,7 @@ public interface PubsubManager {
          * @param client
          * @return
          */
-        List<RedisMessage> unsubAll(Redis.Client client);
+        List<RedisMessage> unsubAll(Client client);
 
         /**
          * query total client sub count
@@ -113,26 +113,26 @@ public interface PubsubManager {
          * @param client
          * @return
          */
-        long subCount(Redis.Client client);
+        long subCount(Client client);
 
         /**
          * called when disconnect
          *
          * @param client
          */
-        void quit(Redis.Client client);
+        void quit(Client client);
     }
 
     class PubPair {
-        private final Redis.Client client;
+        private final Client client;
         private final RedisMessage msg;
 
-        public PubPair(Redis.Client client, RedisMessage msg) {
+        public PubPair(Client client, RedisMessage msg) {
             this.client = client;
             this.msg = msg;
         }
 
-        public Redis.Client getClient() {
+        public Client getClient() {
             return client;
         }
 

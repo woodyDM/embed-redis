@@ -1,7 +1,7 @@
 package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.Constants;
-import cn.deepmax.redis.api.Redis;
+import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.core.Key;
 import cn.deepmax.redis.core.support.ArgsCommand;
@@ -28,7 +28,7 @@ public class TransactionModule extends BaseModule {
 
     public static class Watch extends ArgsCommand.Two {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             if (client.queued()) {
                 return new ErrorRedisMessage("ERR WATCH inside MULTI is not allowed");
             }
@@ -40,7 +40,7 @@ public class TransactionModule extends BaseModule {
 
     public static class Unwatch extends ArgsCommand.OneEx {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             if (client.queued()) {
                 return Constants.QUEUED;
             }
@@ -51,7 +51,7 @@ public class TransactionModule extends BaseModule {
 
     public static class Multi extends ArgsCommand.OneEx {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             if (client.queued()) {
                 return new ErrorRedisMessage("ERR MULTI calls can not be nested");
             }
@@ -62,7 +62,7 @@ public class TransactionModule extends BaseModule {
 
     public static class Exec extends ArgsCommand.OneEx {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             if (!client.queued()) {
                 return new ErrorRedisMessage("ERR EXEC without MULTI");
             }
@@ -72,7 +72,7 @@ public class TransactionModule extends BaseModule {
 
     public static class Discard extends ArgsCommand.OneEx {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             if (!client.queued()) {
                 return new ErrorRedisMessage("ERR DISCARD without MULTI");
             }

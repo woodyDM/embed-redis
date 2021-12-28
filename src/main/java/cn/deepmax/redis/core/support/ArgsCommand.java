@@ -1,10 +1,7 @@
 package cn.deepmax.redis.core.support;
 
 import cn.deepmax.redis.Constants;
-import cn.deepmax.redis.api.Redis;
-import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.api.RedisObject;
-import cn.deepmax.redis.api.RedisServerException;
+import cn.deepmax.redis.api.*;
 import cn.deepmax.redis.core.Key;
 import cn.deepmax.redis.core.RedisCommand;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
@@ -25,7 +22,7 @@ import java.util.Optional;
 public abstract class ArgsCommand<T extends RedisObject> implements RedisCommand {
     protected int limit;
     protected RedisEngine engine;
-    protected Redis.Client client;
+    protected Client client;
     private final boolean exact;
 
     public ArgsCommand(int limit) {
@@ -38,7 +35,7 @@ public abstract class ArgsCommand<T extends RedisObject> implements RedisCommand
     }
 
     @Override
-    public RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine) {
+    public RedisMessage response(RedisMessage type, Client client, RedisEngine engine) {
         //this is thread unsafe. but redis will only use one thread.
         this.engine = engine;
         this.client = client;
@@ -107,7 +104,7 @@ public abstract class ArgsCommand<T extends RedisObject> implements RedisCommand
         return channels;
     }
 
-    abstract protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine);
+    abstract protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine);
 
     /*  Helper classes */
     public abstract static class TwoExWith<T extends RedisObject> extends ArgsCommand<T> {

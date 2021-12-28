@@ -1,10 +1,7 @@
 package cn.deepmax.redis.core;
 
 import cn.deepmax.redis.Constants;
-import cn.deepmax.redis.api.DbManager;
-import cn.deepmax.redis.api.Redis;
-import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.api.TransactionManager;
+import cn.deepmax.redis.api.*;
 import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
@@ -20,10 +17,10 @@ import java.util.stream.Collectors;
  */
 public class DefaultTransactionManager implements TransactionManager {
     private final RedisEngine engine;
-    private final Map<Redis.Client, Boolean> watchKeys = new HashMap<>();
-    private final Map<Redis.Client, List<DbManager.KeyEventListener>> listHashMap = new HashMap<>();
-    private final Map<Redis.Client, List<RedisMessage>> commands = new HashMap<>();
-    private final Set<Redis.Client> errorClient = new HashSet<>();
+    private final Map<Client, Boolean> watchKeys = new HashMap<>();
+    private final Map<Client, List<DbManager.KeyEventListener>> listHashMap = new HashMap<>();
+    private final Map<Client, List<RedisMessage>> commands = new HashMap<>();
+    private final Set<Client> errorClient = new HashSet<>();
     private static final Set<String> txWhiteList = new HashSet<>();
 
     static {
@@ -38,12 +35,12 @@ public class DefaultTransactionManager implements TransactionManager {
     }
 
     @Override
-    public void multi(Redis.Client client) {
+    public void multi(Client client) {
         client.setQueue(true);
     }
 
     @Override
-    public RedisMessage exec(Redis.Client client) {
+    public RedisMessage exec(Client client) {
         try {
             //set queue to false to allow engine to exec command. Otherwise, command will be queued!
             client.setQueue(false);
@@ -54,11 +51,11 @@ public class DefaultTransactionManager implements TransactionManager {
                 return FullBulkStringRedisMessage.NULL_INSTANCE;
             }
             //set queue_exec to true to allow queued events.
-            client.setFlag(Redis.Client.FLAG_QUEUE_EXEC, true);
+            client.setFlag(Client.FLAG_QUEUE_EXEC, true);
             List<RedisMessage> cmds = commands.getOrDefault(client, Collections.emptyList());
             List<RedisMessage> resps = cmds.stream().map(c -> engine.execute(c, client))
                     .collect(Collectors.toList());
-            client.setFlag(Redis.Client.FLAG_QUEUE_EXEC, false);
+            client.setFlag(Client.FLAG_QUEUE_EXEC, false);
             //fire all queued key events;
             engine.getDbManager().fireChangeQueuedEvents(client);
             return new ListRedisMessage(resps);
@@ -72,7 +69,7 @@ public class DefaultTransactionManager implements TransactionManager {
      * test exec if any syntax error. or return QUEUED
      */
     @Override
-    public RedisMessage queue(Redis.Client client, RedisMessage msg) {
+    public RedisMessage queue(Client client, RedisMessage msg) {
         RedisCommand cmd = engine.commandManager().getCommand(msg);
         if (cmd == Constants.UNKNOWN_COMMAND) {
             errorClient.add(client);
@@ -98,7 +95,7 @@ public class DefaultTransactionManager implements TransactionManager {
     }
 
     @Override
-    public void watch(Redis.Client client, List<Key> keys) {
+    public void watch(Client client, List<Key> keys) {
         watchKeys.computeIfAbsent(client, k -> true);
         listHashMap.computeIfAbsent(client, k -> new ArrayList<>());
         DbManager.KeyEventListener theListener = (k, listener) -> {
@@ -110,7 +107,7 @@ public class DefaultTransactionManager implements TransactionManager {
     }
 
     @Override
-    public void unwatch(Redis.Client client) {
+    public void unwatch(Client client) {
         watchKeys.remove(client);
         errorClient.remove(client);
         removeListeners(client);
@@ -118,7 +115,7 @@ public class DefaultTransactionManager implements TransactionManager {
         if (remove != null) remove.forEach(ReferenceCountUtil::release);
     }
 
-    private void removeListeners(Redis.Client client) {
+    private void removeListeners(Client client) {
         listHashMap.getOrDefault(client, Collections.emptyList())
                 .forEach(inner -> engine.getDbManager().removeListener(inner));
         listHashMap.remove(client);
@@ -131,7 +128,7 @@ public class DefaultTransactionManager implements TransactionManager {
      * @return
      */
     @Override
-    public boolean inspect(Redis.Client client) {
+    public boolean inspect(Client client) {
         Boolean valid = this.watchKeys.get(client);
         return valid == null || valid;
     }

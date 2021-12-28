@@ -1,11 +1,10 @@
 package cn.deepmax.redis.core.module;
 
-import cn.deepmax.redis.api.Redis;
+import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.base.BaseTemplateTest;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import io.netty.handler.codec.redis.*;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisOperations;
@@ -64,7 +63,7 @@ public class TransactionModuleTest extends BaseTemplateTest {
 
     @Test
     public void shouldTxNornal() {
-        Redis.Client client = embeddedClient();
+        Client client = embeddedClient();
         RedisMessage msg = engine().execute(ListRedisMessage.ofString("multi"), client);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
 
@@ -87,7 +86,7 @@ public class TransactionModuleTest extends BaseTemplateTest {
 
     @Test
     public void shouldTxError() {
-        Redis.Client client = embeddedClient();
+        Client client = embeddedClient();
         RedisMessage msg = engine().execute(ListRedisMessage.ofString("set k old"), client);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
 
@@ -112,7 +111,7 @@ public class TransactionModuleTest extends BaseTemplateTest {
 
     @Test
     public void shouldTxError2() {
-        Redis.Client client = embeddedClient();
+        Client client = embeddedClient();
         RedisMessage msg = engine().execute(ListRedisMessage.ofString("set k old"), client);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
 
@@ -137,7 +136,7 @@ public class TransactionModuleTest extends BaseTemplateTest {
 
     @Test
     public void shouldTxWatchErrorButExec() {
-        Redis.Client client = embeddedClient();
+        Client client = embeddedClient();
         RedisMessage msg = engine().execute(ListRedisMessage.ofString("set k old"), client);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
 
@@ -171,7 +170,7 @@ public class TransactionModuleTest extends BaseTemplateTest {
 
     @Test
     public void shouldTxDiscardNoError() {
-        Redis.Client client = embeddedClient();
+        Client client = embeddedClient();
         RedisMessage msg = engine().execute(ListRedisMessage.ofString("set k old"), client);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
 
@@ -197,7 +196,7 @@ public class TransactionModuleTest extends BaseTemplateTest {
 
     @Test
     public void shouldTxDiscardError() {
-        Redis.Client client = embeddedClient();
+        Client client = embeddedClient();
         RedisMessage msg = engine().execute(ListRedisMessage.ofString("set k old"), client);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
 
@@ -242,7 +241,7 @@ public class TransactionModuleTest extends BaseTemplateTest {
     /* Watch */
     @Test
     public void shouldWatchTxNornal() {
-        Redis.Client client = embeddedClient();
+        Client client = embeddedClient();
         RedisMessage msg = engine().execute(ListRedisMessage.ofString("watch 1 2 3"), client);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
 
@@ -269,7 +268,7 @@ public class TransactionModuleTest extends BaseTemplateTest {
     /* Watch */
     @Test
     public void shouldWatchAndUnwatchTxNornal() {
-        Redis.Client client = embeddedClient();
+        Client client = embeddedClient();
         RedisMessage msg = engine().execute(ListRedisMessage.ofString("watch 1 2 3"), client);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
 
@@ -304,7 +303,7 @@ public class TransactionModuleTest extends BaseTemplateTest {
 
     @Test
     public void shouldWatchTxError() {
-        Redis.Client client = embeddedClient();
+        Client client = embeddedClient();
         RedisMessage msg = engine().execute(ListRedisMessage.ofString("set k old"), client);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
 
@@ -333,7 +332,7 @@ public class TransactionModuleTest extends BaseTemplateTest {
 
     @Test
     public void shouldWatchTxErrorWatchSameValue() {
-        Redis.Client client = embeddedClient();
+        Client client = embeddedClient();
         RedisMessage msg = engine().execute(ListRedisMessage.ofString("set k old"), client);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
 
@@ -365,7 +364,7 @@ public class TransactionModuleTest extends BaseTemplateTest {
 
     @Test
     public void shouldWatchTxErrorWatchNil() {
-        Redis.Client client = embeddedClient();
+        Client client = embeddedClient();
         
         RedisMessage msg = engine().execute(ListRedisMessage.ofString("watch k 2 3"), client);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
@@ -393,7 +392,7 @@ public class TransactionModuleTest extends BaseTemplateTest {
 //    @Ignore("to fix this ,use new key modify events")
     @Test
     public void shouldWatchTxErrorWatchNilSetAndDel() {
-        Redis.Client client = embeddedClient();
+        Client client = embeddedClient();
 
         RedisMessage msg = engine().execute(ListRedisMessage.ofString("watch k 2 3"), client);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");

@@ -1,7 +1,7 @@
 package cn.deepmax.redis.core.module;
 
+import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.PubsubManager;
-import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.core.Key;
 import cn.deepmax.redis.core.support.ArgsCommand;
@@ -30,7 +30,7 @@ public class PubsubModule extends BaseModule {
 
     private static class Publish extends ArgsCommand.ThreeEx {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] bytes = msg.getAt(1).bytes();
             Key channel = new Key(bytes);
             byte[] message = msg.getAt(2).bytes();
@@ -56,7 +56,7 @@ public class PubsubModule extends BaseModule {
     abstract static class BaseSubscribe extends ArgsCommand.Two {
 
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             List<Key> channels = genKeys(msg.children(), 1);
             List<RedisMessage> list = select(engine.pubsub()).sub(client, channels);
             return CompositeRedisMessage.of(list);
@@ -87,7 +87,7 @@ public class PubsubModule extends BaseModule {
         abstract protected PubsubManager.Pubsub select(PubsubManager pubsub);
 
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             List<RedisMessage> children = msg.children();
             List<RedisMessage> result;
             if (children.size() == 1) {

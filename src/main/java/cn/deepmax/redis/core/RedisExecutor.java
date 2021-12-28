@@ -1,6 +1,6 @@
 package cn.deepmax.redis.core;
 
-import cn.deepmax.redis.api.Redis;
+import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.RedisEngine;
 import io.netty.handler.codec.redis.RedisMessage;
 
@@ -18,6 +18,6 @@ public interface RedisExecutor {
      * @param client
      * @return
      */
-    RedisMessage execute(RedisMessage type, RedisEngine engine, Redis.Client client);
+    RedisMessage execute(RedisMessage type, RedisEngine engine, Client client);
 
 }

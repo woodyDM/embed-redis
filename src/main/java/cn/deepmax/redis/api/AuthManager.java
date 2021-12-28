@@ -10,8 +10,8 @@ public interface AuthManager {
 
     void setAuth(String auth);
 
-    boolean tryAuth(String auth, Redis.Client client);
+    boolean tryAuth(String auth, Client client);
 
-    boolean alreadyAuth(Redis.Client client);
+    boolean alreadyAuth(Client client);
 
 }

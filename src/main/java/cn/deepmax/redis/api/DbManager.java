@@ -15,29 +15,29 @@ public interface DbManager {
 
     RedisEngine engine();
 
-    default RedisEngine.Db get(Redis.Client client) {
+    default RedisEngine.Db get(Client client) {
         return get(getIndex(client));
     }
 
     RedisEngine.Db get(int index);
 
-    int getIndex(Redis.Client client);
+    int getIndex(Client client);
 
-    void switchTo(Redis.Client client, int index);
+    void switchTo(Client client, int index);
 
     int getTotal();
 
-    void fireChangeQueuedEvents(Redis.Client client);
+    void fireChangeQueuedEvents(Client client);
 
-    void fireChangeEvents(Redis.Client client, List<KeyEvent> events);
+    void fireChangeEvents(Client client, List<KeyEvent> events);
 
-    default void fireChangeEvent(Redis.Client client, KeyEvent event) {
+    default void fireChangeEvent(Client client, KeyEvent event) {
         if (event != null) {
             this.fireChangeEvents(client, Collections.singletonList(event));
         }
     }
 
-    void addListener(Redis.Client client, List<Key> keys, KeyEventListener listener);
+    void addListener(Client client, List<Key> keys, KeyEventListener listener);
 
     void removeListener(KeyEventListener listener);
 

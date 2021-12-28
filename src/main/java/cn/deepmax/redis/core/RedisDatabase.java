@@ -1,9 +1,6 @@
 package cn.deepmax.redis.core;
 
-import cn.deepmax.redis.api.DbManager;
-import cn.deepmax.redis.api.Redis;
-import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.api.RedisObject;
+import cn.deepmax.redis.api.*;
 
 import java.util.List;
 import java.util.Map;
@@ -26,13 +23,13 @@ public class RedisDatabase implements RedisEngine.Db {
     }
 
     @Override
-    public RedisObject set(Redis.Client client, byte[] key, RedisObject newValue) {
+    public RedisObject set(Client client, byte[] key, RedisObject newValue) {
         getDbManager().fireChangeEvent(client, new DbManager.KeyEvent(key, selfIndex(), DbManager.EventType.NEW_OR_REPLACE));
         return data.put(new Key(key), newValue);
     }
 
     @Override
-    public void multiSet(Redis.Client client, List<Key> keys, List<RedisObject> newValues) {
+    public void multiSet(Client client, List<Key> keys, List<RedisObject> newValues) {
         for (int i = 0; i < keys.size(); i++) {
             data.put(keys.get(i), newValues.get(i));
         }
@@ -54,7 +51,7 @@ public class RedisDatabase implements RedisEngine.Db {
 
 
     @Override
-    public RedisObject get(Redis.Client client, byte[] key) {
+    public RedisObject get(Client client, byte[] key) {
         Key key1 = new Key(key);
         RedisObject obj = data.get(key1);
         if (obj != null && obj.isExpire()) {
@@ -65,12 +62,12 @@ public class RedisDatabase implements RedisEngine.Db {
         return obj;
     }
 
-    private void onExpire(Redis.Client client, byte[] key) {
+    private void onExpire(Client client, byte[] key) {
         getDbManager().fireChangeEvent(client, new DbManager.KeyEvent(key, selfIndex(), DbManager.EventType.EXPIRE));
     }
 
     @Override
-    public RedisObject del(Redis.Client client, byte[] key) {
+    public RedisObject del(Client client, byte[] key) {
         RedisObject remove = data.remove(new Key(key));
         if (remove == null) {
             return null;

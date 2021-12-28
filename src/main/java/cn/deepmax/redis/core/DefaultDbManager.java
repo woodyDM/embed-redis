@@ -1,9 +1,6 @@
 package cn.deepmax.redis.core;
 
-import cn.deepmax.redis.api.DbManager;
-import cn.deepmax.redis.api.Redis;
-import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.api.RedisServerException;
+import cn.deepmax.redis.api.*;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 
@@ -50,7 +47,7 @@ public class DefaultDbManager implements DbManager {
     }
 
     @Override
-    public void switchTo(Redis.Client client, int index) {
+    public void switchTo(Client client, int index) {
         if (index >= 0 && index < total) {
             client.channel().attr(IDX).set(index);
         } else {
@@ -59,7 +56,7 @@ public class DefaultDbManager implements DbManager {
     }
 
     @Override
-    public int getIndex(Redis.Client client) {
+    public int getIndex(Client client) {
         Attribute<Integer> attr = client.channel().attr(IDX);
         attr.setIfAbsent(0);
         return attr.get();
@@ -71,11 +68,11 @@ public class DefaultDbManager implements DbManager {
     }
 
     @Override
-    public void fireChangeEvents(Redis.Client client, List<KeyEvent> events) {
+    public void fireChangeEvents(Client client, List<KeyEvent> events) {
         if (events == null || events.isEmpty()) {
             return;
         }
-        if (client.queryFlag(Redis.Client.FLAG_QUEUE_EXEC)) {
+        if (client.queryFlag(Client.FLAG_QUEUE_EXEC)) {
             Attribute<List<KeyEvent>> att = client.channel().attr(EVENTS);
             att.setIfAbsent(new ArrayList<>());
             List<KeyEvent> list = att.get();
@@ -86,7 +83,7 @@ public class DefaultDbManager implements DbManager {
     }
 
     @Override
-    public void fireChangeQueuedEvents(Redis.Client client) {
+    public void fireChangeQueuedEvents(Client client) {
         Attribute<List<KeyEvent>> attr = client.channel().attr(EVENTS);
         List<KeyEvent> list = attr.get();
         if (list == null || list.isEmpty()) {
@@ -108,7 +105,7 @@ public class DefaultDbManager implements DbManager {
     }
 
     @Override
-    public void addListener(Redis.Client client, List<Key> keys, KeyEventListener listener) {
+    public void addListener(Client client, List<Key> keys, KeyEventListener listener) {
         if (keys == null || keys.isEmpty()) {
             return;
         }

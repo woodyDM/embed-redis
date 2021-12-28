@@ -1,6 +1,6 @@
 package cn.deepmax.redis.core;
 
-import cn.deepmax.redis.api.Redis;
+import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
@@ -22,7 +22,7 @@ public interface RedisCommand {
         return this.getClass().getSimpleName().toLowerCase();
     }
 
-    RedisMessage response(RedisMessage type, Redis.Client client, RedisEngine engine);
+    RedisMessage response(RedisMessage type, Client client, RedisEngine engine);
 
     default ListRedisMessage cast(RedisMessage msg) {
         return (ListRedisMessage) msg;

@@ -1,6 +1,6 @@
 package cn.deepmax.redis.core.module;
 
-import cn.deepmax.redis.api.Redis;
+import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.base.BaseEngineTest;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import io.netty.handler.codec.redis.FullBulkStringRedisMessage;
@@ -21,7 +21,7 @@ public class DatabaseModuleTest extends BaseEngineTest {
 
     @Test
     public void shouldSelect() {
-        Redis.Client client = embeddedClient();
+        Client client = embeddedClient();
         RedisMessage msg2 = engine().execute(ListRedisMessage.ofString("select 2"), client);
         assertEquals(((SimpleStringRedisMessage) msg2).content(), "OK");
 

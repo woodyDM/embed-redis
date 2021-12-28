@@ -1,6 +1,6 @@
 package cn.deepmax.redis.base;
 
-import cn.deepmax.redis.api.Redis;
+import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.core.NettyClient;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
@@ -41,11 +41,11 @@ public abstract class BaseTest {
 
     abstract public RedisEngine engine();
 
-    public Redis.Client noAuthClient() {
+    public Client noAuthClient() {
         return new NettyClient(new EmbeddedChannel());
     }
 
-    public Redis.Client embeddedClient() {
+    public Client embeddedClient() {
         NettyClient client = new NettyClient(new EmbeddedChannel());
         RedisMessage msg = engine().execute(ListRedisMessage.newBuilder()
                 .append(FullBulkValueRedisMessage.ofString("auth"))

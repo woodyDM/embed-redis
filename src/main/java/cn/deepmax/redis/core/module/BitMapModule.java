@@ -1,10 +1,7 @@
 package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.Constants;
-import cn.deepmax.redis.api.DbManager;
-import cn.deepmax.redis.api.Redis;
-import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.api.RedisServerException;
+import cn.deepmax.redis.api.*;
 import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.core.support.BaseModule;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
@@ -34,7 +31,7 @@ public class BitMapModule extends BaseModule {
 
     public static class SetBit extends ArgsCommand.FourExWith<RString> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
             Long offset = msg.getAt(2).val();
             int value = msg.getAt(3).val().intValue();
@@ -51,7 +48,7 @@ public class BitMapModule extends BaseModule {
 
     public static class GetBit extends ArgsCommand.ThreeExWith<RString> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
             Long offset = msg.getAt(2).val();
             RString obj = get(key);
@@ -65,7 +62,7 @@ public class BitMapModule extends BaseModule {
 
     public static class BitCount extends ArgsCommand.TwoWith<RString> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
             long start;
             long end;
@@ -89,7 +86,7 @@ public class BitMapModule extends BaseModule {
 
     public static class BitOp extends ArgsCommand.FourWith<RString> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             String op = msg.getAt(1).str().toLowerCase();
             byte[] dest = msg.getAt(2).bytes();
             List<RString> dbStrings = msg.children().stream().skip(3)
@@ -129,7 +126,7 @@ public class BitMapModule extends BaseModule {
 
     public static class BitPos extends ArgsCommand.ThreeWith<RString> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
             String bit = msg.getAt(2).str();
             if (!"0".equals(bit) && !"1".equals(bit)) {
@@ -150,7 +147,7 @@ public class BitMapModule extends BaseModule {
     //todo
     public static class BitField extends ArgsCommand.ThreeWith<RString> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
 
             return new ErrorRedisMessage("not not support");
         }

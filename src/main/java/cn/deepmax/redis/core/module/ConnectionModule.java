@@ -1,7 +1,7 @@
 package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.api.AuthManager;
-import cn.deepmax.redis.api.Redis;
+import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.core.support.BaseModule;
@@ -29,7 +29,7 @@ public class ConnectionModule extends BaseModule {
 
     public static class Auth extends ArgsCommand.Two {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             if (msg.children().size() > 2) {
                 return new ErrorRedisMessage("Redis6 ACL is not supported");
             }
@@ -47,7 +47,7 @@ public class ConnectionModule extends BaseModule {
 
     private static class Hello extends ArgsCommand.One {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             //            if (type.size() == 1) {
 //                RedisArray array = new RedisArray();
 //                array.add(RedisBulkString.of("server"));
@@ -65,14 +65,14 @@ public class ConnectionModule extends BaseModule {
 
     private static class Ping extends ArgsCommand.OneEx {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             return new SimpleStringRedisMessage("PONG");
         }
     }
 
     private static class Quit extends ArgsCommand.OneEx {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage type, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage type, Client client, RedisEngine engine) {
             CallbackRedisMessage msg = CallbackRedisMessage.of(OK);
             msg.addHook(c ->
                     client.channel().close()
@@ -84,7 +84,7 @@ public class ConnectionModule extends BaseModule {
 
     private static class Select extends ArgsCommand.TwoEx {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             String idx = msg.getAt(1).str();
             int i = Integer.parseInt(idx);
             engine.getDbManager().switchTo(client, i);

@@ -1,6 +1,6 @@
 package cn.deepmax.redis.core.module;
 
-import cn.deepmax.redis.api.Redis;
+import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.base.BaseEngineTest;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
@@ -26,7 +26,7 @@ public class AuthModuleTest extends BaseEngineTest {
 
     @Test
     public void shouldNoAuth() {
-        Redis.Client client = noAuthClient();
+        Client client = noAuthClient();
         RedisMessage msg = engine().execute(ListRedisMessage.ofString("auth 123456"), client);
         RedisMessage msg2 = engine().execute(ListRedisMessage.ofString("get 12"), client);
 

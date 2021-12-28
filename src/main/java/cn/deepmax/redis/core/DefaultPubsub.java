@@ -1,7 +1,7 @@
 package cn.deepmax.redis.core;
 
+import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.PubsubManager;
-import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.utils.RegexUtils;
@@ -45,7 +45,7 @@ public class DefaultPubsub implements PubsubManager {
 
         @Override
         public List<PubPair> matches(Key channel, byte[] message) {
-            List<Redis.Client> channels = container.get(channel);
+            List<Client> channels = container.get(channel);
             if (channels == null) {
                 return Collections.emptyList();
             }
@@ -75,9 +75,9 @@ public class DefaultPubsub implements PubsubManager {
         @Override
         public List<PubPair> matches(Key channel, byte[] message) {
             List<PubPair> result = new ArrayList<>();
-            for (Map.Entry<Key, List<Redis.Client>> entry : container.entrySet()) {
+            for (Map.Entry<Key, List<Client>> entry : container.entrySet()) {
                 Key p = entry.getKey();
-                List<Redis.Client> chs = entry.getValue();
+                List<Client> chs = entry.getValue();
                 if (chs != null && !chs.isEmpty()) {
                     Pattern pattern = patternMap.get(p);
                     boolean match = pattern.matcher(channel.str()).find();
@@ -87,7 +87,7 @@ public class DefaultPubsub implements PubsubManager {
                         msg.add(FullBulkValueRedisMessage.ofString(p.getContent()));
                         msg.add(FullBulkValueRedisMessage.ofString(channel.getContent()));
                         msg.add(FullBulkValueRedisMessage.ofString(message));
-                        for (Redis.Client ch : chs) {
+                        for (Client ch : chs) {
                             result.add(new PubPair(ch, new ListRedisMessage(msg)));
                         }
                     }
@@ -97,7 +97,7 @@ public class DefaultPubsub implements PubsubManager {
         }
 
         @Override
-        protected void postSub(Redis.Client client, Key channel) {
+        protected void postSub(Client client, Key channel) {
             patternMap.computeIfAbsent(channel, c -> {
                 String regx = RegexUtils.toRegx(channel.str());
                 return Pattern.compile(regx);
@@ -106,7 +106,7 @@ public class DefaultPubsub implements PubsubManager {
     }
 
     abstract class BasePubsub implements Pubsub {
-        protected final Map<Key, List<Redis.Client>> container = new LinkedHashMap<>();
+        protected final Map<Key, List<Client>> container = new LinkedHashMap<>();
 
         /**
          * message name : subscribe / psubscribe
@@ -127,13 +127,13 @@ public class DefaultPubsub implements PubsubManager {
         }
 
         @Override
-        public List<RedisMessage> sub(Redis.Client client, List<Key> patternChannel) {
+        public List<RedisMessage> sub(Client client, List<Key> patternChannel) {
             if (inValidChannels(patternChannel)) {
                 return Collections.emptyList();
             }
             List<RedisMessage> result = new ArrayList<>();
             for (Key ch : patternChannel) {
-                List<Redis.Client> old = container.computeIfAbsent(ch, k -> new LinkedList<>());
+                List<Client> old = container.computeIfAbsent(ch, k -> new LinkedList<>());
                 boolean exist = old.stream().anyMatch(i -> i.equals(client));
                 if (!exist) {
                     old.add(client);
@@ -148,16 +148,16 @@ public class DefaultPubsub implements PubsubManager {
             return result;
         }
 
-        protected void postSub(Redis.Client client, Key channel) {
+        protected void postSub(Client client, Key channel) {
         }
 
         @Override
-        public List<RedisMessage> unsubAll(Redis.Client client) {
+        public List<RedisMessage> unsubAll(Client client) {
             List<RedisMessage> msg = new ArrayList<>();
             container.forEach((k, v) -> {
-                Iterator<Redis.Client> it = v.iterator();
+                Iterator<Client> it = v.iterator();
                 while (it.hasNext()) {
-                    Redis.Client c = it.next();
+                    Client c = it.next();
                     if (c == client) {
                         it.remove();
                         msg.add(createUnsubMessage(c, k)); 
@@ -173,10 +173,10 @@ public class DefaultPubsub implements PubsubManager {
         }
 
         @Override
-        public List<RedisMessage> unsub(Redis.Client client, List<Key> channel) {
+        public List<RedisMessage> unsub(Client client, List<Key> channel) {
             List<RedisMessage> result = new ArrayList<>();
             for (Key key : channel) {
-                List<Redis.Client> list = container.get(key);
+                List<Client> list = container.get(key);
                 if (list != null) {
                     list.remove(client);
                 }
@@ -185,7 +185,7 @@ public class DefaultPubsub implements PubsubManager {
             return result;
         }
 
-        private RedisMessage createUnsubMessage(Redis.Client client, Key key) {
+        private RedisMessage createUnsubMessage(Client client, Key key) {
             RedisMessage m = key == null ? FullBulkStringRedisMessage.NULL_INSTANCE :
                     FullBulkValueRedisMessage.ofString(key.getContent());
             long count = DefaultPubsub.this.subscribeCount(client);
@@ -197,14 +197,14 @@ public class DefaultPubsub implements PubsubManager {
         }
 
         @Override
-        public void quit(Redis.Client client) {
+        public void quit(Client client) {
             container.forEach((k, chs) -> chs.remove(client));
         }
 
         @Override
-        public long subCount(Redis.Client client) {
+        public long subCount(Client client) {
             long c = 0;
-            for (Map.Entry<Key, List<Redis.Client>> en : container.entrySet()) {
+            for (Map.Entry<Key, List<Client>> en : container.entrySet()) {
                 if (en.getValue().contains(client)) c++;
             }
             return c;

@@ -1,9 +1,6 @@
 package cn.deepmax.redis.core.module;
 
-import cn.deepmax.redis.api.DbManager;
-import cn.deepmax.redis.api.Redis;
-import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.api.RedisObject;
+import cn.deepmax.redis.api.*;
 import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.core.support.BaseModule;
 import cn.deepmax.redis.resp3.ListRedisMessage;
@@ -35,7 +32,7 @@ public class KeyModule extends BaseModule {
     private static class Del extends ArgsCommand.Two {
 
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             List<DbManager.KeyEvent> eventList = new ArrayList<>();
             LocalDateTime now = LocalDateTime.now();
             int db = engine.getDbManager().getIndex(client);
@@ -53,7 +50,7 @@ public class KeyModule extends BaseModule {
 
     private static class Exists extends ArgsCommand.Two {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             int c = 0;
             for (int i = 1; i < msg.children().size(); i++) {
                 RedisObject old = engine.getDb(client).get(client, msg.getAt(i).bytes());
@@ -65,7 +62,7 @@ public class KeyModule extends BaseModule {
 
     private static class Expire extends ArgsCommand.ThreeEx {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             RedisObject obj = engine.getDb(client).get(client, msg.getAt(1).bytes());
             if (obj == null) {
                 return new IntegerRedisMessage(0);
@@ -77,7 +74,7 @@ public class KeyModule extends BaseModule {
 
     private static class PExpire extends ArgsCommand.ThreeEx {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             RedisObject obj = engine.getDb(client).get(client, msg.getAt(1).bytes());
             if (obj == null) {
                 return new IntegerRedisMessage(0);
@@ -89,7 +86,7 @@ public class KeyModule extends BaseModule {
 
     private static class ExpireAt extends ArgsCommand.ThreeEx {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             RedisObject obj = engine.getDb(client).get(client, msg.getAt(1).bytes());
             if (obj == null) {
                 return new IntegerRedisMessage(0);
@@ -104,7 +101,7 @@ public class KeyModule extends BaseModule {
 
     private static class PExpireAt extends ArgsCommand.ThreeEx {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             RedisObject obj = engine.getDb(client).get(client, msg.getAt(1).bytes());
             if (obj == null) {
                 return new IntegerRedisMessage(0);
@@ -118,7 +115,7 @@ public class KeyModule extends BaseModule {
 
     private static class Ttl extends ArgsCommand.TwoEx {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             RedisObject obj = engine.getDb(client).get(client, msg.getAt(1).bytes());
             if (obj == null) {
                 return new IntegerRedisMessage(-2);
@@ -129,7 +126,7 @@ public class KeyModule extends BaseModule {
 
     private static class Pttl extends ArgsCommand.TwoEx {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             RedisObject obj = engine.getDb(client).get(client, msg.getAt(1).bytes());
             if (obj == null) {
                 return new IntegerRedisMessage(-2);
@@ -140,7 +137,7 @@ public class KeyModule extends BaseModule {
 
     private static class Persist extends ArgsCommand.TwoEx {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             RedisObject obj = engine.getDb(client).get(client, msg.getAt(1).bytes());
             if (obj == null || obj.expireTime() == null) {
                 return new IntegerRedisMessage(0);

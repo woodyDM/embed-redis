@@ -76,7 +76,7 @@ public class DefaultRedisEngine implements RedisEngine {
     }
 
     @Override
-    public RedisMessage execute(RedisMessage type, Redis.Client client) {
+    public RedisMessage execute(RedisMessage type, Client client) {
         return executor.execute(type, this, client);
     }
 

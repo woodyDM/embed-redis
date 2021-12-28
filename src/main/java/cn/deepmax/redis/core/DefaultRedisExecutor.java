@@ -1,10 +1,7 @@
 package cn.deepmax.redis.core;
 
 import cn.deepmax.redis.Constants;
-import cn.deepmax.redis.api.AuthManager;
-import cn.deepmax.redis.api.Redis;
-import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.api.RedisServerException;
+import cn.deepmax.redis.api.*;
 import cn.deepmax.redis.core.module.ConnectionModule;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.type.CallbackRedisMessage;
@@ -47,14 +44,14 @@ public class DefaultRedisExecutor implements RedisExecutor {
      * @return
      */
     @Override
-    public RedisMessage execute(RedisMessage type, RedisEngine engine, Redis.Client client) {
+    public RedisMessage execute(RedisMessage type, RedisEngine engine, Client client) {
         Objects.requireNonNull(client);
         log.debug("[{}]Request", requestCounter.getAndIncrement());
         printRedisMessage(type, client.queued());
         return doExec(type, engine, client);
     }
 
-    private RedisMessage doExec(RedisMessage type, RedisEngine engine, Redis.Client client) {
+    private RedisMessage doExec(RedisMessage type, RedisEngine engine, Client client) {
         AuthManager auth = engine.authManager();
         RedisCommand command = engine.commandManager().getCommand(type);
         String cmdName = command.name().toLowerCase();

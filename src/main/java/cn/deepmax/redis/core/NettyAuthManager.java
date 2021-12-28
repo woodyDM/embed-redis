@@ -1,7 +1,7 @@
 package cn.deepmax.redis.core;
 
 import cn.deepmax.redis.api.AuthManager;
-import cn.deepmax.redis.api.Redis;
+import cn.deepmax.redis.api.Client;
 import io.netty.util.AttributeKey;
 
 import java.util.Objects;
@@ -20,7 +20,7 @@ public class NettyAuthManager implements AuthManager {
     }
 
     @Override
-    public boolean tryAuth(String auth, Redis.Client client) {
+    public boolean tryAuth(String auth, Client client) {
         if (Objects.equals(this.auth, auth)) {
             client.channel().attr(AUTH_KEY).set("OK");
             return true;
@@ -30,7 +30,7 @@ public class NettyAuthManager implements AuthManager {
     }
 
     @Override
-    public boolean alreadyAuth(Redis.Client client) {
+    public boolean alreadyAuth(Client client) {
         return client.channel().hasAttr(AUTH_KEY);
     }
 

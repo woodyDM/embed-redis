@@ -11,17 +11,17 @@ import java.util.List;
  */
 public interface TransactionManager {
     
-    void multi(Redis.Client client);
+    void multi(Client client);
 
-    RedisMessage exec(Redis.Client client);
+    RedisMessage exec(Client client);
 
-    RedisMessage queue(Redis.Client client, RedisMessage msg);
+    RedisMessage queue(Client client, RedisMessage msg);
 
-    void watch(Redis.Client client, List<Key> keys);
+    void watch(Client client, List<Key> keys);
 
-    void unwatch(Redis.Client client);
+    void unwatch(Client client);
 
-    boolean inspect(Redis.Client client);
+    boolean inspect(Client client);
 
     RedisEngine engine();
 

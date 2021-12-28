@@ -47,7 +47,7 @@ public class StringModule extends BaseModule {
         register(new IncrByFloat());
     }
 
-    static void multiSet(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+    static void multiSet(ListRedisMessage msg, Client client, RedisEngine engine) {
         int len = msg.children().size();
         List<Key> keys = new ArrayList<>();
         List<RedisObject> obj = new ArrayList<>();
@@ -61,7 +61,7 @@ public class StringModule extends BaseModule {
         engine.getDb(client).multiSet(client, keys, obj);
     }
 
-    static RedisMessage genericSet(RedisEngine engine, Redis.Client client,
+    static RedisMessage genericSet(RedisEngine engine, Client client,
                                    byte[] key, byte[] value, Optional<Long> px, int flag,
                                    Supplier<RedisMessage> successReply, Supplier<RedisMessage> emptyReply) {
         //checks
@@ -90,7 +90,7 @@ public class StringModule extends BaseModule {
         return successReply.get();
     }
 
-    static RedisMessage genericIncre(RedisEngine engine, Redis.Client client,
+    static RedisMessage genericIncre(RedisEngine engine, Client client,
                                      byte[] key, long number) {
         RedisObject r = engine.getDb(client).get(client, key);
         if (r != null && !(r instanceof RString)) {
@@ -115,7 +115,7 @@ public class StringModule extends BaseModule {
 
     public static class Get extends ArgsCommand.TwoExWith<RString> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
             RedisObject obj = engine.getDb(client).get(client, key);
             if (obj == null) {
@@ -132,7 +132,7 @@ public class StringModule extends BaseModule {
     public static class Set extends ArgsCommand.ThreeWith<RString> {
 
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
             byte[] value = msg.getAt(2).bytes();
             Optional<Long> exp = parseExpire(msg);
@@ -182,7 +182,7 @@ public class StringModule extends BaseModule {
 
     public static class SetNx extends ArgsCommand.ThreeExWith<RString> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
             byte[] value = msg.getAt(2).bytes();
             return genericSet(engine, client, key, value, Optional.empty(), FLAG_NX, () -> Constants.INT_ONE, () ->
@@ -192,7 +192,7 @@ public class StringModule extends BaseModule {
 
     public static class SetEx extends ArgsCommand.FourWith<RString> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
             Long seconds = msg.getAt(2).val();
             byte[] value = msg.getAt(3).bytes();
@@ -203,7 +203,7 @@ public class StringModule extends BaseModule {
 
     public static class PSetEx extends ArgsCommand.FourWith<RString> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
             Long seconds = msg.getAt(2).val();
             byte[] value = msg.getAt(3).bytes();
@@ -214,7 +214,7 @@ public class StringModule extends BaseModule {
 
     public static class Append extends ArgsCommand.ThreeExWith<RString> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
             byte[] value = msg.getAt(2).bytes();
             RString old = get(key);
@@ -231,7 +231,7 @@ public class StringModule extends BaseModule {
 
     public static class Incr extends ArgsCommand.TwoExWith<RString> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
             return genericIncre(engine, client, key, 1L);
         }
@@ -239,7 +239,7 @@ public class StringModule extends BaseModule {
 
     public static class IncrBy extends ArgsCommand.ThreeExWith<RString> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
             Long num = msg.getAt(2).val();
             return genericIncre(engine, client, key, num);
@@ -248,7 +248,7 @@ public class StringModule extends BaseModule {
 
     public static class Decr extends ArgsCommand.TwoExWith<RString> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
             return genericIncre(engine, client, key, -1L);
         }
@@ -256,7 +256,7 @@ public class StringModule extends BaseModule {
 
     public static class DecrBy extends ArgsCommand.ThreeExWith<RString> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
             Long num = msg.getAt(2).val();
             return genericIncre(engine, client, key, -num);
@@ -266,7 +266,7 @@ public class StringModule extends BaseModule {
 
     public static class Strlen extends ArgsCommand.TwoExWith<RString> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
             RString obj = get(key);
             if (obj == null) {
@@ -279,7 +279,7 @@ public class StringModule extends BaseModule {
 
     public static class GetRange extends ArgsCommand.FourExWith<RString> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
             RString obj = get(key);
             if (obj == null) {
@@ -294,7 +294,7 @@ public class StringModule extends BaseModule {
 
     public static class SetRange extends ArgsCommand.FourExWith<RString> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
             RString obj = get(key);
             long offset = msg.getAt(2).val();
@@ -313,7 +313,7 @@ public class StringModule extends BaseModule {
 
     public static class GetSet extends ArgsCommand.ThreeExWith<RString> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
             byte[] value = msg.getAt(2).bytes();
             RString obj = get(key);
@@ -328,7 +328,7 @@ public class StringModule extends BaseModule {
 
     public static class MGet extends ArgsCommand.Two {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             List<RedisMessage> result = msg.children().stream().skip(1)
                     .map(k -> (FullBulkValueRedisMessage) k)
                     .map(k -> engine.getDb(client).get(client, k.bytes()))
@@ -345,7 +345,7 @@ public class StringModule extends BaseModule {
 
     public static class MSet extends ArgsCommand.Three {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             int len = msg.children().size();
             if (len % 2 != 1) {
                 throw new RedisServerException("ERR wrong number of arguments for MSET");
@@ -357,7 +357,7 @@ public class StringModule extends BaseModule {
 
     public static class MSetNx extends ArgsCommand.Three {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             int len = msg.children().size();
             if (len % 2 != 1) {
                 throw new RedisServerException("ERR wrong number of arguments for MSET");
@@ -376,7 +376,7 @@ public class StringModule extends BaseModule {
 
     public static class IncrByFloat extends ArgsCommand.ThreeExWith<RString> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
             String value = msg.getAt(2).str();
             Double d = NumberUtils.parseDouble(value);

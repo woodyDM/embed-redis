@@ -1,6 +1,6 @@
 package cn.deepmax.redis.core.module;
 
-import cn.deepmax.redis.api.Redis;
+import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.base.BaseEngineTest;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
@@ -33,7 +33,7 @@ public class LuaEngineTest extends BaseEngineTest {
 
     @Test
     public void shouldExist() {
-        Redis.Client client = embeddedClient();
+        Client client = embeddedClient();
         RedisMessage msgD = engine().execute(ListRedisMessage.newBuilder()
                 .append(FullBulkValueRedisMessage.ofString("script"))
                 .append(FullBulkValueRedisMessage.ofString("load"))

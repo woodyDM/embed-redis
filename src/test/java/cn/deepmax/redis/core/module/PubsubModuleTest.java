@@ -1,6 +1,6 @@
 package cn.deepmax.redis.core.module;
 
-import cn.deepmax.redis.api.Redis;
+import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.base.BaseEngineTest;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.type.CompositeRedisMessage;
@@ -25,9 +25,9 @@ public class PubsubModuleTest extends BaseEngineTest {
 
     @Test
     public void shouldOK() {
-        Redis.Client c1 = embeddedClient();
-        Redis.Client c2 = embeddedClient();
-        Redis.Client c3 = embeddedClient();
+        Client c1 = embeddedClient();
+        Client c2 = embeddedClient();
+        Client c3 = embeddedClient();
 
         RedisMessage m1 = engine().execute(ListRedisMessage.ofString("subscribe 123 abc"), c1);
         RedisMessage m2 = engine().execute(ListRedisMessage.ofString("psubscribe 12? 1*23 1*23 1[24]3"), c2);

@@ -1,6 +1,6 @@
 package cn.deepmax.redis.core;
 
-import cn.deepmax.redis.api.Redis;
+import cn.deepmax.redis.api.Client;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.redis.RedisMessage;
 import io.netty.util.Attribute;
@@ -12,7 +12,7 @@ import java.util.Objects;
  * @author wudi
  * @date 2021/6/25
  */
-public class NettyClient implements Redis.Client {
+public class NettyClient implements Client {
     private final Channel channel;
     private static final int MASK_QUEUE = 1;
     private static final int MASK_SCRIPTING = 1 << 2;
@@ -23,8 +23,8 @@ public class NettyClient implements Redis.Client {
     }
 
     @Override
-    public Redis.Protocol resp() {
-        return Redis.Protocol.RESP2;
+    public Protocol resp() {
+        return Client.Protocol.RESP2;
     }
 
     @Override

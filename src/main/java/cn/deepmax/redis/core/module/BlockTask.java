@@ -1,7 +1,7 @@
 package cn.deepmax.redis.core.module;
 
+import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.DbManager;
-import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.core.Key;
 import io.netty.handler.codec.redis.RedisMessage;
@@ -17,7 +17,7 @@ import java.util.function.Supplier;
  * @date 2021/12/27
  */
 public class BlockTask {
-    private final Redis.Client client;
+    private final Client client;
     private final List<Key> keys;
     private final Long timeout;
     private final RedisEngine engine;
@@ -25,7 +25,7 @@ public class BlockTask {
     private final Supplier<RedisMessage> fail;
     private ScheduledFuture<?> future;
 
-    public BlockTask(Redis.Client client, List<Key> keys, Long timeout, RedisEngine engine,
+    public BlockTask(Client client, List<Key> keys, Long timeout, RedisEngine engine,
                      Supplier<Optional<RedisMessage>> success, Supplier<RedisMessage> fail) {
         this.client = client;
         this.keys = keys;

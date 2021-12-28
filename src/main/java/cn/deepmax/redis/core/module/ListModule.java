@@ -1,7 +1,7 @@
 package cn.deepmax.redis.core.module;
 
+import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.DbManager;
-import cn.deepmax.redis.api.Redis;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.core.Key;
 import cn.deepmax.redis.core.support.ArgsCommand;
@@ -29,7 +29,7 @@ public class ListModule extends BaseModule {
 
     public static class LPush extends ArgsCommand.ThreeWith<RList> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
             List<Key> keys = genKeys(msg.children(), 2);
             RList list = get(key);
@@ -45,7 +45,7 @@ public class ListModule extends BaseModule {
 
     public static class BLPop extends ArgsCommand.ThreeWith<RList> {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Redis.Client client, RedisEngine engine) {
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             List<Key> keys = genKeys(msg.children(), 1, msg.children().size() - 1);
             Long timeout = NumberUtils.parseTimeout(msg.getAt(msg.children().size() - 1).str());
             Optional<RedisMessage> returnMsg = tryLPop(keys, client);
@@ -58,7 +58,7 @@ public class ListModule extends BaseModule {
             return null;
         }
 
-        private Optional<RedisMessage> tryLPop(List<Key> keys, Redis.Client client) {
+        private Optional<RedisMessage> tryLPop(List<Key> keys, Client client) {
             Optional<Key> exist = keys.stream().filter(k -> {
                 RList obj = get(k.getContent());
                 return obj != null && obj.size() > 0;
