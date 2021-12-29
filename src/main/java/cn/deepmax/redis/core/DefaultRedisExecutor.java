@@ -59,7 +59,10 @@ public class DefaultRedisExecutor implements RedisExecutor {
         RedisMessage response;
         try {
             response = command.response(type, client, engine);
-            engine.getDbManager().fireChangeQueuedEvents(client);
+            //executor will not fire event in transaction or scripting.
+            if (!client.queued() && !client.queryFlag(Client.FLAG_SCRIPTING) && !client.queryFlag(Client.FLAG_QUEUE_EXEC)) {
+                engine.getDbManager().fireChangeQueuedEvents(client);
+            }
         } catch (RedisServerException e) {
             response = e.getMsg() == null ? new ErrorRedisMessage(e.getMessage()) : e.getMsg();
         } catch (Exception e) {

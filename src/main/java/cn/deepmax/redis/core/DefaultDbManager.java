@@ -6,6 +6,7 @@ import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.api.RedisServerException;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
  * @author wudi
  * @date 2021/5/20
  */
+@Slf4j
 public class DefaultDbManager implements DbManager {
 
     private static final AttributeKey<Integer> IDX = AttributeKey.valueOf("DB_INDEX");
@@ -91,11 +93,13 @@ public class DefaultDbManager implements DbManager {
         Attribute<List<KeyEvent>> attr = client.channel().attr(EVENTS);
         List<KeyEvent> list = attr.get();
         if (list == null || list.isEmpty()) {
+            log.debug("No events for client {}", client);
             return;
         }
         List<KeyEvent> events = DbKey.compress(list);
         if (!events.isEmpty()) {
             doFireChangeEvents(events);
+            log.debug("Fire [{}] events for client {} ", events.size(), client);
             attr.set(null);
         }
     }

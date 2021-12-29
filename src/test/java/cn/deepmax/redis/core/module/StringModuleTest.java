@@ -165,6 +165,7 @@ public class StringModuleTest extends BaseTemplateTest {
 
     @Test
     public void shouldSetPx() {
+        ExpectedEvents events = listen("key");
         ListRedisMessage msg = ListRedisMessage.newBuilder()
                 .append("set")
                 .append("key")
@@ -177,6 +178,8 @@ public class StringModuleTest extends BaseTemplateTest {
         assertThat(m.content(), is("OK"));
         assertThat(v().get("key"), is("好"));
         assertThat(t().getExpire("key"), is(6L));
+        assertEquals(events.triggerTimes, 1);
+        assertEquals(events.events.size(), 1);
 
     }
 
@@ -202,6 +205,7 @@ public class StringModuleTest extends BaseTemplateTest {
     public void shouldSetNxFail() {
         v().set("key", "hahahah哈哈");
 
+        ExpectedEvents events = listen("key");
         ListRedisMessage msg = ListRedisMessage.newBuilder()
                 .append("set")
                 .append("key")
@@ -213,10 +217,12 @@ public class StringModuleTest extends BaseTemplateTest {
         assertThat(resp, sameInstance(FullBulkStringRedisMessage.NULL_INSTANCE));
 
         assertThat(v().get("key"), is("hahahah哈哈"));
+        assertEquals(events.triggerTimes, 0);
     }
 
     @Test
     public void shouldSetXXWithoutKey() {
+        ExpectedEvents events = listen("key");
         ListRedisMessage msg = ListRedisMessage.newBuilder()
                 .append("set")
                 .append("key")
@@ -228,6 +234,8 @@ public class StringModuleTest extends BaseTemplateTest {
 
         assertThat(resp, sameInstance(FullBulkStringRedisMessage.NULL_INSTANCE));
         assertNull(v().get("key"));
+        assertEquals(events.triggerTimes, 0);
+
     }
 
 

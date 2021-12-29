@@ -4,29 +4,35 @@
 |name|supported|desc|
 |-----|-----|-----|
 |LPOP|Y||
-|RPOP|||
+|RPOP|Y||
 |LPUSH|Y||
-|RPUSH|||
-|LPUSHX|||
-|RPUSHX|||
-|LLEN|||
+|RPUSH|Y||
+|LPUSHX|Y||
+|RPUSHX|Y||
+|LLEN|Y||
 |LPOS|||
 |LTRIM|||
 |LINDEX|||
 |LRANGE|||
-|RPOPLPUSH|||
-|LMOVE|||
-|LMPOP|||
+|RPOPLPUSH|Y||
+|LMOVE|Y||
+|LMPOP|N||
 |LINSERT|||
 |LREM|||
 |LSET|||
 |BLPOP|Y||
-|BRPOP|||
+|BRPOP|Y||
 |BLMOVE|||
 |BRPOPLPUSH|||
-|BLMPOP|||
+|BLMPOP|N||
 
 
+## TODO
+-[ ] Lua types.
+-[ ] Script error handle.
+-[ ] redis 7.x support.
+-[ ] cluster support.
 
+  
 
 

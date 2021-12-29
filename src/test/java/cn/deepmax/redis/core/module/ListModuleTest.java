@@ -115,7 +115,7 @@ public class ListModuleTest extends BaseTemplateTest {
         Tuple<Long, Object> b = block(() -> l().leftPop("n", 1, TimeUnit.SECONDS));
 
         assertEquals(b.b, "002");
-        assertTrue(b.a > 300);  //cost at least 500mills
+        assertTrue(b.a > 290);  //cost at least 500mills
         assertTrue(b.a < 500);  //cost no more than 1S
         assertThat(engine.getDbManager().listenerSize(), is(0));
         future.cancel(true);

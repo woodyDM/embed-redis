@@ -101,7 +101,7 @@ public class ScriptingModule extends BaseModule implements Flushable {
             for (int i = 3 + keyNum; i < msg.children().size(); i++) {
                 arg.add(msg.getAt(i));
             }
-
+            client.setFlag(Client.FLAG_SCRIPTING, true);
             String fullLua = LuaScript.make(luaScript);
 
             Globals globals = JsePlatform.standardGlobals();
@@ -110,6 +110,8 @@ public class ScriptingModule extends BaseModule implements Flushable {
 
             LuaValue lua = globals.load(fullLua);
             LuaValue callResult = lua.call();
+            client.setFlag(Client.FLAG_SCRIPTING, false);
+            //now flag scripting is off. events fired in RedisExecutor
             return RedisLuaConverter.toRedis(callResult);
         } catch (LuaError error) {
             if (error.getCause() instanceof LuaFuncException) {

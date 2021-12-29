@@ -37,11 +37,12 @@ public class ListModule extends BaseModule {
         register(new LPop());
         register(new RPop());
         register(new RPopLPush());
-        register(new BLPop());
-        register(new BRPop());
         register(new LLen());
         register(new LMove());
         register(new LMPop());
+        //blocking op
+        register(new BLPop());
+        register(new BRPop());
         register(new BLMPop());
     }
 

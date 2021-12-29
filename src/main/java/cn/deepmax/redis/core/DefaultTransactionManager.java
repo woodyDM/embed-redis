@@ -1,7 +1,10 @@
 package cn.deepmax.redis.core;
 
 import cn.deepmax.redis.Constants;
-import cn.deepmax.redis.api.*;
+import cn.deepmax.redis.api.Client;
+import cn.deepmax.redis.api.DbManager;
+import cn.deepmax.redis.api.RedisEngine;
+import cn.deepmax.redis.api.TransactionManager;
 import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
@@ -56,8 +59,7 @@ public class DefaultTransactionManager implements TransactionManager {
             List<RedisMessage> resps = cmds.stream().map(c -> engine.execute(c, client))
                     .collect(Collectors.toList());
             client.setFlag(Client.FLAG_QUEUE_EXEC, false);
-            //fire all queued key events;
-            engine.getDbManager().fireChangeQueuedEvents(client);
+            //flag exec is off. All queued key events will fire in RedisExecutor.
             return new ListRedisMessage(resps);
         } finally {
             unwatch(client);
