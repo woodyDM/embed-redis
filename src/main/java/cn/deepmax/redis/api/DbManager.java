@@ -11,7 +11,7 @@ import java.util.List;
  * @author wudi
  * @date 2021/5/20
  */
-public interface DbManager {
+public interface DbManager extends Flushable {
 
     RedisEngine engine();
 
@@ -26,6 +26,8 @@ public interface DbManager {
     void switchTo(Client client, int index);
 
     int getTotal();
+
+    int listenerSize();
 
     void fireChangeQueuedEvents(Client client);
 

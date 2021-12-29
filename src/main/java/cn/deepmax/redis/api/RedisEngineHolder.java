@@ -1,7 +1,5 @@
 package cn.deepmax.redis.api;
 
-import lombok.NonNull;
-
 /**
  * @author wudi
  * @date 2021/5/8

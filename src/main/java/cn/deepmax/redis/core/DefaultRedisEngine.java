@@ -5,6 +5,8 @@ import cn.deepmax.redis.core.module.*;
 import io.netty.handler.codec.redis.RedisMessage;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -21,8 +23,8 @@ public class DefaultRedisEngine implements RedisEngine {
     private TransactionManager transactionManager = new DefaultTransactionManager(this);
     private final DbManager dbManager = new DefaultDbManager(this, 16);
     protected TimeProvider timeProvider = new DefaultTimeProvider();
-    private Runnable scriptFlushAction;
     private RedisConfiguration configuration;
+    private final List<Flushable> flushList = new ArrayList<>();
 
     public static DefaultRedisEngine defaultEngine() {
         DefaultRedisEngine e = new DefaultRedisEngine();
@@ -35,9 +37,7 @@ public class DefaultRedisEngine implements RedisEngine {
         loadModule(new BitMapModule());
         loadModule(new ConnectionModule());
         loadModule(new KeyModule());
-        ScriptingModule luaModule = new ScriptingModule();
-        loadModule(luaModule);
-        scriptFlushAction = luaModule::flush;
+        loadModule(new ScriptingModule());
         loadModule(new ConnectionModule());
         loadModule(new PubsubModule());
         loadModule(new TransactionModule());
@@ -47,6 +47,9 @@ public class DefaultRedisEngine implements RedisEngine {
     @Override
     public void loadModule(Module module) {
         this.commandManager.load(module);
+        if (module instanceof Flushable) {
+            flushList.add((Flushable) module);
+        }
     }
 
     @Override
@@ -95,25 +98,20 @@ public class DefaultRedisEngine implements RedisEngine {
     }
 
     @Override
-    public void dataFlush() {
-        log.debug("Flush all data");
-        for (int i = 0; i < dbManager.getTotal(); i++) {
-            dbManager.get(i).flush();
-        }
-    }
-
-    @Override
     public TransactionManager transactionManager() {
         return transactionManager;
     }
 
     @Override
-    public void scriptFlush() {
-        if (scriptFlushAction != null) {
-            log.debug("Flush all script");
-            scriptFlushAction.run();
+    public void flush() {
+        log.debug("Flush all data");
+        for (int i = 0; i < dbManager.getTotal(); i++) {
+            dbManager.get(i).flush();
+        }
+        log.debug("Flush all db listener");
+        dbManager.flush();
+        for (Flushable f : flushList) {
+            f.flush();
         }
     }
-
-
 }

@@ -1,6 +1,9 @@
 package cn.deepmax.redis.core;
 
-import cn.deepmax.redis.api.*;
+import cn.deepmax.redis.api.Client;
+import cn.deepmax.redis.api.DbManager;
+import cn.deepmax.redis.api.RedisEngine;
+import cn.deepmax.redis.api.RedisServerException;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 
@@ -72,14 +75,15 @@ public class DefaultDbManager implements DbManager {
         if (events == null || events.isEmpty()) {
             return;
         }
-        if (client.queryFlag(Client.FLAG_QUEUE_EXEC)) {
-            Attribute<List<KeyEvent>> att = client.channel().attr(EVENTS);
-            att.setIfAbsent(new ArrayList<>());
-            List<KeyEvent> list = att.get();
-            list.addAll(events);
-        } else {
-            doFireChangeEvents(events);
-        }
+        Attribute<List<KeyEvent>> att = client.channel().attr(EVENTS);
+        att.setIfAbsent(new ArrayList<>());
+        List<KeyEvent> list = att.get();
+        list.addAll(events);
+    }
+
+    @Override
+    public int listenerSize() {
+        return listeners.size();
     }
 
     @Override
@@ -130,5 +134,10 @@ public class DefaultDbManager implements DbManager {
             this.list = list;
             this.listener = listener;
         }
+    }
+
+    @Override
+    public void flush() {
+        listeners.clear();
     }
 }

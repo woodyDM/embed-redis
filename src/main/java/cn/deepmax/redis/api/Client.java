@@ -7,8 +7,13 @@ import io.netty.handler.codec.redis.RedisMessage;
  * unique client Identification,client must override equals and hashCode;
  */
 public interface Client {
-
+    /**
+     * multi but not exec 
+     */
     int FLAG_QUEUE = 1;
+    /**
+     * exec
+     */
     int FLAG_QUEUE_EXEC = 1 << 1;
     int FLAG_SCRIPTING = 1 << 2;
     

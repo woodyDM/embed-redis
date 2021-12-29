@@ -1,7 +1,10 @@
 package cn.deepmax.redis.core.support;
 
 import cn.deepmax.redis.Constants;
-import cn.deepmax.redis.api.*;
+import cn.deepmax.redis.api.Client;
+import cn.deepmax.redis.api.RedisEngine;
+import cn.deepmax.redis.api.RedisObject;
+import cn.deepmax.redis.api.RedisServerException;
 import cn.deepmax.redis.core.Key;
 import cn.deepmax.redis.core.RedisCommand;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
@@ -20,13 +23,20 @@ import java.util.Optional;
  * @date 2021/12/21
  */
 public abstract class ArgsCommand<T extends RedisObject> implements RedisCommand {
-    protected int limit;
+    protected int[] validArgs;
     protected RedisEngine engine;
     protected Client client;
+    protected final int limit;
     private final boolean exact;
 
     public ArgsCommand(int limit) {
         this(limit, false);
+    }
+
+    public ArgsCommand(int... valid) {
+        this.limit = -1;
+        this.validArgs = valid;
+        this.exact = false;
     }
 
     public ArgsCommand(int limit, boolean exact) {
@@ -47,14 +57,34 @@ public abstract class ArgsCommand<T extends RedisObject> implements RedisCommand
         return doResponse(msg, client, engine);
     }
 
+    protected Optional<ErrorRedisMessage> exactCheckLength(RedisMessage type, int size) {
+        if (cast(type).children().size() != size) {
+            return createErrorRedisMessage();
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<ErrorRedisMessage> createErrorRedisMessage() {
+        ErrorRedisMessage value = new ErrorRedisMessage("ERR wrong number of arguments for '"
+                + this.getClass().getSimpleName().toLowerCase() + "' command");
+        return Optional.of(value);
+    }
+
     public Optional<ErrorRedisMessage> preCheckLength(RedisMessage type) {
         ListRedisMessage msg = cast(type);
-        if (msg.children().size() < limit || (exact && msg.children().size() != limit)) {
-            ErrorRedisMessage errorRedisMessage = new ErrorRedisMessage("ERR wrong number of arguments for '"
-                    + this.getClass().getSimpleName().toLowerCase() + "' command");
-            return Optional.of(errorRedisMessage);
+        int len = cast(type).children().size();
+        if (limit == -1) {
+            for (int i : validArgs) {
+                if (i == len) return Optional.empty();
+            }
+            return createErrorRedisMessage();
+        } else {
+            if (msg.children().size() < limit || (exact && len != limit)) {
+                return createErrorRedisMessage();
+            }
+            return Optional.empty();
         }
-        return Optional.empty();
     }
 
     /**
@@ -69,15 +99,22 @@ public abstract class ArgsCommand<T extends RedisObject> implements RedisCommand
         if (obj == null) {
             return null;
         }
-        //check type
-        Type t = this.getClass().getGenericSuperclass();
-        ParameterizedType p = (ParameterizedType) t;
-        Class<?> clazz = (Class<?>) p.getActualTypeArguments()[0];
-        if (clazz.isInstance(obj)) {
-            return (T) obj;
-        } else {
-            throw new RedisServerException(Constants.ERR_TYPE);
+        Class<?> cur = this.getClass();
+        while (cur != null) {
+            Type t = cur.getGenericSuperclass();
+            if (t instanceof ParameterizedType) {
+                ParameterizedType p = (ParameterizedType) t;
+                Class<?> clazz = (Class<?>) p.getActualTypeArguments()[0];
+                if (clazz.isInstance(obj)) {
+                    return (T) obj;
+                } else {
+                    throw new RedisServerException(Constants.ERR_TYPE);
+                }
+            } else {
+                cur = cur.getSuperclass();
+            }
         }
+        throw new IllegalStateException("can't predicate real type of " + this.getClass().getName());
     }
 
     /**

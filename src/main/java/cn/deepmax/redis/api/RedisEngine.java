@@ -7,13 +7,9 @@ import io.netty.handler.codec.redis.RedisMessage;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public interface RedisEngine {
+public interface RedisEngine extends Flushable {
 
     void loadModule(Module module);
-
-    void dataFlush();
-
-    void scriptFlush();
 
     TimeProvider timeProvider();
 
@@ -48,7 +44,7 @@ public interface RedisEngine {
 
     CommandManager commandManager();
 
-    interface Db {
+    interface Db extends Flushable {
 
         DbManager getDbManager();
 
@@ -61,8 +57,6 @@ public interface RedisEngine {
         RedisObject get(Client client, byte[] key);
 
         RedisObject del(Client client, byte[] key);
-
-        void flush();
 
     }
 

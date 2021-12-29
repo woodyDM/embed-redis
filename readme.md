@@ -1,30 +1,30 @@
-
 ## Commands
-### List  
+### List
+  
 |name|supported|desc|
 |-----|-----|-----|
 |LPOP|Y||
-|RPOP|Y||
+|RPOP|||
 |LPUSH|Y||
-|RPUSH|Y||
-|LPUSHX|Y||
-|RPUSHX|Y||
-|LLEN|Y||
-|LPOS|Y||
-|LTRIM|Y||
-|LINDEX|Y||
-|LRANGE|Y||
-|RPOPLPUSH|Y||
-|LMOVE|Y||
-|LMPOP|Y||
-|LINSERT|Y||
-|LREM|Y||
-|LSET|Y||
+|RPUSH|||
+|LPUSHX|||
+|RPUSHX|||
+|LLEN|||
+|LPOS|||
+|LTRIM|||
+|LINDEX|||
+|LRANGE|||
+|RPOPLPUSH|||
+|LMOVE|||
+|LMPOP|||
+|LINSERT|||
+|LREM|||
+|LSET|||
 |BLPOP|Y||
-|BRPOP|Y||
-|BLMOVE|Y||
-|BRPOPLPUSH|Y||
-|BLMPOP|Y||
+|BRPOP|||
+|BLMOVE|||
+|BRPOPLPUSH|||
+|BLMPOP|||
 
 
 

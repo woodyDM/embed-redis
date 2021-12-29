@@ -1,6 +1,7 @@
 package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.api.Client;
+import cn.deepmax.redis.api.Flushable;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.api.RedisServerException;
 import cn.deepmax.redis.core.support.ArgsCommand;
@@ -14,6 +15,7 @@ import cn.deepmax.redis.utils.SHA1;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
+import lombok.extern.slf4j.Slf4j;
 import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaError;
 import org.luaj.vm2.LuaTable;
@@ -30,7 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author wudi
  * @date 2021/5/7
  */
-public class ScriptingModule extends BaseModule {
+@Slf4j
+public class ScriptingModule extends BaseModule implements Flushable {
     private final Map<String, String> scriptCache = new ConcurrentHashMap<>();
     private final Load cmdLoad = new Load();
     private final Exists cmdExists = new Exists();
@@ -38,13 +41,14 @@ public class ScriptingModule extends BaseModule {
 
     public ScriptingModule() {
         super("scripting");
-
         register(new Script());
         register(new Eval());
         register(new Evalsha());
     }
 
+    @Override
     public void flush() {
+        log.debug("flush all script");
         scriptCache.clear();
     }
 

@@ -59,6 +59,7 @@ public class DefaultRedisExecutor implements RedisExecutor {
         RedisMessage response;
         try {
             response = command.response(type, client, engine);
+            engine.getDbManager().fireChangeQueuedEvents(client);
         } catch (RedisServerException e) {
             response = e.getMsg() == null ? new ErrorRedisMessage(e.getMessage()) : e.getMsg();
         } catch (Exception e) {
