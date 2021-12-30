@@ -98,6 +98,21 @@ public class RegexUtilsTest {
     }
 
     @Test
+    public void shouldNeg() {
+        assertTrue(Pattern.compile(RegexUtils.toRegx("h[^e]llo")).matcher("hallo").matches());
+        assertTrue(Pattern.compile(RegexUtils.toRegx("h[^e]llo")).matcher("hbllo").matches());
+        assertFalse(Pattern.compile(RegexUtils.toRegx("h[^e]llo")).matcher("hello").matches());
+    }
+
+    @Test
+    public void shouldAll() {
+        assertTrue(Pattern.compile(RegexUtils.toRegx("h[a-d]llo")).matcher("hallo").matches());
+        assertTrue(Pattern.compile(RegexUtils.toRegx("h[a-d]llo")).matcher("hdllo").matches());
+        assertFalse(Pattern.compile(RegexUtils.toRegx("h[a-d]llo")).matcher("hello").matches());
+        assertFalse(Pattern.compile(RegexUtils.toRegx("h[a-d]llo")).matcher("hallo2").matches());
+    }
+    
+    @Test
     public void shouldSpecial() {
         assertTrue(Pattern.compile(RegexUtils.toRegx("te\\?*t")).matcher("te?12t").matches());
         assertTrue(Pattern.compile(RegexUtils.toRegx("te\\?*t")).matcher("te?t").matches());

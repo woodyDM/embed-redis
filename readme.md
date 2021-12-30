@@ -69,6 +69,7 @@
 -[ ] Script error handle.  
 -[ ] redis 7.x support.  
 -[ ] cluster support.  
+-[ ] scans.      
 
   
 
