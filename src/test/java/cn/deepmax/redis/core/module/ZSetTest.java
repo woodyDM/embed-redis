@@ -1,5 +1,6 @@
-package cn.deepmax.redis.core.support;
+package cn.deepmax.redis.core.module;
 
+import cn.deepmax.redis.core.module.ZSet;
 import org.junit.Test;
 
 import java.math.BigDecimal;

@@ -1,4 +1,4 @@
-package cn.deepmax.redis.core.support;
+package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.core.Key;
 import cn.deepmax.redis.core.RPattern;

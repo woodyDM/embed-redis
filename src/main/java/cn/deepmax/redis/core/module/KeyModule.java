@@ -7,7 +7,6 @@ import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.api.RedisObject;
 import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.core.support.BaseModule;
-import cn.deepmax.redis.core.support.NavMap;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.utils.NumberUtils;

@@ -4,7 +4,7 @@ import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.DbManager;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.api.RedisObject;
-import cn.deepmax.redis.core.support.NavMap;
+import cn.deepmax.redis.core.module.NavMap;
 
 import java.util.List;
 import java.util.stream.Collectors;

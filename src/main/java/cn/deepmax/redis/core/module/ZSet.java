@@ -1,43 +1,31 @@
-package cn.deepmax.redis.core.support;
+package cn.deepmax.redis.core.module;
+
+import cn.deepmax.redis.utils.Tuple;
 
 import java.math.BigDecimal;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
-/*
-
-From redis server.h 
-
-typedef struct zskiplistNode {
-        sds ele;
-        double score;
-        struct zskiplistNode *backward;
-        struct zskiplistLevel {
-            struct zskiplistNode *forward;
-            unsigned long span;
-        } level[];
-} zskiplistNode;
-
-typedef struct zskiplist {
-        struct zskiplistNode *header, *tail;
-        unsigned long length;
-        int level;
-} zskiplist;
-
-typedef struct zset {
-        dict *dict;
-        zskiplist *zsl;
-} zset;
-
+/**
+ * 
+ * @param <T> 
+ * @param <V>
  */
 public class ZSet<T extends Comparable<T>, V> {
 
     static final int ZSKIPLIST_MAXLEVEL = 32;
     static final double ZSKIPLIST_P = 0.25D;
-    ZSkipList<T> zsl;
-    Map<T, V> dict;
+    final ZSkipList<T> zsl;
+    final Map<T, V> dict;
+
+    public ZSet() {
+        this.zsl = ZSkipList.newInstance();
+        this.dict = new HashMap<>();
+    }
+
+    public void add(List<Tuple<T, V>> values) {
+        
+    }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     static class ZSkipList<T extends Comparable<T>> {

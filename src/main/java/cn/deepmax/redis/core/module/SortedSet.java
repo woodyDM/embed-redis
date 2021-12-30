@@ -1,20 +1,21 @@
-package cn.deepmax.redis.core.support;
+package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.api.RedisObject;
 import cn.deepmax.redis.api.TimeProvider;
+import cn.deepmax.redis.core.Key;
 
 import java.time.LocalDateTime;
 
 /**
  * @author wudi
- * @date 2021/4/30
+ * @date 2021/12/30
  */
-public abstract class AbstractRedisObject implements RedisObject {
+public class SortedSet extends ZSet<Double, Key> implements RedisObject {
 
-    private LocalDateTime expire;
+    protected LocalDateTime expire;
     protected final TimeProvider timeProvider;
 
-    public AbstractRedisObject(TimeProvider timeProvider) {
+    public SortedSet(TimeProvider timeProvider) {
         this.timeProvider = timeProvider;
     }
 
@@ -27,10 +28,10 @@ public abstract class AbstractRedisObject implements RedisObject {
     public void expireAt(LocalDateTime time) {
         this.expire = time;
     }
-    
+
     @Override
     public TimeProvider timeProvider() {
         return timeProvider;
     }
-
+    
 }
