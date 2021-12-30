@@ -34,7 +34,8 @@ public class NavMapTest {
         assertSame(map.get(2L).next, map.get(3L));
         assertSame(map.get(3L).pre, map.get(2L));
         assertNull(map.get(3L).next);
-        assertSame(map.get(3L), map.lastNode);
+        assertSame(map.get(3L), map.tail);
+        assertSame(map.get(1L), map.head);
 
     }
 
@@ -45,6 +46,7 @@ public class NavMapTest {
         map.set(k("a"), "1");
         map.set(k("b"), "2");
         map.set(k("c"), "3");
+
         map.delete(k("a"));
 
         assertEquals(map.size(), 2);
@@ -58,7 +60,8 @@ public class NavMapTest {
         assertSame(map.get(2L).next, map.get(3L));
         assertSame(map.get(3L).pre, map.get(2L));
         assertNull(map.get(3L).next);
-        assertSame(map.get(3L), map.lastNode);
+        assertSame(map.get(3L), map.tail);
+        assertSame(map.get(2L), map.head);
 
     }
 
@@ -78,12 +81,13 @@ public class NavMapTest {
         assertEquals(map.get(1L).value, "1");
         assertNull(map.get(2L));
         assertEquals(map.get(3L).value, "3");
-        
+
         assertNull(map.get(1L).pre);
         assertSame(map.get(1L).next, map.get(3L));
         assertSame(map.get(3L).pre, map.get(1L));
         assertNull(map.get(3L).next);
-        assertSame(map.get(3L), map.lastNode);
+        assertSame(map.get(3L), map.tail);
+        assertSame(map.get(1L), map.head);
 
     }
 
@@ -107,7 +111,8 @@ public class NavMapTest {
         assertNull(map.get(1L).pre);
         assertSame(map.get(1L).next, map.get(2L));
         assertSame(map.get(2L).pre, map.get(1L));
-        assertSame(map.get(2L), map.lastNode);
+        assertSame(map.get(2L), map.tail);
+        assertSame(map.get(1L), map.head);
 
     }
 
@@ -137,7 +142,8 @@ public class NavMapTest {
         assertSame(map.get(2L).next, map.get(4L));
         assertSame(map.get(4L).pre, map.get(2L));
         assertNull(map.get(3L));
-        assertSame(map.get(4L), map.lastNode);
+        assertSame(map.get(4L), map.tail);
+        assertSame(map.get(1L), map.head);
 
     }
 
@@ -166,8 +172,31 @@ public class NavMapTest {
         assertSame(map.get(3L).pre, map.get(2L));
         assertSame(map.get(3L).next, map.get(4L));
         assertSame(map.get(4L).pre, map.get(3L));
-         
-        assertSame(map.get(4L), map.lastNode);
+
+        assertSame(map.get(2L), map.head);
+
+    }
+
+    @Test
+    public void shouldAddAndSetHead2() {
+        NavMap<String> map = new NavMap<>();
+
+        map.set(k("a"), "1");
+        map.set(k("a"), "11");
+
+        assertEquals(map.size(), 1);
+        assertEquals(map.get(k("a")), "11");
+
+
+        assertNull(map.get(1L));
+        assertEquals(map.get(2L).value, "11");
+
+        assertNull(map.head.next);
+        assertNull(map.head.pre);
+        assertNull(map.tail.pre);
+        assertNull(map.tail.next);
+        assertSame(map.get(2L), map.head);
+        assertSame(map.get(2L), map.tail);
 
     }
 
@@ -189,14 +218,15 @@ public class NavMapTest {
         assertNull(map.get(2L));
         assertEquals(map.get(3L).value, "3");
         assertEquals(map.get(4L).value, "22");
-        
+
         assertNull(map.get(1L).pre);
         assertSame(map.get(1L).next, map.get(3L));
         assertSame(map.get(3L).pre, map.get(1L));
         assertSame(map.get(3L).next, map.get(4L));
         assertSame(map.get(4L).pre, map.get(3L));
 
-        assertSame(map.get(4L), map.lastNode);
+        assertSame(map.get(4L), map.tail);
+        assertSame(map.get(1L), map.head);
 
     }
 

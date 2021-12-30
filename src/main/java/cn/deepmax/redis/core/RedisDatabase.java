@@ -1,10 +1,12 @@
 package cn.deepmax.redis.core;
 
-import cn.deepmax.redis.api.*;
+import cn.deepmax.redis.api.Client;
+import cn.deepmax.redis.api.DbManager;
+import cn.deepmax.redis.api.RedisEngine;
+import cn.deepmax.redis.api.RedisObject;
+import cn.deepmax.redis.core.support.NavMap;
 
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -13,7 +15,7 @@ import java.util.stream.Collectors;
  */
 public class RedisDatabase implements RedisEngine.Db {
 
-    private final Map<Key, RedisObject> data = new ConcurrentHashMap<>();
+    private final NavMap<RedisObject> data = new NavMap<>();
     private final DbManager manager;
     private final int idx;
 
@@ -23,15 +25,20 @@ public class RedisDatabase implements RedisEngine.Db {
     }
 
     @Override
+    public Object getContainer() {
+        return data;
+    }
+
+    @Override
     public RedisObject set(Client client, byte[] key, RedisObject newValue) {
         getDbManager().fireChangeEvent(client, new DbManager.KeyEvent(key, selfIndex(), DbManager.EventType.NEW_OR_REPLACE));
-        return data.put(new Key(key), newValue);
+        return data.set(key, newValue);
     }
 
     @Override
     public void multiSet(Client client, List<Key> keys, List<RedisObject> newValues) {
         for (int i = 0; i < keys.size(); i++) {
-            data.put(keys.get(i), newValues.get(i));
+            data.set(keys.get(i), newValues.get(i));
         }
         List<DbManager.KeyEvent> events = keys.stream()
                 .map(k -> new DbManager.KeyEvent(k.getContent(), selfIndex(), DbManager.EventType.NEW_OR_REPLACE))
@@ -49,14 +56,13 @@ public class RedisDatabase implements RedisEngine.Db {
         return idx;
     }
 
-
     @Override
     public RedisObject get(Client client, byte[] key) {
         Key key1 = new Key(key);
         RedisObject obj = data.get(key1);
         if (obj != null && obj.isExpire()) {
             onExpire(client, key);
-            data.remove(key1);
+            data.delete(key1);
             return null;
         }
         return obj;
@@ -68,16 +74,17 @@ public class RedisDatabase implements RedisEngine.Db {
 
     @Override
     public RedisObject del(Client client, byte[] key) {
-        RedisObject remove = data.remove(new Key(key));
-        if (remove == null) {
+        NavMap.Node<RedisObject> node = data.delete(key);
+        if (node == null) {
             return null;
         }
-        if (remove.isExpire()) {
+        RedisObject ele = node.getValue();
+        if (ele.isExpire()) {
             onExpire(client, key);
             return null;
         }
         getDbManager().fireChangeEvent(client, new DbManager.KeyEvent(key, selfIndex(), DbManager.EventType.DEL));
-        return remove;
+        return ele;
     }
 
     @Override

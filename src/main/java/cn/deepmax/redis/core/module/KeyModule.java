@@ -1,9 +1,16 @@
 package cn.deepmax.redis.core.module;
 
-import cn.deepmax.redis.api.*;
+import cn.deepmax.redis.Constants;
+import cn.deepmax.redis.api.Client;
+import cn.deepmax.redis.api.DbManager;
+import cn.deepmax.redis.api.RedisEngine;
+import cn.deepmax.redis.api.RedisObject;
 import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.core.support.BaseModule;
+import cn.deepmax.redis.core.support.NavMap;
+import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
+import cn.deepmax.redis.utils.NumberUtils;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 
@@ -13,6 +20,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class KeyModule extends BaseModule {
 
@@ -27,6 +36,43 @@ public class KeyModule extends BaseModule {
         register(new Ttl());
         register(new Pttl());
         register(new Persist());
+        register(new Scan());
+    }
+
+    public static class Scan extends ArgsCommand.Two {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            Long cursor = msg.getAt(1).val();
+            Optional<String> pattern = ArgParser.parseArg(msg, 2, "match");
+            Long count = ArgParser.parseArg(msg, 2, "count").map(NumberUtils::parse)
+                    .orElse(10L);
+            Optional<String> type = ArgParser.parseArg(msg, 2, "type");
+            Object container = engine.getDb(client).getContainer();
+            if (container instanceof NavMap) {
+                return genericScan((NavMap<?>) container, true, cursor, count, pattern, type);
+            } else {
+                return Constants.ERR_IMPL_MISMATCH;
+            }
+        }
+    }
+
+    /**
+     * @param map
+     * @param globalMap 和type配合，false时，忽略type
+     * @param cursor
+     * @param count
+     * @param pattern
+     * @param type      globalMap=true时有效，对key忽略
+     * @return
+     */
+    static RedisMessage genericScan(NavMap<?> map, boolean globalMap, Long cursor, Long count, Optional<String> pattern, Optional<String> type) {
+        NavMap.ScanResult result = map.scan(cursor, count, pattern);
+        List<RedisMessage> keys = result.getKeyNames().stream().map(k -> FullBulkValueRedisMessage.ofString(k.getContent()))
+                .collect(Collectors.toList());
+        return ListRedisMessage.newBuilder()
+                .append(FullBulkValueRedisMessage.ofString(result.getNextCursor().toString()))
+                .append(new ListRedisMessage(keys))
+                .build();
     }
 
     private static class Del extends ArgsCommand.Two {

@@ -1,12 +1,14 @@
 package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.Constants;
-import cn.deepmax.redis.api.*;
+import cn.deepmax.redis.api.Client;
+import cn.deepmax.redis.api.DbManager;
+import cn.deepmax.redis.api.RedisEngine;
+import cn.deepmax.redis.api.RedisServerException;
 import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.core.support.BaseModule;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
-import cn.deepmax.redis.utils.NumberUtils;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
@@ -137,8 +139,8 @@ public class BitMapModule extends BaseModule {
             if (obj == null) {
                 return "0".equals(bit) ? Constants.INT_ZERO : Constants.INT_ONE_NEG;
             }
-            int start = msg.children().size() > 3 ? NumberUtils.parse(msg.getAt(3).str()).intValue() : 0;
-            int end = msg.children().size() > 4 ? NumberUtils.parse(msg.getAt(4).str()).intValue() : -1;
+            int start = msg.children().size() > 3 ? msg.getAt(3).val().intValue() : 0;
+            int end = msg.children().size() > 4 ? msg.getAt(4).val().intValue() : -1;
             boolean endGiven = msg.children().size() == 5;
             long v = obj.bitPos(start, end, Integer.parseInt(bit), endGiven);
             return new IntegerRedisMessage(v);

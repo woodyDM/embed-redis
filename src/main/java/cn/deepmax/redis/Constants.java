@@ -19,6 +19,7 @@ public class Constants {
     public static final ErrorRedisMessage ERR_NO_AUTH = of("NOAUTH Authentication required.");
     public static final ErrorRedisMessage ERR_TYPE = of("ERR Operation against a key holding the wrong kind of value");
     public static final ErrorRedisMessage ERR_SYNTAX = of("ERR syntax error");
+    public static final ErrorRedisMessage ERR_IMPL_MISMATCH = of("ERR Embed-redis internal type mismatch!");
     public static final ErrorRedisMessage ERR_NOT_SUPPORT = of("ERR redis 7.X command ,not support");
     public static final ErrorRedisMessage ERR_SYNTAX_NUMBER = of("ERR value is not an integer or out of range");
     public static final IntegerRedisMessage INT_ZERO = new IntegerRedisMessage(0);

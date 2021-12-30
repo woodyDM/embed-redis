@@ -4,13 +4,11 @@ import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.PubsubManager;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
-import cn.deepmax.redis.utils.RegexUtils;
 import io.netty.handler.codec.redis.FullBulkStringRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -60,7 +58,7 @@ public class DefaultPubsub implements PubsubManager {
 
     private class PatternPubSub extends BasePubsub {
 
-        private final Map<Key, Pattern> patternMap = new LinkedHashMap<>();
+        private final Map<Key, RPattern> patternMap = new LinkedHashMap<>();
 
         @Override
         protected String name() {
@@ -79,8 +77,8 @@ public class DefaultPubsub implements PubsubManager {
                 Key p = entry.getKey();
                 List<Client> chs = entry.getValue();
                 if (chs != null && !chs.isEmpty()) {
-                    Pattern pattern = patternMap.get(p);
-                    boolean match = pattern.matcher(channel.str()).find();
+                    RPattern pattern = patternMap.get(p);
+                    boolean match = pattern.matches(channel.str());
                     if (match) {
                         List<RedisMessage> msg = new ArrayList<>();
                         msg.add(FullBulkValueRedisMessage.ofString("pmessage"));
@@ -98,10 +96,7 @@ public class DefaultPubsub implements PubsubManager {
 
         @Override
         protected void postSub(Client client, Key channel) {
-            patternMap.computeIfAbsent(channel, c -> {
-                String regx = RegexUtils.toRegx(channel.str());
-                return Pattern.compile(regx);
-            });
+            patternMap.computeIfAbsent(channel, key -> RPattern.compile(channel.str()));
         }
     }
 

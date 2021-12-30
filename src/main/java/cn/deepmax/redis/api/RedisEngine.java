@@ -45,7 +45,9 @@ public interface RedisEngine extends Flushable {
     CommandManager commandManager();
 
     interface Db extends Flushable {
-
+        
+        Object getContainer();
+        
         DbManager getDbManager();
 
         int selfIndex();

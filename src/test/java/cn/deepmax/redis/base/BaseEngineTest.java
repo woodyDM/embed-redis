@@ -1,6 +1,9 @@
 package cn.deepmax.redis.base;
 
-import cn.deepmax.redis.api.*;
+import cn.deepmax.redis.api.Client;
+import cn.deepmax.redis.api.RedisConfiguration;
+import cn.deepmax.redis.api.RedisEngine;
+import cn.deepmax.redis.api.RedisEngineHolder;
 import cn.deepmax.redis.core.DefaultRedisEngine;
 import cn.deepmax.redis.core.NettyClient;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
@@ -33,7 +36,7 @@ public class BaseEngineTest extends BaseTest {
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         e = DefaultRedisEngine.defaultEngine();
         e.setTimeProvider(timeProvider);
         e.setConfiguration(new RedisConfiguration(6379, AUTH));
@@ -71,6 +74,18 @@ public class BaseEngineTest extends BaseTest {
         assertTrue(msg instanceof SimpleStringRedisMessage);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
         return client;
+    }
+
+    protected void del(String k) {
+        engine().execute(ListRedisMessage.ofString(String.format("del %s", k)), embeddedClient());
+    }
+
+    protected void set(String k, String v) {
+        engine().execute(ListRedisMessage.ofString(String.format("set %s %s", k, v)), embeddedClient());
+    }
+
+    protected void rpush(String k, String v) {
+        engine().execute(ListRedisMessage.ofString(String.format("rpush %s %s", k, v)), embeddedClient());
     }
 
 }

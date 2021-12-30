@@ -99,8 +99,8 @@ public class ListModule extends BaseModule {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
-            long start = NumberUtils.parse(msg.getAt(2).str());
-            long end = NumberUtils.parse(msg.getAt(3).str());
+            long start = msg.getAt(2).val();
+            long end = msg.getAt(3).val();
             RList list = get(key);
             if (list == null) {
                 return Constants.LIST_EMPTY;
@@ -150,7 +150,7 @@ public class ListModule extends BaseModule {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
-            long idx = NumberUtils.parse(msg.getAt(2).str());
+            long idx = msg.getAt(2).val();
             RList list = get(key);
             if (list == null) {
                 return FullBulkValueRedisMessage.NULL_INSTANCE;
@@ -169,7 +169,7 @@ public class ListModule extends BaseModule {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
-            long idx = NumberUtils.parse(msg.getAt(2).str());
+            long idx = msg.getAt(2).val();
             byte[] ele = msg.getAt(3).bytes();
             RList list = get(key);
             if (list == null) {
@@ -190,7 +190,7 @@ public class ListModule extends BaseModule {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
-            long count = NumberUtils.parse(msg.getAt(2).str());
+            long count = msg.getAt(2).val();
             byte[] ele = msg.getAt(3).bytes();
             RList list = get(key);
             if (list == null) {
@@ -213,8 +213,8 @@ public class ListModule extends BaseModule {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
-            long start = NumberUtils.parse(msg.getAt(2).str());
-            long stop = NumberUtils.parse(msg.getAt(3).str());
+            long start = msg.getAt(2).val();
+            long stop = msg.getAt(3).val();
             RList list = get(key);
             if (list == null) {
                 return OK;
@@ -362,7 +362,7 @@ public class ListModule extends BaseModule {
             Long count;
             boolean countFlag;
             if (msg.children().size() == 3) {
-                count = NumberUtils.parse(msg.getAt(2).str());
+                count = msg.getAt(2).val();
                 countFlag = true;
             } else {
                 count = 1L;
