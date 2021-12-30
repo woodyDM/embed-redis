@@ -1,7 +1,6 @@
 ## Commands
 ### List
-  
-|name|supported|desc|
+|name|supported|description|
 |-----|-----|-----|
 |LPOP|Y||
 |RPOP|Y||
@@ -10,21 +9,21 @@
 |LPUSHX|Y||
 |RPUSHX|Y||
 |LLEN|Y||
-|LPOS|||
-|LTRIM|||
-|LINDEX|||
-|LRANGE|||
+|LPOS|Y||
+|LTRIM|Y||
+|LINDEX|Y||
+|LRANGE|Y||
 |RPOPLPUSH|Y||
 |LMOVE|Y||
 |LMPOP|N||
-|LINSERT|||
-|LREM|||
-|LSET|||
+|LINSERT|Y||
+|LREM|Y||
+|LSET|Y||
 |BLPOP|Y||
 |BRPOP|Y||
-|BLMOVE|||
-|BRPOPLPUSH|||
-|BLMPOP|N||
+|BLMOVE|Y|redis 7.x|
+|BRPOPLPUSH|Y||
+|BLMPOP|N|redis 7.x|
 
 
 ## TODO

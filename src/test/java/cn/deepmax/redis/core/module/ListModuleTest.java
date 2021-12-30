@@ -8,8 +8,11 @@ import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.utils.Tuple;
 import io.netty.handler.codec.redis.RedisMessage;
 import org.junit.Test;
+import org.springframework.data.redis.connection.RedisListCommands;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 
+import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -387,6 +390,304 @@ public class ListModuleTest extends BaseTemplateTest {
         assertThat(e2.events.size(), is(0));
     }
 
+    @Test
+    public void shouldBLMoveWithValueAdd() {
+        ScheduledFuture<?> future = scheduler.schedule(() -> {
+            engine.execute(ListRedisMessage.newBuilder()
+                    .append(FullBulkValueRedisMessage.ofString("lpush"))
+                    .append(FullBulkValueRedisMessage.ofString("n"))
+                    .append(FullBulkValueRedisMessage.ofString(serialize("001")))
+                    .append(FullBulkValueRedisMessage.ofString(serialize("002"))).build(), embeddedClient());
+        }, 500, TimeUnit.MILLISECONDS);
+
+        Tuple<Long, Object> b = block(() -> l().rightPopAndLeftPush("n", "des", 1, TimeUnit.SECONDS));
+
+        assertEquals(b.b, "001");
+        assertTrue(b.a > 490);  //cost at least 500mills
+        assertTrue(b.a < 700);  //cost no more than 1S
+        assertThat(engine.getDbManager().listenerSize(), is(0));
+        assertThat(l().rightPop("des"), equalTo("001"));
+        assertThat(l().size("des"), is(0L));
+
+        future.cancel(true);
+    }
+
+    @Test
+    public void shouldLposNil() {
+        if (isRedisson()) {
+            return;
+        }
+        Object obj = t().execute((RedisCallback<Object>) con -> con.lPos(bytes("nil"), bytes("em")));
+
+        assertNull(obj);
+    }
+
+    @Test
+    public void shouldLposNormal() {
+        if (isRedisson()) {
+            return;
+        }
+        l().rightPushAll("key", "a", "b", "c", "1", "c", "b");
+        Object obj = t().execute((RedisCallback<Object>) con -> con.listCommands().lPos(bytes("key"), serialize("c")));
+
+        assertEquals(obj, 2L);
+    }
+
+    @Test
+    public void shouldLposAllArg() {
+        if (isRedisson()) {
+            return;
+        }
+        l().rightPushAll("key", "a", "b", "c", "1", "c", "b");
+        List<Long> obj = (List<Long>) t().execute((RedisCallback<Object>) con -> con.listCommands().lPos(bytes("key"), serialize("c"),
+                -1, 2));
+
+        assertEquals(obj.size(), 2);
+        assertEquals(obj.get(0).longValue(), 4L);
+        assertEquals(obj.get(1).longValue(), 2L);
+    }
+
+    @Test
+    public void shouldLposAllArgInteger() {
+        if (isRedisson()) {
+            return;
+        }
+        l().rightPushAll("key", "a", "b", "c", "1", "c", "b");
+        Object obj = t().execute((RedisCallback<Object>) con -> con.listCommands().lPos(bytes("key"), serialize("c")));
+
+        assertEquals(obj, 2L);
+    }
+
+    @Test
+    public void shouldLposAllArgNil() {
+        if (isRedisson()) {
+            return;
+        }
+        l().rightPushAll("key", "a", "b", "c", "1", "c", "b");
+        Object obj = t().execute((RedisCallback<Object>) con -> con.listCommands().lPos(bytes("key"), serialize("x")));
+
+        assertNull(obj);
+    }
+
+    @Test
+    public void shouldLposAllArgEmptyArray() {
+        if (isRedisson()) {
+            return;
+        }
+        l().rightPushAll("key", "a", "b", "c", "1", "c", "b");
+        List<Long> obj = (List<Long>) t().execute((RedisCallback<Object>) con -> con.listCommands().lPos(bytes("key"), serialize("c"),
+                3, 2));
+
+        assertEquals(obj.size(), 0);
+    }
+
+    @Test
+    public void shouldLRangeNil() {
+        List<Object> o = l().range("nil", 0, 0);
+        assertEquals(o.size(), 0);
+    }
+
+    @Test
+    public void shouldLRangeNormal() {
+        l().rightPushAll("key", "a", "b", "c", "d", "e");
+
+        List<Object> list = l().range("key", 2, -1);
+
+        assertEquals(list.size(), 3);
+        assertEquals(list.get(0), "c");
+        assertEquals(list.get(1), "d");
+        assertEquals(list.get(2), "e");
+    }
+
+    @Test
+    public void shouldLRangeNormal2() {
+        l().rightPushAll("key", "a", "b", "c", "d", "e");
+
+        List<Object> list = l().range("key", 20, 5);
+
+        assertEquals(list.size(), 0);
+    }
+
+    @Test
+    public void shouldLInsert() {
+        l().rightPushAll("key", "a", "b", "c", "d", "e");
+
+        ExpectedEvents events = listen("key");
+        Long v = t().execute((RedisCallback<Long>) con -> con.lInsert(bytes("key"), RedisListCommands.Position.AFTER,
+                serialize("c"), serialize("X")));
+        if (!isRedisson()) {
+            //call: lpos
+            assertEquals(l().indexOf("key", "X").longValue(), 3L);
+        }
+        assertEquals(v.longValue(), 6L);
+        assertEquals(events.triggerTimes, 1);
+    }
+
+    @Test
+    public void shouldLInsertNoPivot() {
+        l().rightPushAll("key", "a", "b", "c", "d", "e");
+
+        ExpectedEvents events = listen("key");
+        Long v = t().execute((RedisCallback<Long>) con -> con.lInsert(bytes("key"), RedisListCommands.Position.AFTER,
+                serialize("NOT_EXIST"), serialize("X")));
+        if (!isRedisson()) {
+            //call: lpos
+            assertNull(l().indexOf("key", "NOT_EXIST"));
+        }
+        assertEquals(v.longValue(), -1L);
+        assertEquals(events.triggerTimes, 0);
+    }
+
+    @Test
+    public void shouldLIndex() {
+        l().rightPushAll("key", "a", "b", "c", "d", "e");
+
+        Object obj;
+        obj = l().index("key", 2);
+        assertEquals(obj, "c");
+
+        obj = l().index("key", -1);
+        assertEquals(obj, "e");
+
+        obj = l().index("key", -10);
+        assertNull(obj);
+
+        obj = l().index("nil", 0);
+        assertNull(obj);
+    }
+
+    @Test
+    public void shouldLSet() {
+        l().rightPushAll("key", "a", "b", "c", "d", "e");
+
+        ExpectedEvents events = listen("key");
+
+        l().set("key", 2, "X");
+        List<Object> k = l().range("key", 2, 2);
+        assertEquals(k.get(0), "X");
+        assertEquals(events.triggerTimes, 1);
+    }
+
+    @Test
+    public void shouldLSetOutOfRange() {
+        l().rightPushAll("key", "a", "b", "c", "d", "e");
+
+        ExpectedEvents events = listen("key");
+        try {
+            l().set("key", 20, "X");
+        } catch (Exception e) {
+            assertTrue(e.getCause().getMessage().contains("ERR index out of range"));
+        }
+        assertEquals(events.triggerTimes, 0);
+    }
+
+    @Test
+    public void shouldLRem() {
+        l().rightPushAll("key", "a", "b", "1", "b", "e");
+
+        ExpectedEvents events = listen("key");
+        Long v = l().remove("key", 2, "b");
+
+        List<Object> values = l().range("key", 0, -1);
+        assertEquals(v.longValue(), 2L);
+        assertEquals(events.triggerTimes, 1);
+        assertEquals(values.size(), 3);
+        assertEquals(values.get(0), "a");
+        assertEquals(values.get(1), "1");
+        assertEquals(values.get(2), "e");
+    }
+
+    @Test
+    public void shouldLRemNotExist() {
+        l().rightPushAll("key", "a", "b", "1", "b", "e");
+
+        ExpectedEvents events = listen("key");
+        Long v = l().remove("key", 2, "X");
+
+        List<Object> values = l().range("key", 0, -1);
+        assertEquals(v.longValue(), 0L);
+        assertEquals(events.triggerTimes, 0);
+        assertEquals(values.size(), 5);
+    }
+
+    @Test
+    public void shouldLRem2() {
+        l().rightPushAll("key", "a", "b", "1", "b", "e");
+
+        ExpectedEvents events = listen("key");
+        Long v = l().remove("key", -1, "b");
+
+        List<Object> values = l().range("key", 0, -1);
+        assertEquals(v.longValue(), 1L);
+        assertEquals(events.triggerTimes, 1);
+        assertEquals(values.size(), 4);
+        assertEquals(values.get(0), "a");
+        assertEquals(values.get(1), "b");
+        assertEquals(values.get(2), "1");
+        assertEquals(values.get(3), "e");
+    }
+
+    @Test
+    public void shouldLRemDel() {
+        l().rightPushAll("key", "b", "b", "b", "b");
+
+        ExpectedEvents events = listen("key");
+        Long v = l().remove("key", 10, "b");
+
+        assertEquals(v.longValue(), 4L);
+        assertNull(engine.getDb(embeddedClient()).get(embeddedClient(), bytes("key")));
+        assertEquals(events.triggerTimes, 1);
+        assertEquals(events.events.get(0).type, DbManager.EventType.DEL);
+    }
+
+    @Test
+    public void shouldLTrimNormal() {
+        l().rightPushAll("key", "a", "b", "c", "d");
+
+        ExpectedEvents events = listen("key");
+        l().trim("key", 1, -2);
+
+        List<Object> obj = l().range("key", 0, -1);
+        assertEquals(obj.size(), 2);
+        assertEquals(obj.get(0), "b");
+        assertEquals(obj.get(1), "c");
+        assertEquals(events.triggerTimes, 1);
+        assertEquals(events.events.get(0).type, DbManager.EventType.UPDATE);
+    }
+
+    @Test
+    public void shouldLTrimDel() {
+        l().rightPushAll("key", "a", "b", "c", "d");
+
+        ExpectedEvents events = listen("key");
+        l().trim("key", 3, -2);
+
+        assertNull(engine.getDb(embeddedClient()).get(embeddedClient(), bytes("key")));
+        assertEquals(events.triggerTimes, 1);
+        assertEquals(events.events.get(0).type, DbManager.EventType.DEL);
+    }
+
+    @Test
+    public void shouldLTrimFireEvents() {
+        l().rightPushAll("key", "a", "b", "c", "d");
+        ExpectedEvents events = listen("key");
+        l().trim("key", 0, -1);
+
+        List<Object> obj = l().range("key", 0, -1);
+        assertEquals(obj.size(), 4);
+        assertEquals(events.triggerTimes, 1);
+        assertEquals(events.events.get(0).type, DbManager.EventType.UPDATE);
+    }
+
+    @Test
+    public void shouldLTrimNil() {
+
+        ExpectedEvents events = listen("key");
+        l().trim("key", 0, -1);
+
+        assertNull(engine.getDb(embeddedClient()).get(embeddedClient(), bytes("key")));
+        assertEquals(events.triggerTimes, 0);
+    }
 
     private <T> Tuple<Long, T> block(Supplier<T> action) {
         long start = System.nanoTime();

@@ -216,4 +216,8 @@ public abstract class BaseTemplateTest extends BaseTest {
     protected Long bitCount(byte[] key) {
         return t().execute((RedisCallback<Long>) cn -> cn.bitCount(key, 0, -1L));
     }
+
+    protected boolean isRedisson() {
+        return t().getConnectionFactory().getClass().getName().toLowerCase().contains("redisson");
+    }
 }

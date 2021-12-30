@@ -35,7 +35,7 @@ public class BlockTask {
         this.fail = fail;
     }
 
-    public void register() {
+    public void block() {
         DbManager.KeyEventListener outListener = (modified, listener) -> {
             Optional<RedisMessage> redisMessage = success.get();
             if (redisMessage.isPresent()) {

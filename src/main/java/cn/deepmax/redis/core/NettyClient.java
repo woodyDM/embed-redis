@@ -78,11 +78,18 @@ public class NettyClient implements Client {
         int v = value ? (flag | f) : (flag & (~f));
         channel.attr(ATT_FLAG).set(v);
     }
-    
+
     private int getFlag() {
         Attribute<Integer> attr = channel.attr(ATT_FLAG);
         attr.setIfAbsent(0);
         return attr.get();
     }
 
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer("NettyClient{");
+        sb.append("channel=").append(channel);
+        sb.append('}');
+        return sb.toString();
+    }
 }

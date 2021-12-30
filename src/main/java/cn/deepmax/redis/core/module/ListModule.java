@@ -11,11 +11,13 @@ import cn.deepmax.redis.core.support.BaseModule;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.utils.NumberUtils;
+import cn.deepmax.redis.utils.Tuple;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.FullBulkStringRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -38,12 +40,193 @@ public class ListModule extends BaseModule {
         register(new RPop());
         register(new RPopLPush());
         register(new LLen());
-        register(new LMove());
+        LMove lmove = new LMove();
+        register(lmove);
+        register(new BLMove(lmove));
         register(new LMPop());
+        register(new LPos());
+        register(new LRange());
+        register(new LInsert());
+        register(new LIndex());
+        register(new LSet());
+        register(new LRem());
+        register(new LTrim());
         //blocking op
         register(new BLPop());
         register(new BRPop());
         register(new BLMPop());
+        register(new BRPopLPush());
+
+    }
+
+    public static class LPos extends ArgsCommand<RList> {
+        public LPos() {
+            super(3, 5, 7, 9);
+        }
+
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            byte[] ele = msg.getAt(2).bytes();
+            //param check
+            Optional<Long> rank = ArgParser.parseLongArg(msg, "rank");
+            if (rank.isPresent() && rank.get() == 0) {
+                return new ErrorRedisMessage("ERR RANK can't be zero: use 1 to start from the first match, 2 from the second, ...");
+            }
+            Optional<Long> count = ArgParser.parseLongArg(msg, "count");
+            Optional<Long> maxlen = ArgParser.parseLongArg(msg, "maxlen");
+            RList list = get(key);
+            if (list == null) {
+                return FullBulkValueRedisMessage.NULL_INSTANCE;
+            }
+            List<Integer> pos = list.lpos(ele, rank, count, maxlen);
+            if (!count.isPresent()) {
+                if (pos.isEmpty()) {
+                    return FullBulkValueRedisMessage.NULL_INSTANCE;
+                } else {
+                    return new IntegerRedisMessage(pos.get(0));
+                }
+            } else {
+                List<RedisMessage> msgList = pos.stream()
+                        .map(IntegerRedisMessage::new)
+                        .collect(Collectors.toList());
+                return new ListRedisMessage(msgList);
+            }
+        }
+    }
+
+    public static class LRange extends ArgsCommand.FourExWith<RList> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            long start = NumberUtils.parse(msg.getAt(2).str());
+            long end = NumberUtils.parse(msg.getAt(3).str());
+            RList list = get(key);
+            if (list == null) {
+                return Constants.LIST_EMPTY;
+            }
+            List<Key> values = list.lrange((int) start, (int) end);
+            List<RedisMessage> r = values.stream().map(k -> FullBulkValueRedisMessage.ofString(k.getContent()))
+                    .collect(Collectors.toList());
+            return new ListRedisMessage(r);
+        }
+    }
+
+    public static class LInsert extends ArgsCommand<RList> {
+        static final String BEFORE = "before";
+        static final String AFTER = "after";
+
+        public LInsert() {
+            super(5, true);
+        }
+
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            String p = msg.getAt(2).str().toLowerCase();
+            int offset;
+            if (BEFORE.equals(p)) {
+                offset = 0;
+            } else if (AFTER.equals(p)) {
+                offset = 1;
+            } else {
+                return Constants.ERR_SYNTAX;
+            }
+            RList list = get(key);
+            if (list == null) {
+                return Constants.INT_ZERO;
+            }
+            byte[] pivot = msg.getAt(3).bytes();
+            byte[] ele = msg.getAt(4).bytes();
+            int num = list.insert(pivot, ele, offset);
+            if (num != -1) {
+                engine.fireChangeEvent(client, key, DbManager.EventType.UPDATE);
+            }
+            return new IntegerRedisMessage(num);
+        }
+    }
+
+    public static class LIndex extends ArgsCommand.ThreeExWith<RList> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            long idx = NumberUtils.parse(msg.getAt(2).str());
+            RList list = get(key);
+            if (list == null) {
+                return FullBulkValueRedisMessage.NULL_INSTANCE;
+            }
+            Key v = list.valueAt((int) idx);
+            if (v == null) {
+                return FullBulkValueRedisMessage.NULL_INSTANCE;
+            } else {
+                return FullBulkValueRedisMessage.ofString(v.getContent());
+            }
+        }
+    }
+
+    public static class LSet extends ArgsCommand.FourExWith<RList> {
+
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            long idx = NumberUtils.parse(msg.getAt(2).str());
+            byte[] ele = msg.getAt(3).bytes();
+            RList list = get(key);
+            if (list == null) {
+                return new ErrorRedisMessage("ERR no such key");
+            }
+            int effected = list.lset((int) idx, ele);
+            if (effected == -1) {
+                return new ErrorRedisMessage("ERR index out of range");
+            } else {
+                engine.fireChangeEvent(client, key, DbManager.EventType.UPDATE);
+                return OK;
+            }
+        }
+    }
+
+    public static class LRem extends ArgsCommand.FourExWith<RList> {
+
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            long count = NumberUtils.parse(msg.getAt(2).str());
+            byte[] ele = msg.getAt(3).bytes();
+            RList list = get(key);
+            if (list == null) {
+                return Constants.INT_ZERO;
+            }
+            int removed = list.remove(ele, (int) count);
+            if (removed != 0) {
+                if (list.size() == 0) {
+                    engine.getDb(client).del(client, key);
+                } else {
+                    engine.fireChangeEvent(client, key, DbManager.EventType.UPDATE);
+                }
+            }
+            return new IntegerRedisMessage(removed);
+        }
+    }
+
+    public static class LTrim extends ArgsCommand.FourExWith<RList> {
+
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            long start = NumberUtils.parse(msg.getAt(2).str());
+            long stop = NumberUtils.parse(msg.getAt(3).str());
+            RList list = get(key);
+            if (list == null) {
+                return OK;
+            }
+            list.trim((int) start, (int) stop);
+            if (list.size() == 0) {
+                engine.getDb(client).del(client, key);
+            } else {
+                engine.fireChangeEvent(client, key, DbManager.EventType.UPDATE);
+            }
+            return OK;
+        }
     }
 
     public static class LMPop extends ArgsCommand.FourWith<RList> {
@@ -239,7 +422,7 @@ public class ListModule extends BaseModule {
             }
             new BlockTask(client, keys, timeout, engine,
                     () -> tryLPop(keys, client),
-                    () -> FullBulkStringRedisMessage.NULL_INSTANCE).register();
+                    () -> FullBulkStringRedisMessage.NULL_INSTANCE).block();
             return null;
         }
 
@@ -268,10 +451,36 @@ public class ListModule extends BaseModule {
         }
     }
 
+    public static class BRPopLPush extends BasePopPush {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] sourceKey = msg.getAt(1).bytes();
+            byte[] destKey = msg.getAt(2).bytes();
+            Optional<RedisMessage> fetch = doResponseO(client, engine, RList::rPop, RList::lpush, sourceKey, destKey);
+            if (fetch.isPresent()) {
+                return fetch.get();
+            }
+
+            Long timeout = NumberUtils.parseTimeout(msg.getAt(3).str());
+            new BlockTask(client, Collections.singletonList(new Key(sourceKey)), timeout, engine,
+                    () -> doResponseO(client, engine, RList::rPop, RList::lpush, sourceKey, destKey),
+                    () -> FullBulkValueRedisMessage.NULL_INSTANCE).block();
+            return null;
+        }
+
+        @Override
+        public Optional<ErrorRedisMessage> preCheckLength(RedisMessage type) {
+            return exactCheckLength(type, 4);
+        }
+    }
+
     public static class RPopLPush extends BasePopPush {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
-            return doResponse(msg, client, engine, RList::rPop, RList::lpush);
+            byte[] source = msg.getAt(1).bytes();
+            byte[] dest = msg.getAt(2).bytes();
+            return doResponseO(client, engine, RList::rPop, RList::lpush, source, dest)
+                    .orElse(FullBulkValueRedisMessage.NULL_INSTANCE);
         }
 
         @Override
@@ -280,34 +489,53 @@ public class ListModule extends BaseModule {
         }
     }
 
+    public static class BLMove extends BasePopPush {
+        final LMove lMove;
+
+        BLMove(LMove lMove) {
+            this.lMove = lMove;
+        }
+
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            if (client.queued()) {
+                return lMove.doResponse(msg, client, engine);
+            }
+            byte[] source = msg.getAt(1).bytes();
+            byte[] destKey = msg.getAt(2).bytes();
+            String sourceA = parse(msg, 3);
+            String descA = parse(msg, 4);
+            Tuple<Function<RList, Key>, BiConsumer<RList, Key>> t = toAction(sourceA, descA);
+            //first try
+            Optional<RedisMessage> fetched = doResponseO(client, engine, t.a, t.b, source, destKey);
+            if (fetched.isPresent()) {
+                return fetched.get();
+            }
+            //block to get 
+            Long timeout = NumberUtils.parseTimeout(msg.getAt(5).str());
+            new BlockTask(client, Collections.singletonList(new Key(source)), timeout, engine,
+                    () -> doResponseO(client, engine, t.a, t.b, msg.getAt(1).bytes(), destKey),
+                    () -> FullBulkValueRedisMessage.NULL_INSTANCE).block();
+            return null;
+        }
+
+        @Override
+        protected Optional<ErrorRedisMessage> exactCheckLength(RedisMessage type, int size) {
+            return exactCheckLength(type, 6);
+        }
+    }
+
     public static class LMove extends BasePopPush {
-        static String L = "left";
-        static String R = "right";
 
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             String sourceA = parse(msg, 3);
             String descA = parse(msg, 4);
-            if (L.equals(sourceA) && L.equals(descA)) {
-                return doResponse(msg, client, engine, RList::lPop, RList::lpush);
-            } else if (R.equals(sourceA) && R.equals(descA)) {
-                return doResponse(msg, client, engine, RList::rPop, RList::rpush);
-            } else if (L.equals(sourceA) && R.equals(descA)) {
-                return doResponse(msg, client, engine, RList::lPop, RList::rpush);
-            } else if (R.equals(sourceA) && L.equals(descA)) {
-                return doResponse(msg, client, engine, RList::rPop, RList::lpush);
-            } else {
-                return Constants.ERR_SYNTAX;
-            }
-        }
-
-        private String parse(ListRedisMessage msg, int index) {
-            String sourceA = msg.getAt(index).str().toLowerCase();
-            if (L.equals(sourceA) || R.equals(sourceA)) {
-                return sourceA;
-            } else {
-                throw new RedisServerException(Constants.ERR_SYNTAX);
-            }
+            Tuple<Function<RList, Key>, BiConsumer<RList, Key>> t = toAction(sourceA, descA);
+            byte[] source = msg.getAt(1).bytes();
+            byte[] dest = msg.getAt(2).bytes();
+            return doResponseO(client, engine, t.a, t.b, source, dest)
+                    .orElse(FullBulkValueRedisMessage.NULL_INSTANCE);
         }
 
         @Override
@@ -317,33 +545,56 @@ public class ListModule extends BaseModule {
     }
 
     abstract static class BasePopPush extends ArgsCommand.ThreeWith<RList> {
-        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine, Function<RList, Key> sourceAction,
-                                          BiConsumer<RList, Key> destAction) {
-            byte[] sourceKey = msg.getAt(1).bytes();
-            RList source = get(sourceKey);
-            byte[] destKey = msg.getAt(2).bytes();
-            RList dest = get(destKey);
+        static String L = "left";
+        static String R = "right";
+
+        protected Tuple<Function<RList, Key>, BiConsumer<RList, Key>> toAction(String sourceA, String descA) {
+            if (L.equals(sourceA) && L.equals(descA)) {
+                return new Tuple<>(RList::lPop, RList::lpush);
+            } else if (R.equals(sourceA) && R.equals(descA)) {
+                return new Tuple<>(RList::rPop, RList::rpush);
+            } else if (L.equals(sourceA) && R.equals(descA)) {
+                return new Tuple<>(RList::lPop, RList::rpush);
+            } else if (R.equals(sourceA) && L.equals(descA)) {
+                return new Tuple<>(RList::rPop, RList::lpush);
+            } else {
+                throw new IllegalStateException("invalid " + sourceA + " " + descA);
+            }
+        }
+
+        protected String parse(ListRedisMessage msg, int index) {
+            String sourceA = msg.getAt(index).str().toLowerCase();
+            if (L.equals(sourceA) || R.equals(sourceA)) {
+                return sourceA;
+            } else {
+                throw new RedisServerException(Constants.ERR_SYNTAX);
+            }
+        }
+
+        protected Optional<RedisMessage> doResponseO(Client client, RedisEngine engine, Function<RList, Key> sourceAction,
+                                                     BiConsumer<RList, Key> destAction, byte[] sourceBytes, byte[] destBytes) {
+            RList source = get(sourceBytes);
+            RList dest = get(destBytes);
             if (source == null) {
-                return FullBulkValueRedisMessage.NULL_INSTANCE;
+                return Optional.empty();
             }
             Key value = sourceAction.apply(source);
             if (source.size() == 0) {
-                engine.getDb(client).del(client, sourceKey);
+                engine.getDb(client).del(client, sourceBytes);
             } else {
-                engine.fireChangeEvent(client, sourceKey, DbManager.EventType.UPDATE);
+                engine.fireChangeEvent(client, sourceBytes, DbManager.EventType.UPDATE);
             }
             if (dest == null) {
                 dest = new RList(engine.timeProvider());
-                engine.getDb(client).set(client, destKey, dest);
+                engine.getDb(client).set(client, destBytes, dest);
                 destAction.accept(dest, value);
             } else {
                 destAction.accept(dest, value);
-                engine.fireChangeEvent(client, destKey, DbManager.EventType.UPDATE);
+                engine.fireChangeEvent(client, destBytes, DbManager.EventType.UPDATE);
             }
-            return FullBulkValueRedisMessage.ofString(value.getContent());
+            return Optional.of(FullBulkValueRedisMessage.ofString(value.getContent()));
         }
     }
-
 
 }
 

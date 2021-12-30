@@ -3,10 +3,13 @@ package cn.deepmax.redis;
 
 import cn.deepmax.redis.api.RedisServerException;
 import cn.deepmax.redis.core.RedisCommand;
+import cn.deepmax.redis.resp3.ListRedisMessage;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.SimpleStringRedisMessage;
 import lombok.NonNull;
+
+import java.util.Collections;
 
 /**
  * @author wudi
@@ -21,7 +24,8 @@ public class Constants {
     public static final IntegerRedisMessage INT_ZERO = new IntegerRedisMessage(0);
     public static final IntegerRedisMessage INT_ONE_NEG = new IntegerRedisMessage(-1);
     public static final IntegerRedisMessage INT_ONE = new IntegerRedisMessage(1);
-
+    public static final ListRedisMessage LIST_EMPTY = new ListRedisMessage(Collections.emptyList());
+    
     public static final RedisCommand UNKNOWN_COMMAND = ((type, ctx, engine) -> new ErrorRedisMessage("Embed-redis does not support this command"));
 
     public static final SimpleStringRedisMessage QUEUED = new SimpleStringRedisMessage("QUEUED");

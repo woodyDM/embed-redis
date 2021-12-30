@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 public class StringModule extends BaseModule {
     static final int FLAG_EMPTY = 0;
-    static final int FLAG_NX = 1 << 0;
+    static final int FLAG_NX = 1;
     static final int FLAG_XX = 1 << 1;
     static final int FLAG_KEEPTTL = 1 << 4;
 
@@ -153,19 +153,7 @@ public class StringModule extends BaseModule {
         }
 
         Optional<Long> parseExpire(ListRedisMessage msg, String ex) {
-            int len = msg.children().size();
-            for (int i = 3; i < len; i++) {
-                String key = msg.getAt(i).str();
-                if (ex.toLowerCase().equals(key.toLowerCase())) {
-                    if (i + 1 < len) {
-                        Long v = msg.getAt(i + 1).val();
-                        return Optional.of(v);
-                    } else {
-                        throw new RedisServerException(Constants.ERR_SYNTAX);
-                    }
-                }
-            }
-            return Optional.empty();
+            return ArgParser.parseLongArg(msg, ex);
         }
 
         boolean parseFlag(ListRedisMessage msg, String ex) {

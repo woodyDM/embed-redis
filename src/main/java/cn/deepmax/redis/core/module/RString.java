@@ -2,6 +2,7 @@ package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.api.RedisServerException;
 import cn.deepmax.redis.api.TimeProvider;
+import cn.deepmax.redis.core.Sized;
 import cn.deepmax.redis.core.support.AbstractRedisObject;
 
 import java.nio.charset.StandardCharsets;
@@ -12,7 +13,7 @@ import java.util.stream.Collectors;
 /**
  * @author wudi
  */
-class RString extends AbstractRedisObject {
+class RString extends AbstractRedisObject implements Sized {
     /**
      * byte is 8-bit
      */
@@ -35,6 +36,11 @@ class RString extends AbstractRedisObject {
         byte[] c = new byte[s.length + offset];
         System.arraycopy(s, 0, c, offset, s.length);
         return new RString(timeProvider, c);
+    }
+
+    @Override
+    public long size() {
+        return s.length;
     }
 
     /**
@@ -184,21 +190,6 @@ class RString extends AbstractRedisObject {
             total += _bitCount(b);
         }
         return total;
-    }
-
-    private int tranStart(int start) {
-        int len = s.length;
-        if (start < 0) start = len + start;
-        if (start < 0) start = 0;
-        return start;
-    }
-
-    private int tranEnd(int end) {
-        int len = s.length;
-        if (end < 0) end = len + end;
-        if (end < 0) end = 0;
-        if (end >= len) end = len - 1;
-        return end;
     }
 
     public long _bitCount(int b) {
