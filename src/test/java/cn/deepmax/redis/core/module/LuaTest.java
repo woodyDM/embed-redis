@@ -1,8 +1,6 @@
 package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.base.BaseTemplateTest;
-import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
-import cn.deepmax.redis.resp3.ListRedisMessage;
 import org.junit.Test;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -33,18 +31,12 @@ public class LuaTest extends BaseTemplateTest {
 
     @Test
     public void shouldExec2() {
-        //first load script to avoid redisson eval bug. 
-        //@see https://github.com/redisson/redisson/pull/4032
-        ExpectedEvents events = listen("key1");
         String sc = " redis.call('set', KEYS[1], ARGV[1]) ;" +
                 " redis.call('lpush', KEYS[2], ARGV[2]) ; " +
                 " local v = redis.call('get',KEYS[1]);" +
                 " return v; ";
-        engine().execute(ListRedisMessage.newBuilder()
-                .append("script")
-                .append("load")
-                .append(FullBulkValueRedisMessage.ofString(sc)).build(), embeddedClient());
 
+        ExpectedEvents events = listen("key1");
         DefaultRedisScript<String> redisScript = new DefaultRedisScript<>(sc, String.class);
         String execute = t().execute(redisScript, Arrays.asList("key1", "key2"), "myName你👌", "list_value");
 
@@ -57,14 +49,7 @@ public class LuaTest extends BaseTemplateTest {
 
     @Test
     public void shouldEvalsha() {
-        //first load script to avoid redisson codec error.
         String script = "return ARGV[1];";
-        engine().execute(ListRedisMessage.newBuilder()
-                .append(FullBulkValueRedisMessage.ofString("script"))
-                .append(FullBulkValueRedisMessage.ofString("load"))
-                .append(FullBulkValueRedisMessage.ofString(script)).build(), embeddedClient());
-
-
         RedisTemplate<String, Object> redisTemplate = t();
         DefaultRedisScript<byte[]> redisScript = new DefaultRedisScript<>(script, byte[].class);
         byte[] results = redisTemplate.execute(redisScript, Collections.singletonList("any"), new byte[]{5, 11, 2, 3});

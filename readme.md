@@ -71,7 +71,7 @@
 -[ ] cluster support.  
 -[ ] scans.     
 -[ ] Upgrade redisson 3.16.7.   
- 
+-[ ] Fix lpos 
 
   
 
