@@ -22,10 +22,7 @@ import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
-import org.springframework.data.redis.core.ListOperations;
-import org.springframework.data.redis.core.RedisCallback;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.serializer.JdkSerializationRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
@@ -177,6 +174,10 @@ public abstract class BaseTemplateTest extends BaseTest {
         return redisTemplate.opsForList();
     }
 
+    protected ZSetOperations<String,Object> z(){
+        return redisTemplate.opsForZSet();
+    }
+    
     static class Client {
         RedisTemplate<String, Object> t;
         RedisConnectionFactory factory;
@@ -219,5 +220,9 @@ public abstract class BaseTemplateTest extends BaseTest {
 
     protected boolean isRedisson() {
         return t().getConnectionFactory().getClass().getName().toLowerCase().contains("redisson");
+    }
+
+    protected boolean isJedis() {
+        return t().getConnectionFactory().getClass().getName().toLowerCase().contains("jedis");
     }
 }

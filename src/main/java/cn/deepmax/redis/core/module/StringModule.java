@@ -157,14 +157,7 @@ public class StringModule extends BaseModule {
         }
 
         boolean parseFlag(ListRedisMessage msg, String ex) {
-            int len = msg.children().size();
-            for (int i = 3; i < len; i++) {
-                String key = msg.getAt(i).str();
-                if (ex.toLowerCase().equals(key.toLowerCase())) {
-                    return true;
-                }
-            }
-            return false;
+            return ArgParser.parseFlag(msg, ex);
         }
     }
 

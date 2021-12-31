@@ -32,6 +32,35 @@ public class NumberUtils {
         return parseDoubleO(s).orElseThrow(() -> new RedisServerException("ERR value is not a valid float"));
     }
 
+    public static Range<Double> parseScoreRange(String min, String max) {
+        min = min.toLowerCase();
+        max = max.toLowerCase();
+        Range<Double> r = new Range<>();
+        if (min.startsWith("(")) {
+            r.startOpen = true;
+            min = min.substring(1);
+        }
+        if (max.startsWith("(")) {
+            r.endOpen = true;
+            max = max.substring(1);
+        }
+        r.start = parseDoubleWithInf(min);
+        r.end = parseDoubleWithInf(max);
+        return r;
+    }
+
+    private static Double parseDoubleWithInf(String s) {
+        if (s.equals("inf") || s.equals("+inf")) {
+            return Double.POSITIVE_INFINITY;
+        } else if (s.equals("-inf")) {
+            return Double.NEGATIVE_INFINITY;
+        } else {
+            return parseDoubleO(s)
+                    .filter(d -> !d.isNaN())
+                    .orElseThrow(() -> new RedisServerException("min or max is not a float"));
+        }
+    }
+
     public static String formatDouble(Double d) {
         NumberFormat nf = NumberFormat.getInstance();
         nf.setGroupingUsed(false);

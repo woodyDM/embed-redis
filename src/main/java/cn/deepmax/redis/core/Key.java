@@ -2,12 +2,13 @@ package cn.deepmax.redis.core;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Comparator;
 
 /**
  * @author wudi
  * @date 2021/5/10
  */
-public class Key {
+public class Key implements Comparable<Key> {
     private final byte[] content;
 
     public Key(byte[] content) {
@@ -22,6 +23,11 @@ public class Key {
         return content;
     }
 
+    @Override
+    public int compareTo(Key o) {
+        //todo binary byte compare
+        return Comparator.comparing(Key::str).compare(this, o);
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -42,4 +48,5 @@ public class Key {
         sb.append(new String(content, StandardCharsets.UTF_8)).append("]");
         return sb.toString();
     }
+
 }

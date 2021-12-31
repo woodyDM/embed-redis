@@ -55,7 +55,7 @@
 |ZREMRANGEBYLEX|||
 |ZREMRANGEBYRANK|||
 |ZREMRANGEBYSCORE|||
-|ZREVRANGE|||
+|ZREVRANGE|Y||
 |ZREVRANGEBYLEX|||
 |ZREVRANGEBYSCORE|||
 |ZREVRANK|||
@@ -69,7 +69,9 @@
 -[ ] Script error handle.  
 -[ ] redis 7.x support.  
 -[ ] cluster support.  
--[ ] scans.      
+-[ ] scans.     
+-[ ] Upgrade redisson 3.16.7.   
+ 
 
   
 

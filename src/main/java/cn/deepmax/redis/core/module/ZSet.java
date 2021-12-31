@@ -1,49 +1,135 @@
 package cn.deepmax.redis.core.module;
 
+import cn.deepmax.redis.core.Sized;
+import cn.deepmax.redis.utils.Range;
 import cn.deepmax.redis.utils.Tuple;
 
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 
- * @param <T> 
- * @param <V>
+ * @param <S>
+ * @param <T>
  */
-public class ZSet<T extends Comparable<T>, V> {
+public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements Sized {
 
     static final int ZSKIPLIST_MAXLEVEL = 32;
     static final double ZSKIPLIST_P = 0.25D;
-    final ZSkipList<T> zsl;
-    final Map<T, V> dict;
+    final ZSkipList<S, T> zsl;
+    final Map<T, S> dict;
 
     public ZSet() {
         this.zsl = ZSkipList.newInstance();
         this.dict = new HashMap<>();
     }
 
-    public void add(List<Tuple<T, V>> values) {
-        
+    @Override
+    public long size() {
+        if (zsl.length != dict.size()) {
+            throw new IllegalStateException("invalid zset, check code");
+        }
+        return dict.size();
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    static class ZSkipList<T extends Comparable<T>> {
-        ZSkipListNode<T> header;
-        ZSkipListNode<T> tail;
-        long length;
-        int level;  //level: [0,level)
+    public int add(List<Pair<S, T>> values) {
+        int c = 0;
+        for (Pair<S, T> t : values) {
+            S old = dict.put(t.ele, t.score);
+            if (old == null) {
+                c++;
+                zsl.insert(t.score, t.ele);
+            } else {
+                zsl.updateScore(t.ele, old, t.score);
+            }
+        }
+        return c;
+    }
 
-        public static <T extends Comparable<T>> ZSkipList<T> newInstance() {
-            ZSkipList<T> t = new ZSkipList<>();
+    /**
+     * indexRange
+     *
+     * @param start
+     * @param end
+     * @param rev
+     * @return
+     */
+    public List<Pair<S, T>> indexRange(int start, int end, boolean rev) {
+        start = tranStart(start);
+        end = tranEnd(end);
+        if (start > end) {
+            return Collections.emptyList();
+        }
+        int rangeLength = end - start + 1;
+        ZSkipListNode<S, T> cur;
+        if (rev) {
+            cur = start == 0 ? zsl.tail : zsl.getByRank(zsl.length - start);
+        } else {
+            cur = start == 0 ? zsl.header.next() : zsl.getByRank(start + 1);
+        }
+        List<Pair<S, T>> result = new ArrayList<>();
+        while (rangeLength-- > 0) {
+            result.add(new Pair<>(cur.score, cur.ele));
+            cur = cur.next(rev);
+        }
+        return result;
+    }
+
+    /**
+     * ScoreRange
+     *
+     * @param range
+     * @param rev
+     * @param optLimit
+     * @return
+     */
+    public List<Pair<S, T>> scoreRange(Range<S> range, boolean rev, Optional<Tuple<Long, Long>> optLimit) {
+        ZSkipListNode<S, T> cur;
+        if (rev) {
+            cur = zsl.zslLastInRange(range);
+        } else {
+            cur = zsl.zslFirstInRange(range);
+        }
+        if (cur == null) {
+            return Collections.emptyList();
+        }
+        long offset = optLimit.map(t -> t.a).orElse(0L);
+        long limit = optLimit.filter(t -> t.b > 0).map(t -> t.b).orElse(zsl.length);
+        //skip offset and then get at most limit elements;
+        while (cur != null && offset-- > 0) {
+            cur = cur.next(rev);
+        }
+        List<Pair<S, T>> result = new ArrayList<>();
+        while (cur != null && limit-- > 0) {
+            //check range
+            if (rev) {
+                if (!cur.greaterOrEqualThanMinOf(range)) break;
+            } else {
+                if (!cur.lessOrEqualThanMaxOf(range)) break;
+            }
+            result.add(new Pair<>(cur.score, cur.ele));
+            cur = cur.next(rev);
+        }
+        return result;
+    }
+
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    static class ZSkipList<S extends Comparable<S>, T extends Comparable<T>> implements Sized {
+        ZSkipListNode<S, T> header;
+        ZSkipListNode<S, T> tail;
+        long length;
+        int level;  //levelRange: [0,level)
+
+        public static <S extends Comparable<S>, T extends Comparable<T>> ZSkipList<S, T> newInstance() {
+            ZSkipList<S, T> t = new ZSkipList<>();
             t.length = 0;
             t.level = 1;
-            t.header = zslCreateNode(ZSKIPLIST_MAXLEVEL, null, BigDecimal.ZERO);
+            t.header = zslCreateNode(ZSKIPLIST_MAXLEVEL, null, null);
             return t;
         }
-
-        static <T extends Comparable<T>> ZSkipListNode<T> zslCreateNode(int levelNumber, T ele, BigDecimal score) {
-            ZSkipListNode<T> node = new ZSkipListNode<>(ele, score);
+        
+        static <S extends Comparable<S>, T extends Comparable<T>> ZSkipListNode<S, T> zslCreateNode(int levelNumber, T ele, S score) {
+            ZSkipListNode<S, T> node = new ZSkipListNode<>(ele, score);
             node.level = new Level[levelNumber];
             for (int i = 0; i < levelNumber; i++) {
                 node.level[i] = new Level<>();
@@ -51,13 +137,115 @@ public class ZSet<T extends Comparable<T>, V> {
             return node;
         }
 
+        @Override
+        public long size() {
+            return length;
+        }
+
+        /**
+         * find
+         *
+         * @param idx start at 0   [0,length)
+         * @return
+         */
+        public ZSkipListNode<S, T> getByIndex(int idx) {
+            idx = tranStart(idx);
+            return getByRank(idx + 1);
+        }
+
+        /**
+         * find
+         *
+         * @param rank start at 1   [1,length]
+         * @return
+         */
+        public ZSkipListNode<S, T> getByRank(long rank) {
+            if (rank > length) {
+                return null;
+            }
+            int c = 0;
+            ZSkipListNode<S, T> cur = this.header;
+            for (int lv = level - 1; lv >= 0; lv--) {
+                while (cur.level[lv].forward != null && cur.level[lv].span + c <= rank) {
+                    c += cur.level[lv].span;
+                    cur = cur.level[lv].forward;
+                }
+                if (c == rank) {
+                    return cur;
+                }
+            }
+            return null;
+        }
+
+        /**
+         * range中的第一个：比开始的第一个
+         *
+         * @param r
+         * @return
+         */
+        public ZSkipListNode<S, T> zslFirstInRange(Range<S> r) {
+            if (!inRange(r)) {
+                return null;
+            }
+            ZSkipListNode<S, T> x = header;
+            for (int i = level - 1; i >= 0; i--) {
+                /* Go forward while *OUT* of range. */
+                while (x.level[i].forward != null &&
+                        !x.level[i].forward.greaterOrEqualThanMinOf(r)) {
+                    x = x.level[i].forward;
+                }
+            }
+            x = x.level[0].forward;
+            /* Check if score <= max. */
+            if (!x.lessOrEqualThanMaxOf(r)) return null;
+            return x;
+        }
+
+        /**
+         * range 中的最后一个
+         *
+         * @param r
+         * @return
+         */
+        public ZSkipListNode<S, T> zslLastInRange(Range<S> r) {
+            if (!inRange(r)) {
+                return null;
+            }
+            ZSkipListNode<S, T> x = header;
+            for (int i = level - 1; i >= 0; i--) {
+                /* Go forward while *IN* range. */
+                while (x.level[i].forward != null &&
+                        x.level[i].forward.lessOrEqualThanMaxOf(r)) {
+                    x = x.level[i].forward;
+                }
+            }
+            /* Check if score >= min. */
+            if (!x.greaterOrEqualThanMinOf(r)) return null;
+            return x;
+        }
+
+        private boolean inRange(Range<S> r) {
+            if (r.getStart().compareTo(r.getEnd()) > 0
+                    || (r.getStart().compareTo(r.getEnd()) == 0) && (r.isEndOpen() || r.isStartOpen())) {
+                return false;
+            }
+            if (tail == null || !tail.greaterOrEqualThanMinOf(r)) {
+                return false;
+            }
+            ZSkipListNode<S, T> first = header.level[0].forward;
+            if (first == null || !first.lessOrEqualThanMaxOf(r)) {
+                return false;
+            }
+            return true;
+        }
+
         //ele and old score must exist!
-        public ZSkipListNode<T> updateScore(T ele, BigDecimal old, BigDecimal newScore) {
+        public ZSkipListNode<S, T> updateScore(T ele, S old, S newScore) {
             Objects.requireNonNull(old);
             Objects.requireNonNull(newScore);
             ZSkipListNode[] update = new ZSkipListNode[ZSKIPLIST_MAXLEVEL];
-            ZSkipListNode<T> x = header;
-            ZSkipListNode<T> dummy = new ZSkipListNode<>(ele, old);
+            ZSkipListNode<S, T> x = header;
+            ZSkipListNode<S, T> dummy = new ZSkipListNode<>(ele, old);
             for (int i = level - 1; i >= 0; i--) {
                 while (x.level[i].forward != null && x.level[i].forward.lessThan(dummy)) {
                     x = x.level[i].forward;
@@ -75,11 +263,11 @@ public class ZSet<T extends Comparable<T>, V> {
                 return x;
             } else {
                 deleteNode(x, update);
-                return insert(ele, newScore);
+                return insert(newScore, ele);
             }
         }
 
-        private IllegalStateException notFoundError(T ele, BigDecimal old) {
+        private IllegalStateException notFoundError(T ele, S old) {
             return new IllegalStateException("Can't found score " + old + " with ele " + ele);
         }
 
@@ -88,9 +276,9 @@ public class ZSet<T extends Comparable<T>, V> {
          * @param score
          * @return 1-based rank  or 0 if not found
          */
-        public long getRank(T ele, BigDecimal score) {
-            ZSkipListNode<T> dummy = new ZSkipListNode<>(ele, score);
-            ZSkipListNode<T> x = header;
+        public long getRank(T ele, S score) {
+            ZSkipListNode<S, T> dummy = new ZSkipListNode<>(ele, score);
+            ZSkipListNode<S, T> x = header;
             long c = 0L;
             for (int i = level - 1; i >= 0; i--) {
                 while (x.level[i].forward != null && x.level[i].forward.lessOrEqThan(dummy)) {
@@ -104,10 +292,10 @@ public class ZSet<T extends Comparable<T>, V> {
             return 0L;
         }
 
-        public ZSkipListNode<T> delete(T ele, BigDecimal score) {
+        public ZSkipListNode<S, T> delete(S score, T ele) {
             ZSkipListNode[] update = new ZSkipListNode[ZSKIPLIST_MAXLEVEL];
-            ZSkipListNode<T> x = header;
-            ZSkipListNode<T> dummy = new ZSkipListNode<>(ele, score);
+            ZSkipListNode<S, T> x = header;
+            ZSkipListNode<S, T> dummy = new ZSkipListNode<>(ele, score);
             for (int i = level - 1; i >= 0; i--) {
                 while (x.level[i].forward != null && x.level[i].forward.lessThan(dummy)) {
                     x = x.level[i].forward;
@@ -123,7 +311,7 @@ public class ZSet<T extends Comparable<T>, V> {
             return null;
         }
 
-        private void deleteNode(ZSkipListNode<T> node, ZSkipListNode[] update) {
+        private void deleteNode(ZSkipListNode<S, T> node, ZSkipListNode[] update) {
             for (int i = 0; i < level; i++) {
                 if (update[i].level[i].forward == node) {
                     update[i].level[i].span += (node.level[i].span - 1);
@@ -143,13 +331,13 @@ public class ZSet<T extends Comparable<T>, V> {
             length--;
         }
 
-        public ZSkipListNode<T> insert(T ele, BigDecimal score) {
+        public ZSkipListNode<S, T> insert(S score, T ele) {
             ZSkipListNode[] update = new ZSkipListNode[ZSKIPLIST_MAXLEVEL];
             int[] rank = new int[ZSKIPLIST_MAXLEVEL];
             int i;
-            ZSkipListNode<T> x = header;
+            ZSkipListNode<S, T> x = header;
             int thisLevel = zslRandomLevel();
-            ZSkipListNode<T> theNode = zslCreateNode(thisLevel, ele, score);
+            ZSkipListNode<S, T> theNode = zslCreateNode(thisLevel, ele, score);
             /* store rank that is crossed to reach the insert position */
             for (i = this.level - 1; i >= 0; i--) {
                 rank[i] = (i == this.level - 1 ? 0 : rank[i + 1]);
@@ -199,36 +387,75 @@ public class ZSet<T extends Comparable<T>, V> {
         }
     }
 
-    static class ZSkipListNode<T extends Comparable<T>> implements Comparable<ZSkipListNode<T>> {
+    static class ZSkipListNode<S extends Comparable<S>, T extends Comparable<T>> implements Comparable<ZSkipListNode<S, T>> {
         T ele;
-        BigDecimal score;
-        ZSkipListNode<T> backward;
-        Level<T>[] level;
+        S score;
+        ZSkipListNode<S, T> backward;
+        Level<S, T>[] level;
 
-        ZSkipListNode(T ele, BigDecimal score) {
+        ZSkipListNode(T ele, S score) {
             this.ele = ele;
             this.score = score;
         }
 
-        public boolean lessThan(ZSkipListNode<T> that) {
+        ZSkipListNode<S, T> next() {
+            return level[0].forward;
+        }
+
+
+        ZSkipListNode<S, T> next(boolean reversed) {
+            if (reversed) {
+                return backward;
+            } else {
+                return level[0].forward;
+            }
+        }
+
+        public boolean greaterOrEqualThanMinOf(Range<S> s) {
+            if (s.isStartOpen()) {
+                return score.compareTo(s.getStart()) > 0;
+            } else {
+                return score.compareTo(s.getStart()) >= 0;
+            }
+        }
+
+        public boolean lessOrEqualThanMaxOf(Range<S> s) {
+            if (s.isEndOpen()) {
+                return score.compareTo(s.getEnd()) < 0;
+            } else {
+                return score.compareTo(s.getEnd()) <= 0;
+            }
+        }
+
+        public boolean lessThan(ZSkipListNode<S, T> that) {
             return compareTo(that) < 0;
         }
 
-        public boolean lessOrEqThan(ZSkipListNode<T> that) {
+        public boolean lessOrEqThan(ZSkipListNode<S, T> that) {
             int i = compareTo(that);
             return i < 0 || i == 0;
         }
 
         @Override
-        public int compareTo(ZSkipListNode<T> that) {
-            return Comparator.comparing((ZSkipListNode<T> n) -> n.score)
-                    .thenComparing((ZSkipListNode<T> n) -> n.ele).compare(this, that);
+        public int compareTo(ZSkipListNode<S, T> that) {
+            return Comparator.comparing((ZSkipListNode<S, T> n) -> n.score)
+                    .thenComparing((ZSkipListNode<S, T> n) -> n.ele).compare(this, that);
         }
     }
 
-    static class Level<T extends Comparable<T>> {
-        ZSkipListNode<T> forward;
+    static class Level<S extends Comparable<S>, T extends Comparable<T>> {
+        ZSkipListNode<S, T> forward;
         long span;
+    }
+
+    public static class Pair<S extends Comparable<S>, T extends Comparable<T>> {
+        public final S score;
+        public final T ele;
+
+        public Pair(S score, T ele) {
+            this.score = score;
+            this.ele = ele;
+        }
     }
 
 }
