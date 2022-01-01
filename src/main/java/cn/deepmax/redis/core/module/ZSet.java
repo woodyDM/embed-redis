@@ -102,9 +102,9 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
         while (cur != null && limit-- > 0) {
             //check range
             if (rev) {
-                if (!cur.greaterOrEqualThanMinOf(range)) break;
+                if (!cur.scoreGreaterOrEqualThanMinOf(range)) break;
             } else {
-                if (!cur.lessOrEqualThanMaxOf(range)) break;
+                if (!cur.scoreLessOrEqualThanMaxOf(range)) break;
             }
             result.add(new Pair<>(cur.score, cur.ele));
             cur = cur.next(rev);
@@ -112,6 +112,43 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
         return result;
     }
 
+    /**
+     * lexRange
+     *
+     * @param range
+     * @param rev
+     * @param optLimit
+     * @return
+     */
+    public List<Pair<S, T>> lexRange(Range<T> range, boolean rev, Optional<Tuple<Long, Long>> optLimit) {
+        ZSkipListNode<S, T> cur;
+        if (rev) {
+            cur = zsl.zslLastLexInRange(range);
+        } else {
+            cur = zsl.zslFirstLexInRange(range);
+        }
+        if (cur == null) {
+            return Collections.emptyList();
+        }
+        long offset = optLimit.map(t -> t.a).orElse(0L);
+        long limit = optLimit.filter(t -> t.b > 0).map(t -> t.b).orElse(zsl.length);
+        //skip offset and then get at most limit elements;
+        while (cur != null && offset-- > 0) {
+            cur = cur.next(rev);
+        }
+        List<Pair<S, T>> result = new ArrayList<>();
+        while (cur != null && limit-- > 0) {
+            //check range
+            if (rev) {
+                if (!cur.eleGreaterOrEqualThanMinOf(range)) break;
+            } else {
+                if (!cur.eleLessOrEqualThanMaxOf(range)) break;
+            }
+            result.add(new Pair<>(cur.score, cur.ele));
+            cur = cur.next(rev);
+        }
+        return result;
+    }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     static class ZSkipList<S extends Comparable<S>, T extends Comparable<T>> implements Sized {
@@ -191,13 +228,13 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
             for (int i = level - 1; i >= 0; i--) {
                 /* Go forward while *OUT* of range. */
                 while (x.level[i].forward != null &&
-                        !x.level[i].forward.greaterOrEqualThanMinOf(r)) {
+                        !x.level[i].forward.scoreGreaterOrEqualThanMinOf(r)) {
                     x = x.level[i].forward;
                 }
             }
             x = x.level[0].forward;
             /* Check if score <= max. */
-            if (!x.lessOrEqualThanMaxOf(r)) return null;
+            if (!x.scoreLessOrEqualThanMaxOf(r)) return null;
             return x;
         }
 
@@ -215,12 +252,59 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
             for (int i = level - 1; i >= 0; i--) {
                 /* Go forward while *IN* range. */
                 while (x.level[i].forward != null &&
-                        x.level[i].forward.lessOrEqualThanMaxOf(r)) {
+                        x.level[i].forward.scoreLessOrEqualThanMaxOf(r)) {
                     x = x.level[i].forward;
                 }
             }
             /* Check if score >= min. */
-            if (!x.greaterOrEqualThanMinOf(r)) return null;
+            if (!x.scoreGreaterOrEqualThanMinOf(r)) return null;
+            return x;
+        }
+
+        /**
+         * lexRange中的第一个：比开始的第一个
+         *
+         * @param r
+         * @return
+         */
+        public ZSkipListNode<S, T> zslFirstLexInRange(Range<T> r) {
+            if (!lexInRange(r)) {
+                return null;
+            }
+            ZSkipListNode<S, T> x = header;
+            for (int i = level - 1; i >= 0; i--) {
+                /* Go forward while *OUT* of range. */
+                while (x.level[i].forward != null &&
+                        !x.level[i].forward.eleGreaterOrEqualThanMinOf(r)) {
+                    x = x.level[i].forward;
+                }
+            }
+            x = x.level[0].forward;
+            /* Check if ele <= max. */
+            if (!x.eleLessOrEqualThanMaxOf(r)) return null;
+            return x;
+        }
+
+        /**
+         * range 中的最后一个
+         *
+         * @param r
+         * @return
+         */
+        public ZSkipListNode<S, T> zslLastLexInRange(Range<T> r) {
+            if (!lexInRange(r)) {
+                return null;
+            }
+            ZSkipListNode<S, T> x = header;
+            for (int i = level - 1; i >= 0; i--) {
+                /* Go forward while *IN* range. */
+                while (x.level[i].forward != null &&
+                        x.level[i].forward.eleLessOrEqualThanMaxOf(r)) {
+                    x = x.level[i].forward;
+                }
+            }
+            /* Check if ele >= min. */
+            if (!x.eleGreaterOrEqualThanMinOf(r)) return null;
             return x;
         }
 
@@ -229,11 +313,26 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
                     || (r.getStart().compareTo(r.getEnd()) == 0) && (r.isEndOpen() || r.isStartOpen())) {
                 return false;
             }
-            if (tail == null || !tail.greaterOrEqualThanMinOf(r)) {
+            if (tail == null || !tail.scoreGreaterOrEqualThanMinOf(r)) {
                 return false;
             }
             ZSkipListNode<S, T> first = header.level[0].forward;
-            if (first == null || !first.lessOrEqualThanMaxOf(r)) {
+            if (first == null || !first.scoreLessOrEqualThanMaxOf(r)) {
+                return false;
+            }
+            return true;
+        }
+
+        private boolean lexInRange(Range<T> r) {
+            if (r.getStart().compareTo(r.getEnd()) > 0
+                    || (r.getStart().compareTo(r.getEnd()) == 0) && (r.isEndOpen() || r.isStartOpen())) {
+                return false;
+            }
+            if (tail == null || !tail.eleGreaterOrEqualThanMinOf(r)) {
+                return false;
+            }
+            ZSkipListNode<S, T> first = header.level[0].forward;
+            if (first == null || !first.eleLessOrEqualThanMaxOf(r)) {
                 return false;
             }
             return true;
@@ -411,7 +510,7 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
             }
         }
 
-        public boolean greaterOrEqualThanMinOf(Range<S> s) {
+        public boolean scoreGreaterOrEqualThanMinOf(Range<S> s) {
             if (s.isStartOpen()) {
                 return score.compareTo(s.getStart()) > 0;
             } else {
@@ -419,11 +518,27 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
             }
         }
 
-        public boolean lessOrEqualThanMaxOf(Range<S> s) {
+        public boolean scoreLessOrEqualThanMaxOf(Range<S> s) {
             if (s.isEndOpen()) {
                 return score.compareTo(s.getEnd()) < 0;
             } else {
                 return score.compareTo(s.getEnd()) <= 0;
+            }
+        }
+
+        public boolean eleGreaterOrEqualThanMinOf(Range<T> s) {
+            if (s.isStartOpen()) {
+                return ele.compareTo(s.getStart()) > 0;
+            } else {
+                return ele.compareTo(s.getStart()) >= 0;
+            }
+        }
+
+        public boolean eleLessOrEqualThanMaxOf(Range<T> s) {
+            if (s.isEndOpen()) {
+                return ele.compareTo(s.getEnd()) < 0;
+            } else {
+                return ele.compareTo(s.getEnd()) <= 0;
             }
         }
 

@@ -3,6 +3,7 @@ package cn.deepmax.redis.core.module;
 import cn.deepmax.redis.base.BaseTemplateTest;
 import cn.deepmax.redis.utils.NumberUtils;
 import org.junit.Test;
+import org.springframework.data.redis.connection.RedisZSetCommands;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
@@ -241,4 +242,54 @@ public class SortedSetModuleTest extends BaseTemplateTest {
             assertArrayEquals(list.get(4), serialize("b"));
         }
     }
+
+    @Test
+    public void shouldAddAndRangeByLexNormal() {
+        if (isRedisson()) {
+            return; // redisson zRangeByLex bug.
+        }
+        z().add("key", "b", 1.0D);
+        z().add("key", "a", 1.0D);
+        z().add("key", "c", 1.0D);
+        z().add("key", "e", 1.0D);
+        z().add("key", "d", 1.0D);
+        z().add("key", "f", 1.0D);
+
+        //a b c d e f
+        //0 1 2 3 4 5
+
+        RedisZSetCommands.Range range = RedisZSetCommands.Range.range().gt(serialize("a")).lte(serialize("e"));
+        Set<Object> keys = z().rangeByLex("key", range);
+
+        List<Object> list = new ArrayList<>(keys);
+        assertEquals(list.size(), 4);
+        assertEquals((String) list.get(0), ("b"));
+        assertEquals((String) list.get(1), ("c"));
+        assertEquals((String) list.get(2), ("d"));
+        assertEquals((String) list.get(3), ("e"));
+    }
+
+    @Test
+    public void shouldAddAndRangeByLexNormalInf() {
+        if (isRedisson()) {
+            return; // redisson zRangeByLex bug.
+        }
+        t().execute((RedisCallback<Object>) con -> con.zAdd(bytes("key"), 1.0, bytes("a")));
+        t().execute((RedisCallback<Object>) con -> con.zAdd(bytes("key"), 1.0, bytes("c")));
+        t().execute((RedisCallback<Object>) con -> con.zAdd(bytes("key"), 1.0, bytes("f")));
+        t().execute((RedisCallback<Object>) con -> con.zAdd(bytes("key"), 1.0, bytes("b")));
+        t().execute((RedisCallback<Object>) con -> con.zAdd(bytes("key"), 1.0, bytes("d")));
+        t().execute((RedisCallback<Object>) con -> con.zAdd(bytes("key"), 1.0, bytes("e")));
+        //a b c d e f
+        //0 1 2 3 4 5
+        RedisZSetCommands.Range range = RedisZSetCommands.Range.unbounded().lt("d");
+        Set<byte[]> keys = t().execute((RedisCallback<Set<byte[]>>) con -> con.zRangeByLex(bytes("key"), range));
+
+        List<Object> list = new ArrayList<>(keys);
+        assertEquals(list.size(), 3);
+        assertArrayEquals((byte[]) list.get(0), bytes("a"));
+        assertArrayEquals((byte[]) list.get(1), bytes("b"));
+        assertArrayEquals((byte[]) list.get(2), bytes("c"));
+    }
+
 }

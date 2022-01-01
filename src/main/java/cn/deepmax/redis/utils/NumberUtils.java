@@ -2,8 +2,10 @@ package cn.deepmax.redis.utils;
 
 import cn.deepmax.redis.Constants;
 import cn.deepmax.redis.api.RedisServerException;
+import cn.deepmax.redis.core.Key;
 
 import java.text.NumberFormat;
+import java.util.Arrays;
 import java.util.Optional;
 
 /**
@@ -11,6 +13,9 @@ import java.util.Optional;
  * @date 2021/5/8
  */
 public class NumberUtils {
+
+    private final static byte[] PLUS = new byte[]{'+'};
+    private final static byte[] MINUS = new byte[]{'-'};
 
     public static Long parse(String s) {
         return parseO(s).orElseThrow(() -> new RedisServerException(Constants.ERR_SYNTAX_NUMBER));
@@ -32,6 +37,17 @@ public class NumberUtils {
         return parseDoubleO(s).orElseThrow(() -> new RedisServerException("ERR value is not a valid float"));
     }
 
+    public static Range<Key> parseLexRange(byte[] startB, byte[] endB) {
+        Range<Key> r = new Range<>();
+        Tuple<Key, Boolean> start = parseKey(startB);
+        Tuple<Key, Boolean> end = parseKey(endB);
+        r.start = start.a;
+        r.startOpen = start.b;
+        r.end = end.a;
+        r.endOpen = end.b;
+        return r;
+    }
+
     public static Range<Double> parseScoreRange(String min, String max) {
         min = min.toLowerCase();
         max = max.toLowerCase();
@@ -49,7 +65,39 @@ public class NumberUtils {
         return r;
     }
 
+    /**
+     * @param b
+     * @return true if open
+     */
+    public static Tuple<Key, Boolean> parseKey(byte[] b) {
+        if (b == null || b.length == 0) {
+            throw new RedisServerException(Constants.ERR_SYNTAX);
+        }
+
+        if (Arrays.equals(b, PLUS)) {
+            return new Tuple<>(Key.INF, true);
+        } else if (Arrays.equals(b, MINUS)) {
+            return new Tuple<>(Key.NEG_INF, true);
+        } else if (b.length >= 2) {
+            //at least 2 bytes
+            byte[] c = new byte[b.length - 1];
+            System.arraycopy(b, 1, c, 0, c.length);
+            if (b[0] == '(') {
+                return new Tuple<>(new Key(c), true);
+            } else if (b[0] == '[') {
+                return new Tuple<>(new Key(c), false);
+            } else {
+                throw new RedisServerException(Constants.ERR_SYNTAX);
+            }
+        } else {
+            throw new RedisServerException(Constants.ERR_SYNTAX);
+        }
+    }
+
     private static Double parseDoubleWithInf(String s) {
+        if (s.length() == 0) {
+            throw new RedisServerException(Constants.ERR_SYNTAX);
+        }
         if (s.equals("inf") || s.equals("+inf")) {
             return Double.POSITIVE_INFINITY;
         } else if (s.equals("-inf")) {

@@ -16,6 +16,7 @@ import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -30,7 +31,10 @@ public class SortedSetModule extends BaseModule {
         register(new ZAdd());
         register(new ZRange());
         register(new ZRevRange());
-        register(new ZRangeByScore());
+        register(new ZRangeByScore(false, "zrangebyscore"));
+        register(new ZRangeByScore(true, "zrevrangebyscore"));
+        register(new ZRangeByLex(false, "zrangebylex"));
+        register(new ZRangeByLex(true, "zrevrangebylex"));
     }
 
     /**
@@ -71,8 +75,8 @@ public class SortedSetModule extends BaseModule {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] keys = msg.getAt(1).bytes();
-            String min = msg.getAt(2).str();
-            String max = msg.getAt(3).str();
+            byte[] min = msg.getAt(2).bytes();
+            byte[] max = msg.getAt(3).bytes();
             boolean withscores = ArgParser.parseFlag(msg, "WITHSCORES", 4);
             boolean byScore = ArgParser.parseFlag(msg, "BYSCORE", 4);
             boolean byLex = ArgParser.parseFlag(msg, "BYLEX", 4);
@@ -98,20 +102,61 @@ public class SortedSetModule extends BaseModule {
         }
     }
 
-
+    /**
+     * ZREVRANGEBYSCORE key max min [WITHSCORES] [LIMIT offset count]
+     */
     public static class ZRangeByScore extends BaseRange {
-        public ZRangeByScore() {
+        private final boolean rev;
+        private final String name;
+
+        public ZRangeByScore(boolean rev, String name) {
             super(4, 5, 7, 8);
+            this.rev = rev;
+            this.name = name;
+        }
+
+        @Override
+        public String name() {
+            return name;
         }
 
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] keys = msg.getAt(1).bytes();
-            String min = msg.getAt(2).str();
-            String max = msg.getAt(3).str();
+            byte[] min = msg.getAt(2).bytes();
+            byte[] max = msg.getAt(3).bytes();
             boolean withscores = ArgParser.parseFlag(msg, "WITHSCORES", 4);
             Optional<Tuple<Long, Long>> optLimit = ArgParser.parseLongArgTwo(msg, "LIMIT", 4, msg.children().size());
-            return genericZRange(keys, RangeType.SCORE, min, max, false, withscores, optLimit);
+            return genericZRange(keys, RangeType.SCORE, min, max, rev, withscores, optLimit);
+        }
+    }
+
+    /**
+     * ZRANGEBYLEX key min max [LIMIT offset count]
+     * ZREVRANGEBYLEX key max min [LIMIT offset count]
+     */
+    public static class ZRangeByLex extends BaseRange {
+        private final boolean rev;
+        private final String name;
+
+        public ZRangeByLex(boolean rev, String name) {
+            super(4, 7);
+            this.rev = rev;
+            this.name = name;
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] keys = msg.getAt(1).bytes();
+            byte[] min = msg.getAt(2).bytes();
+            byte[] max = msg.getAt(3).bytes();
+            Optional<Tuple<Long, Long>> optLimit = ArgParser.parseLongArgTwo(msg, "LIMIT", 4, msg.children().size());
+            return genericZRange(keys, RangeType.LEX, min, max, rev, false, optLimit);
         }
     }
 
@@ -123,8 +168,8 @@ public class SortedSetModule extends BaseModule {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] keys = msg.getAt(1).bytes();
-            String start = msg.getAt(2).str();
-            String stop = msg.getAt(3).str();
+            byte[] start = msg.getAt(2).bytes();
+            byte[] stop = msg.getAt(3).bytes();
             boolean withscores = ArgParser.parseFlag(msg, "WITHSCORES", 4);
             return genericZRange(keys, RangeType.INDEX, start, stop, true, withscores, Optional.empty());
         }
@@ -139,15 +184,17 @@ public class SortedSetModule extends BaseModule {
             super(valid);
         }
 
-        protected RedisMessage genericZRange(byte[] key, RangeType type, String start, String end, boolean rev,
+        protected RedisMessage genericZRange(byte[] key, RangeType type, byte[] startB, byte[] endB, boolean rev,
                                              boolean withScores, Optional<Tuple<Long, Long>> optLimit) {
 
             if (rev && (type == RangeType.SCORE || type == RangeType.LEX)) {
                 /* Range is given as [max,min] */
-                String tmp = start;
-                start = end;
-                end = tmp;
+                byte[] tmp = startB;
+                startB = endB;
+                endB = tmp;
             }
+            String start = new String(startB, StandardCharsets.UTF_8);
+            String end = new String(endB, StandardCharsets.UTF_8);
             SortedSet set = get(key);
 
             if (type == RangeType.INDEX) {
@@ -165,16 +212,18 @@ public class SortedSetModule extends BaseModule {
                 }
                 List<ZSet.Pair<Double, Key>> range = set.scoreRange(r, rev, optLimit);
                 return transPair(range, withScores);
-            } else {
-                //todo
+            } else if (type == RangeType.LEX) {
+                Range<Key> r = NumberUtils.parseLexRange(startB, endB);
                 if (set == null) {
                     return Constants.LIST_EMPTY;
                 }
-                return new ErrorRedisMessage("temp to do");
+                List<ZSet.Pair<Double, Key>> range = set.lexRange(r, rev, optLimit);
+                return transPair(range, withScores);
+            } else {
+                throw new Error();
             }
         }
     }
-
 
     enum RangeType {
         INDEX, SCORE, LEX;
@@ -203,5 +252,4 @@ public class SortedSetModule extends BaseModule {
         }
         return new ListRedisMessage(msgList);
     }
-    
 }

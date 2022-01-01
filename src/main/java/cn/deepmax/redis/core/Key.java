@@ -2,7 +2,6 @@ package cn.deepmax.redis.core;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Comparator;
 
 /**
  * @author wudi
@@ -10,6 +9,8 @@ import java.util.Comparator;
  */
 public class Key implements Comparable<Key> {
     private final byte[] content;
+    public static final Key INF = new Key(new byte[]{});
+    public static final Key NEG_INF = new Key(new byte[]{});
 
     public Key(byte[] content) {
         this.content = content;
@@ -25,14 +26,39 @@ public class Key implements Comparable<Key> {
 
     @Override
     public int compareTo(Key o) {
-        //todo binary byte compare
-        return Comparator.comparing(Key::str).compare(this, o);
+        if (o == this) return 0;
+        if (this == INF || o == NEG_INF) {
+            return 1;
+        }
+        if (this == NEG_INF || o == INF) {
+            return -1;
+        }
+        //binary compare
+        int len = Math.min(content.length, o.content.length);
+        for (int i = 0; i < len; i++) {
+            if (content[i] == o.content[i]) {
+                continue;
+            }
+            if (content[i] > o.content[i]) {
+                return 1;
+            } else {
+                return -1;
+            }
+        }
+        if (content.length == o.content.length) {
+            return 0;
+        } else if (content.length > o.content.length) {
+            return 1;
+        } else {
+            return -1;
+        }
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null) return false;
+        if (this == INF || this == NEG_INF || o == INF || o == NEG_INF) return false;
         Key key = (Key) o;
         return Arrays.equals(content, key.content);
     }
