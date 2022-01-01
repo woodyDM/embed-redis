@@ -1,6 +1,6 @@
-package cn.deepmax.redis.core.module;
+package cn.deepmax.redis.core.template;
 
-import cn.deepmax.redis.base.BaseTemplateTest;
+import cn.deepmax.redis.base.BasePureTemplateTest;
 import cn.deepmax.redis.utils.NumberUtils;
 import org.junit.Test;
 import org.springframework.data.redis.connection.RedisZSetCommands;
@@ -20,8 +20,8 @@ import static org.junit.Assert.assertEquals;
  * @author wudi
  * @date 2021/12/30
  */
-public class SortedSetModuleTest extends BaseTemplateTest {
-    public SortedSetModuleTest(RedisTemplate<String, Object> redisTemplate) {
+public class SortedSetModuleTemplateTest extends BasePureTemplateTest {
+    public SortedSetModuleTemplateTest(RedisTemplate<String, Object> redisTemplate) {
         super(redisTemplate);
     }
 

@@ -1,6 +1,6 @@
-package cn.deepmax.redis.core.module;
+package cn.deepmax.redis.core.engine;
 
-import cn.deepmax.redis.base.BaseEngineTest;
+import cn.deepmax.redis.base.BaseMemEngineTest;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import org.junit.Test;
 
@@ -10,8 +10,8 @@ import static org.junit.Assert.assertEquals;
  * @author wudi
  * @date 2021/12/30
  */
-public class KeyModuleEngineTest extends BaseEngineTest {
-    
+public class KeyModuleEngineTest extends BaseMemEngineTest {
+
     @Test
     public void shouldScanNormalRaw() {
         set("a", "1");

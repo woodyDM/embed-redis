@@ -1,7 +1,7 @@
-package cn.deepmax.redis.core.module;
+package cn.deepmax.redis.core.engine;
 
 import cn.deepmax.redis.api.Client;
-import cn.deepmax.redis.base.BaseEngineTest;
+import cn.deepmax.redis.base.BaseMemEngineTest;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.FullBulkStringRedisMessage;
@@ -15,7 +15,7 @@ import static org.junit.Assert.*;
  * @author wudi
  * @date 2021/12/17
  */
-public class AuthModuleTest extends BaseEngineTest {
+public class AuthModuleTest extends BaseMemEngineTest {
     @Test
     public void shouldOK() {
         RedisMessage msg = engine().execute(ListRedisMessage.ofString("auth 123456"), noAuthClient());

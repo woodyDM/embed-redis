@@ -1,7 +1,8 @@
-package cn.deepmax.redis.core.module;
+package cn.deepmax.redis.core.engine;
 
-import cn.deepmax.redis.base.BaseEngineTest;
+import cn.deepmax.redis.base.BaseMemEngineTest;
 import cn.deepmax.redis.core.Key;
+import cn.deepmax.redis.core.module.RList;
 import org.junit.Test;
 
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.Optional;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-public class RListTest extends BaseEngineTest {
+public class RListTest extends BaseMemEngineTest {
 
     @Test
     public void shouldLPos() {

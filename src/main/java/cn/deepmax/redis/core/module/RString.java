@@ -6,6 +6,7 @@ import cn.deepmax.redis.core.Sized;
 import cn.deepmax.redis.core.support.AbstractRedisObject;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -290,5 +291,10 @@ class RString extends AbstractRedisObject implements Sized {
             return -1;
         }
         return c;
+    }
+
+    @Override
+    public String toString() {
+        return "RString["+new String(s)+"]";
     }
 }

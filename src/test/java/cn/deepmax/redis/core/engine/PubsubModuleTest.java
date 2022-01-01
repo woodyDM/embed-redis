@@ -1,7 +1,7 @@
-package cn.deepmax.redis.core.module;
+package cn.deepmax.redis.core.engine;
 
 import cn.deepmax.redis.api.Client;
-import cn.deepmax.redis.base.BaseEngineTest;
+import cn.deepmax.redis.base.BaseMemEngineTest;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.type.CompositeRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
@@ -21,7 +21,7 @@ import static org.junit.Assert.*;
  * @author wudi
  * @date 2021/12/17
  */
-public class PubsubModuleTest extends BaseEngineTest {
+public class PubsubModuleTest extends BaseMemEngineTest {
 
     @Test
     public void shouldOK() {

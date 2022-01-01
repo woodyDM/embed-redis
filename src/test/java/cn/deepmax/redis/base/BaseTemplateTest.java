@@ -1,15 +1,8 @@
 package cn.deepmax.redis.base;
 
-import cn.deepmax.redis.RedisServer;
-import cn.deepmax.redis.api.RedisConfiguration;
-import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.core.DefaultRedisEngine;
 import io.lettuce.core.ClientOptions;
 import io.lettuce.core.protocol.ProtocolVersion;
 import io.lettuce.core.resource.ClientResources;
-import org.junit.Before;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.redisson.config.Config;
 import org.redisson.config.SingleServerConfig;
 import org.redisson.spring.data.connection.RedissonConnectionFactory;
@@ -26,87 +19,42 @@ import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.serializer.JdkSerializationRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-import java.util.Arrays;
-import java.util.Collection;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.stream.Collectors;
 
-@RunWith(Parameterized.class)
-public abstract class BaseTemplateTest extends BaseTest {
+/**
+ * redis template test support
+ */
+abstract class BaseTemplateTest implements ByteHelper {
 
-    public static final String AUTH = "123456";
-    public static final String HOST = "localhost";
-    public static final int PORT = 6381;
-    public static Client[] ts;
-    protected static RedisServer server;
-    protected static DefaultRedisEngine engine;
     protected RedisTemplate<String, Object> redisTemplate;
     protected JdkSerializationRedisSerializer serializer = new JdkSerializationRedisSerializer();
     public static final Logger log = LoggerFactory.getLogger(BaseTemplateTest.class);
     protected static ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private static final int POOL_SIZE = 4;
 
-    static {
-        scheduler.submit(() -> System.out.println("warn up"));
-    }
-
-    @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
-    }
-
-    @Override
-    String auth() {
-        return AUTH;
-    }
-
-    @Override
-    public RedisEngine engine() {
-        return engine;
-    }
-
-    static {
-        try {
-            init();
-        } catch (Exception e) {
-            log.error("启动失败", e);
-            throw new IllegalStateException(e);
-        }
-    }
-
-    private static void init() {
-        engine = DefaultRedisEngine.defaultEngine();
-        engine.setTimeProvider(timeProvider);
-        server = new RedisServer(engine, new RedisConfiguration(PORT, AUTH));
-        if (PORT != 6379) {
-            server.start();
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                server.stop();
-            }));
-        }
-        ts = new Client[3];
-        ts[0] = createRedisson();
-        ts[1] = createLettuce();
-        ts[2] = createJedis();
-    }
-
-    @Parameterized.Parameters
-    public static Collection<RedisTemplate<String, Object>> prepareTemplate() {
-        return Arrays.stream(ts).map(c -> c.t).collect(Collectors.toList());
-    }
-
     public BaseTemplateTest(RedisTemplate<String, Object> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
-    private static Client createJedis() {
+    static {
+        scheduler.submit(() -> System.out.println("warn up"));
+    }
+
+    protected static void init(Client[] clients, String host, int port, String auth) {
+        log.info("Init with {}:{} {}", host, port, auth);
+        clients[0] = createRedisson(host, port, auth);
+        clients[1] = createLettuce(host, port, auth);
+        clients[2] = createJedis(host, port, auth);
+    }
+
+    protected static Client createJedis(String host, int port, String auth) {
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
         config.setDatabase(0);
-        config.setHostName(HOST);
-        config.setPort(PORT);
-        config.setPassword(AUTH);
+        config.setHostName(host);
+        config.setPort(port);
+        config.setPassword(auth);
 
         JedisClientConfiguration jedisClientConfiguration = JedisClientConfiguration.defaultConfiguration();
         jedisClientConfiguration.getPoolConfig().ifPresent(c -> {
@@ -118,12 +66,12 @@ public abstract class BaseTemplateTest extends BaseTest {
         return new Client(template(factory), factory);
     }
 
-    private static Client createLettuce() {
+    protected static Client createLettuce(String host, int port, String auth) {
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
         config.setDatabase(0);
-        config.setHostName(HOST);
-        config.setPort(PORT);
-        config.setPassword(AUTH);
+        config.setHostName(host);
+        config.setPort(port);
+        config.setPassword(auth);
 
         LettuceClientConfiguration lettuceClientConfiguration = LettuceClientConfiguration.builder()
                 .clientResources(ClientResources.builder()
@@ -138,12 +86,12 @@ public abstract class BaseTemplateTest extends BaseTest {
 
     }
 
-    private static Client createRedisson() {
+    protected static Client createRedisson(String host, int port, String auth) {
         Config config = new Config();
         SingleServerConfig c = config.useSingleServer();
 
-        c.setAddress("redis://" + HOST + ":" + PORT);
-        c.setPassword(AUTH);
+        c.setAddress("redis://" + host + ":" + port);
+        c.setPassword(auth);
         c.setConnectionPoolSize(POOL_SIZE);
         c.setConnectionMinimumIdleSize(POOL_SIZE);
         RedissonConnectionFactory factory = new RedissonConnectionFactory(config);
@@ -174,10 +122,10 @@ public abstract class BaseTemplateTest extends BaseTest {
         return redisTemplate.opsForList();
     }
 
-    protected ZSetOperations<String,Object> z(){
+    protected ZSetOperations<String, Object> z() {
         return redisTemplate.opsForZSet();
     }
-    
+
     static class Client {
         RedisTemplate<String, Object> t;
         RedisConnectionFactory factory;
@@ -197,9 +145,9 @@ public abstract class BaseTemplateTest extends BaseTest {
             t.afterPropertiesSet();
         }
     }
-    
-    protected byte[] serialize(String s){
-        return serializer.serialize(s);
+
+    public byte[] bytes(String k) {
+        return k.getBytes(StandardCharsets.UTF_8);
     }
 
     protected boolean set(byte[] key, byte[] value) {

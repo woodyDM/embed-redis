@@ -143,7 +143,7 @@ public class StringModule extends BaseModule {
             return genericSet(engine, client, key, value, exp, flag, () -> OK, () -> FullBulkStringRedisMessage.NULL_INSTANCE);
         }
 
-        Optional<Long> parseExpire(ListRedisMessage msg) {
+        public Optional<Long> parseExpire(ListRedisMessage msg) {
             Optional<Long> ex = parseExpire(msg, "ex");
             Optional<Long> px = parseExpire(msg, "px");
             if (ex.isPresent() && px.isPresent()) {
@@ -152,11 +152,11 @@ public class StringModule extends BaseModule {
             return ex.map(v -> Optional.of(v * 1000L)).orElse(px);
         }
 
-        Optional<Long> parseExpire(ListRedisMessage msg, String ex) {
+        public Optional<Long> parseExpire(ListRedisMessage msg, String ex) {
             return ArgParser.parseLongArg(msg, ex);
         }
 
-        boolean parseFlag(ListRedisMessage msg, String ex) {
+        public boolean parseFlag(ListRedisMessage msg, String ex) {
             return ArgParser.parseFlag(msg, ex);
         }
     }

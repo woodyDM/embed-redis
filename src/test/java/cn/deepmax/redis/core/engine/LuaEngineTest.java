@@ -1,7 +1,7 @@
-package cn.deepmax.redis.core.module;
+package cn.deepmax.redis.core.engine;
 
 import cn.deepmax.redis.api.Client;
-import cn.deepmax.redis.base.BaseEngineTest;
+import cn.deepmax.redis.base.BaseMemEngineTest;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.resp3.RedisMessageType;
@@ -17,7 +17,7 @@ import static org.junit.Assert.assertTrue;
  * @author wudi
  * @date 2021/12/15
  */
-public class LuaEngineTest extends BaseEngineTest {
+public class LuaEngineTest extends BaseMemEngineTest {
 
     @Test
     public void shouldLoad() {

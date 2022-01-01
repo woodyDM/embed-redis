@@ -25,6 +25,7 @@ public class ConnectionModule extends BaseModule {
         register(new Ping());
         register(new Quit());
         register(new Select());
+        register(new FlushAll());
     }
 
     public static class Auth extends ArgsCommand.Two {
@@ -80,6 +81,14 @@ public class ConnectionModule extends BaseModule {
             return msg;
         }
 
+    }
+
+    public static class FlushAll extends ArgsCommand.OneEx {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage type, Client client, RedisEngine engine) {
+            engine.flush();
+            return OK;
+        }
     }
 
     private static class Select extends ArgsCommand.TwoEx {

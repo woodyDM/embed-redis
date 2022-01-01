@@ -1,7 +1,7 @@
 package cn.deepmax.redis.core.support;
 
 import cn.deepmax.redis.api.TimeProvider;
-import cn.deepmax.redis.utils.MockTimeProvider;
+import cn.deepmax.redis.support.MockTimeProvider;
 import org.junit.Test;
 
 import java.time.LocalDateTime;

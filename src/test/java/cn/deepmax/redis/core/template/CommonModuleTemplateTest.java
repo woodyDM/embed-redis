@@ -1,6 +1,7 @@
-package cn.deepmax.redis.core.module;
+package cn.deepmax.redis.core.template;
 
-import cn.deepmax.redis.base.BaseTemplateTest;
+import cn.deepmax.redis.base.BasePureTemplateTest;
+import cn.deepmax.redis.support.MockTimeProvider;
 import org.junit.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.connection.RedisConnection;
@@ -19,8 +20,8 @@ import static org.junit.Assert.*;
  * @author wudi
  * @date 2021/12/16
  */
-public class CommonModuleTest extends BaseTemplateTest {
-    public CommonModuleTest(RedisTemplate<String, Object> redisTemplate) {
+public class CommonModuleTemplateTest extends BasePureTemplateTest {
+    public CommonModuleTemplateTest(RedisTemplate<String, Object> redisTemplate) {
         super(redisTemplate);
     }
 
@@ -51,28 +52,49 @@ public class CommonModuleTest extends BaseTemplateTest {
 
         t().expire("key", 5, TimeUnit.SECONDS);
         assertThat(t().getExpire("key"), is(5L));
-        assertThat(t().getExpire("key", TimeUnit.MILLISECONDS), is(5000L));
+        if (isEmbededRedis()) {
+            assertThat(t().getExpire("key", TimeUnit.MILLISECONDS), is(5000L));
+        } else {
+            assertTrue(t().getExpire("key", TimeUnit.MILLISECONDS) > 4500L);
+        }
         assertThat(v().get("key"), is("你好"));
 
-        t().expireAt("key", BASE.plusSeconds(15).toInstant(OffsetDateTime.now().getOffset()));
-        assertThat(t().getExpire("key"), is(15L));
-        assertThat(t().getExpire("key", TimeUnit.MILLISECONDS), is(15_000L));
-        assertThat(v().get("key"), is("你好"));
+        t().expireAt("key", MockTimeProvider.BASE.plusSeconds(15).toInstant(OffsetDateTime.now().getOffset()));
+        if (isEmbededRedis()) {
+            assertThat(t().getExpire("key"), is(15L));
+            assertThat(t().getExpire("key", TimeUnit.MILLISECONDS), is(15_000L));
+            assertThat(v().get("key"), is("你好"));
+        } else {
+            assertThat(t().getExpire("key"), is(-2L));
+            assertThat(t().getExpire("key", TimeUnit.MILLISECONDS), is(-2L));
+            assertNull(v().get("key"));
+        }
 
         Boolean pok = t().persist("key");
-        assertThat(pok, is(true));
-        assertThat(t().countExistingKeys(Collections.singletonList("key")), is(1L));
-        assertThat(t().getExpire("key"), is(-1L));
-        assertThat(t().getExpire("key", TimeUnit.MILLISECONDS), is(-1L));
+        if (isEmbededRedis()) {
+            assertThat(pok, is(true));
+            assertThat(t().countExistingKeys(Collections.singletonList("key")), is(1L));
+            assertThat(t().getExpire("key"), is(-1L));
+            assertThat(t().getExpire("key", TimeUnit.MILLISECONDS), is(-1L));
+        } else {
+            assertFalse(pok);
+            assertThat(t().countExistingKeys(Collections.singletonList("key")), is(0L));
+            assertThat(t().getExpire("key"), is(-2L));
+            assertThat(t().getExpire("key", TimeUnit.MILLISECONDS), is(-2L));
+        }
 
         Boolean dok = t().delete("key");
-        assertThat(dok, is(true));
+        if (isEmbededRedis()) {
+            assertThat(dok, is(true));
+        } else {
+            assertFalse(dok);
+        }
         assertThat(t().countExistingKeys(Collections.singletonList("key")), is(0L));
         assertThat(t().getExpire("key"), is(-2L));
         assertThat(t().getExpire("key", TimeUnit.MILLISECONDS), is(-2L));
         assertNull(v().get("key"));
 
-        assertThat(t().delete("key-not-exist"),is(false));
+        assertThat(t().delete("key-not-exist"), is(false));
     }
 
     @Test

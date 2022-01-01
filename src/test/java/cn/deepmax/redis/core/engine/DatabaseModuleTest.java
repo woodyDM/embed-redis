@@ -1,7 +1,7 @@
-package cn.deepmax.redis.core.module;
+package cn.deepmax.redis.core.engine;
 
 import cn.deepmax.redis.api.Client;
-import cn.deepmax.redis.base.BaseEngineTest;
+import cn.deepmax.redis.base.BaseMemEngineTest;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import io.netty.handler.codec.redis.FullBulkStringRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
@@ -17,7 +17,7 @@ import static org.junit.Assert.assertSame;
  * @author wudi
  * @date 2021/12/17
  */
-public class DatabaseModuleTest extends BaseEngineTest {
+public class DatabaseModuleTest extends BaseMemEngineTest {
 
     @Test
     public void shouldSelect() {

@@ -1,6 +1,6 @@
-package cn.deepmax.redis.core.module;
+package cn.deepmax.redis.core.template;
 
-import cn.deepmax.redis.base.BaseTemplateTest;
+import cn.deepmax.redis.base.BasePureTemplateTest;
 import org.junit.Test;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisCallback;
@@ -17,13 +17,16 @@ import static org.junit.Assert.assertEquals;
  * @author wudi
  * @date 2021/12/30
  */
-public class KeyModuleTest extends BaseTemplateTest {
+public class KeyModuleTest extends BasePureTemplateTest {
     public KeyModuleTest(RedisTemplate<String, Object> redisTemplate) {
         super(redisTemplate);
     }
 
     @Test
     public void shouldScanNormal() {
+        if (!isEmbededRedis()) {
+            return;
+        }
         v().set("a", "1");
         v().set("b", "2");
         v().set("c", "3");

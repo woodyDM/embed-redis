@@ -1,73 +1,17 @@
-package cn.deepmax.redis.core.module;
+package cn.deepmax.redis.core.engine;
 
 import cn.deepmax.redis.api.Client;
-import cn.deepmax.redis.base.BaseTemplateTest;
+import cn.deepmax.redis.base.BaseMemEngineTest;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import io.netty.handler.codec.redis.*;
 import org.junit.Test;
-import org.springframework.dao.DataAccessException;
-import org.springframework.data.redis.core.RedisOperations;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.SessionCallback;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
-/**
- * @author wudi
- * @date 2021/12/24
- */
-public class TransactionModuleTest extends BaseTemplateTest {
-    public TransactionModuleTest(RedisTemplate<String, Object> redisTemplate) {
-        super(redisTemplate);
-    }
-
-    @Test
-    public void shouldRunTx() {
-        if (isRedisson()) {
-            return; //redisson 3.16.7 will not run exec???
-        }
-        ExpectedEvents events = listen("k1");
-        SessionCallback<Object> sessionCallback = new SessionCallback<Object>() {
-            @Override
-            public Object execute(RedisOperations operations) throws DataAccessException {
-                operations.multi();
-                operations.opsForValue().set("k1", "old");
-                operations.opsForValue().getAndSet("k1", "new");
-                operations.opsForValue().set("k2", "v2", 15, TimeUnit.SECONDS);
-                return operations.exec();
-            }
-        };
-        //redisson v:  size = 1 : only old
-        //jedis / lettuce: v: size = 3: true old true
-        List<Object> v = (List<Object>) t().execute(sessionCallback);
-
-        assertTrue(v.stream().anyMatch(vl -> "old".equals(vl)));
-        assertEquals(v().get("k1"), "new");
-        assertEquals(v().get("k2"), "v2");
-        assertEquals(t().getExpire("k2").longValue(), 15L);
-        assertEquals(events.events.size(),2);
-        assertEquals(events.triggerTimes,1);
-    }
-
-    @Test
-    public void shouldRunEmpty() {
-        SessionCallback<Object> sessionCallback = new SessionCallback<Object>() {
-            @Override
-            public Object execute(RedisOperations operations) throws DataAccessException {
-                operations.multi();
-                return operations.exec();
-            }
-        };
-        List<Object> v = (List<Object>) t().execute(sessionCallback);
-
-        assertEquals(v.size(), 0);
-    }
-
+public class TransactionModuleEngineTest extends BaseMemEngineTest {
     @Test
     public void shouldTxNornal() {
         ExpectedEvents evnets = listen(Arrays.asList("k", "k2"));
@@ -77,7 +21,7 @@ public class TransactionModuleTest extends BaseTemplateTest {
 
         msg = engine().execute(ListRedisMessage.ofString("set k 1"), client);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "QUEUED");
-        
+
         msg = engine().execute(ListRedisMessage.ofString("incrby k 10"), client);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "QUEUED");
 
@@ -86,7 +30,7 @@ public class TransactionModuleTest extends BaseTemplateTest {
 
         msg = engine().execute(ListRedisMessage.ofString("set k2 1"), client);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "QUEUED");
-        
+
         msg = engine().execute(ListRedisMessage.ofString("exec"), client);
         ListRedisMessage m = (ListRedisMessage) msg;
         assertEquals(m.children().size(), 4);
@@ -296,7 +240,7 @@ public class TransactionModuleTest extends BaseTemplateTest {
 
         msg = engine().execute(ListRedisMessage.ofString("unwatch"), embeddedClient());
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
-        
+
         msg = engine().execute(ListRedisMessage.ofString("multi"), client);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
 
@@ -308,7 +252,7 @@ public class TransactionModuleTest extends BaseTemplateTest {
         //other set ,but no watch.
         msg = engine().execute(ListRedisMessage.ofString("set k new"), embeddedClient());
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
-        
+
         msg = engine().execute(ListRedisMessage.ofString("get k"), client);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "QUEUED");
 
@@ -384,7 +328,7 @@ public class TransactionModuleTest extends BaseTemplateTest {
     @Test
     public void shouldWatchTxErrorWatchNil() {
         Client client = embeddedClient();
-        
+
         RedisMessage msg = engine().execute(ListRedisMessage.ofString("watch k 2 3"), client);
         assertEquals(((SimpleStringRedisMessage) msg).content(), "OK");
 
@@ -407,8 +351,8 @@ public class TransactionModuleTest extends BaseTemplateTest {
         msg = engine().execute(ListRedisMessage.ofString("get k"), client);
         assertEquals(((FullBulkValueRedisMessage) msg).str(), "old");
     }
-    
-//    @Ignore("to fix this ,use new key modify events")
+
+    //    @Ignore("to fix this ,use new key modify events")
     @Test
     public void shouldWatchTxErrorWatchNilSetAndDel() {
         Client client = embeddedClient();
@@ -436,5 +380,4 @@ public class TransactionModuleTest extends BaseTemplateTest {
         msg = engine().execute(ListRedisMessage.ofString("get k"), client);
         assertSame(FullBulkStringRedisMessage.NULL_INSTANCE, msg);
     }
-
 }
