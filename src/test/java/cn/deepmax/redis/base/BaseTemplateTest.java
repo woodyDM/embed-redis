@@ -29,7 +29,6 @@ import java.util.concurrent.ScheduledExecutorService;
 abstract class BaseTemplateTest implements ByteHelper {
 
     protected RedisTemplate<String, Object> redisTemplate;
-    protected JdkSerializationRedisSerializer serializer = new JdkSerializationRedisSerializer();
     public static final Logger log = LoggerFactory.getLogger(BaseTemplateTest.class);
     protected static ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private static final int POOL_SIZE = 4;

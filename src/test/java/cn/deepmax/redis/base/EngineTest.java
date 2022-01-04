@@ -8,6 +8,8 @@ import cn.deepmax.redis.core.NettyClient;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.handler.codec.redis.FullBulkStringRedisMessage;
+import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 import io.netty.handler.codec.redis.SimpleStringRedisMessage;
 
@@ -57,9 +59,30 @@ public interface EngineTest extends ByteHelper {
         return client;
     }
 
+    default long getExpire(String key) {
+        IntegerRedisMessage l = exec("ttl " + key);
+        return l.value();
+    }
+
+    default <T> T exec(String command) {
+        return (T) engine().execute(ListRedisMessage.ofString(command), embeddedClient());
+    }
 
     default void del(String k) {
         engine().execute(ListRedisMessage.ofString(String.format("del %s", k)), embeddedClient());
+    }
+
+    default byte[] get(String key) {
+        FullBulkStringRedisMessage msg = exec("get " + key);
+        if (msg == FullBulkStringRedisMessage.NULL_INSTANCE) {
+            return null;
+        } else if (msg == FullBulkStringRedisMessage.EMPTY_INSTANCE) {
+            return new byte[0];
+        } else {
+            byte[] dest = new byte[msg.content().readableBytes()];
+            msg.content().getBytes(0, dest);
+            return dest;
+        }
     }
 
     default void set(String k, String v) {

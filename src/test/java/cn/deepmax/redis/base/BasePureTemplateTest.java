@@ -60,5 +60,5 @@ public abstract class BasePureTemplateTest extends BaseTemplateTest {
             return null;
         });
     }
-
+    
 }
