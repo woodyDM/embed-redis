@@ -19,7 +19,7 @@ import java.util.function.Supplier;
 public class BlockTask {
     private final Client client;
     private final List<Key> keys;
-    private final Long timeout;
+    private final Long timeout; //mills
     private final RedisEngine engine;
     private final Supplier<Optional<RedisMessage>> success;
     private final Supplier<RedisMessage> fail;
@@ -51,7 +51,7 @@ public class BlockTask {
             this.future = client.channel().eventLoop().schedule(() -> {
                 engine.getDbManager().removeListener(outListener);
                 client.pub(fail.get());
-            }, timeout, TimeUnit.SECONDS);
+            }, timeout, TimeUnit.MILLISECONDS);
         }
     }
 

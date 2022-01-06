@@ -1,17 +1,28 @@
 package cn.deepmax.redis.resp3;
 
 import cn.deepmax.redis.api.RedisServerException;
+import cn.deepmax.redis.core.Key;
 import io.netty.handler.codec.redis.ArrayRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ListRedisMessage extends ArrayRedisMessage implements RedisMessage {
 
     public ListRedisMessage(List<RedisMessage> children) {
         super(children);
+    }
+    
+    public static ListRedisMessage wrapKeys(List<Key> list){
+        if (list == null || list.isEmpty()) {
+            return empty();
+        }
+        List<RedisMessage> r = list.stream().map(k -> FullBulkValueRedisMessage.ofString(k.getContent()))
+                .collect(Collectors.toList());
+        return new ListRedisMessage(r);
     }
 
     public static ListRedisMessage empty() {

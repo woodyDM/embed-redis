@@ -23,6 +23,35 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
         this.dict = new ScanMap<>();
     }
 
+    /**
+     * diff
+     *
+     * @param sets
+     * @param <S>
+     * @param <T>
+     * @return
+     */
+    public static <S extends Comparable<S>, T extends Comparable<T>> List<ZSet.Pair<S, T>> diff(List<? extends ZSet<S, T>> sets) {
+        if (sets == null || sets.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<ZSet.Pair<S, T>> list = new LinkedList<>();
+        ZSet<S, T> base = sets.get(0);
+        base.dict.forEach((t, s) -> {
+            boolean exist = false;
+            for (int i = 1; i < sets.size(); i++) {
+                if (sets.get(i).dict.get(t) != null) {
+                    exist = true;
+                    break;
+                }
+            }
+            if (!exist) {
+                list.add(new Pair<>(s, t));
+            }
+        });
+        return list;
+    }
+
     @Override
     public long size() {
         if (zsl.length != dict.size()) {
@@ -31,18 +60,32 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
         return dict.size();
     }
 
+    /**
+     * @param score
+     * @param ele
+     * @return 1 if insert or 0 if update
+     */
+    public int add(S score, T ele) {
+        S old = dict.set(ele, score);
+        if (old == null) {
+            zsl.insert(score, ele);
+            return 1;
+        } else {
+            zsl.updateScore(ele, old, score);
+            return 0;
+        }
+    }
+
     public int add(List<Pair<S, T>> values) {
         int c = 0;
         for (Pair<S, T> t : values) {
-            S old = dict.set(t.ele, t.score);
-            if (old == null) {
-                c++;
-                zsl.insert(t.score, t.ele);
-            } else {
-                zsl.updateScore(t.ele, old, t.score);
-            }
+            c += add(t.score, t.ele);
         }
         return c;
+    }
+
+    public S get(T ele) {
+        return dict.get(ele);
     }
 
     /**
@@ -213,6 +256,31 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
         return dict.get(key);
     }
 
+    public long zcount(Range<S> range) {
+        if (!zsl.inRange(range)) {
+            return 0;
+        }
+        long count = 0;
+        ZSkipListNode<S, T> first = zsl.zslFirstInRange(range);
+        if (first != null) {
+            long r1 = zsl.getRank(first.ele, first.score);
+            count = size() - (r1 - 1);
+            ZSkipListNode<S, T> last = zsl.zslLastInRange(range);
+            if (last != null) {
+                long r2 = zsl.getRank(last.ele, last.score);
+                count -= size() - r2;
+            }
+        }
+        return count;
+    }
+
+    public List<Pair<S, T>> pop(long count, boolean fromMax) {
+        count = trimToSize(count);
+        List<Pair<S, T>> result = zsl.pop(count, fromMax);
+        result.forEach(p -> dict.delete(p.ele));
+        return result;
+    }
+
     @SuppressWarnings({"unchecked", "rawtypes"})
     static class ZSkipList<S extends Comparable<S>, T extends Comparable<T>> implements Sized {
         ZSkipListNode<S, T> header;
@@ -227,7 +295,7 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
             t.header = zslCreateNode(ZSKIPLIST_MAXLEVEL, null, null);
             return t;
         }
-        
+
         static <S extends Comparable<S>, T extends Comparable<T>> ZSkipListNode<S, T> zslCreateNode(int levelNumber, T ele, S score) {
             ZSkipListNode<S, T> node = new ZSkipListNode<>(ele, score);
             node.level = new Level[levelNumber];
@@ -433,6 +501,19 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
             return new IllegalStateException("Can't found score " + old + " with ele " + ele);
         }
 
+        public List<Pair<S, T>> pop(long count, boolean fromMax) {
+            List<Pair<S, T>> list = new ArrayList<>();
+            ZSkipListNode<S, T> x;
+            ZSkipListNode<S, T> next = null;
+            while (count-- > 0) {
+                x = (next == null ? (fromMax ? tail : header.next()) : next);
+                next = (fromMax ? x.backward : x.next());
+                list.add(new Pair<>(x.score, x.ele));
+                delete(x.score, x.ele);
+            }
+            return list;
+        }
+
         /**
          * @param ele
          * @param score
@@ -630,6 +711,8 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
                 level += 1;
             return Math.min(level, ZSKIPLIST_MAXLEVEL);
         }
+
+
     }
 
     static class ZSkipListNode<S extends Comparable<S>, T extends Comparable<T>> implements Comparable<ZSkipListNode<S, T>> {

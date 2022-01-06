@@ -32,25 +32,25 @@
 ### Sorted Set
 |name|supported|description|
 |-----|-----|-----|
-|BZMPOP|||
-|BZPOPMAX|||
-|BZPOPMIN|||
+|BZMPOP|N|7.x|
+|BZPOPMAX|Y||
+|BZPOPMIN|Y||
 |ZADD|||
-|ZCARD|||
-|ZCOUNT|||
-|ZDIFF|||
-|ZDIFFSTORE|||
-|ZINCRBY|||
+|ZCARD|Y||
+|ZCOUNT|Y||
+|ZDIFF|Y||
+|ZDIFFSTORE|Y||
+|ZINCRBY|Y||
 |ZINTER|||
 |ZINTERCARD|||
 |ZINTERSTORE|||
 |ZLEXCOUNT|||
-|ZMPOP|||
+|ZMPOP|N|7.x|
 |ZMSCORE|Y||
-|ZPOPMAX|||
-|ZPOPMIN|||
+|ZPOPMAX|Y||
+|ZPOPMIN|Y||
 |ZRANDMEMBER|||
-|ZRANGE|||
+|ZRANGE|Y||
 |ZRANGEBYLEX|Y||
 |ZRANGEBYSCORE|Y||
 |ZRANGESTORE|Y||
@@ -76,6 +76,7 @@
 -[ ] scans.     
 -[ ] Upgrade redisson 3.16.7.   
 -[X] Fix RedissonConnection lpos 
+-[ ] Block command in Transaction and scripting
 
   
 

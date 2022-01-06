@@ -7,6 +7,14 @@ public interface Sized {
 
     long size();
 
+    default long trimToSize(long count) {
+        if (count > size()) {
+            return size();
+        } else {
+            return count;
+        }
+    }
+
     default int tranStart(int start) {
         int len = (int) size();
         if (start < 0) start = len + start;

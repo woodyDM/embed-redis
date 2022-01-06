@@ -16,6 +16,10 @@ public class FullBulkValueRedisMessage extends FullBulkStringRedisMessage {
         this.type = type;
     }
 
+    public static FullBulkStringRedisMessage ofDouble(Double v) {
+        return ofString(NumberUtils.formatDouble(v));
+    }
+
     public static FullBulkStringRedisMessage ofString(String v) {
         if (v == null) {
             return FullBulkStringRedisMessage.NULL_INSTANCE;

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public class ScanMap<K, V> {
@@ -16,6 +17,10 @@ public class ScanMap<K, V> {
     public V get(K key) {
         Node<K, V> n = container.get(key);
         return n == null ? null : n.value;
+    }
+
+    public void forEach(BiConsumer<? super K, ? super V> c) {
+        container.forEach((k, n) -> c.accept(k, n.value));
     }
 
     public Node<K, V> get(Long idx) {

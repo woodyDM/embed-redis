@@ -1,7 +1,9 @@
 package cn.deepmax.redis.core.template;
 
 import cn.deepmax.redis.base.BasePureTemplateTest;
+import cn.deepmax.redis.base.BlockTest;
 import cn.deepmax.redis.utils.NumberUtils;
+import cn.deepmax.redis.utils.Tuple;
 import org.junit.Test;
 import org.springframework.data.redis.connection.RedisZSetCommands;
 import org.springframework.data.redis.core.RedisCallback;
@@ -9,9 +11,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -19,7 +20,7 @@ import static org.junit.Assert.*;
  * @author wudi
  * @date 2021/12/30
  */
-public class SortedSetModuleTemplateTest extends BasePureTemplateTest {
+public class SortedSetModuleTemplateTest extends BasePureTemplateTest implements BlockTest {
     public SortedSetModuleTemplateTest(RedisTemplate<String, Object> redisTemplate) {
         super(redisTemplate);
     }
@@ -48,6 +49,15 @@ public class SortedSetModuleTemplateTest extends BasePureTemplateTest {
     }
 
     @Test
+    public void shouldZCard() {
+        z().add("key", "a", 1.0D);
+        z().add("key", "b", 1.1D);
+
+        assertEquals(z().size("key").longValue(), 2);
+        assertEquals(z().size("key-not-exist").longValue(), 0);
+    }
+
+    @Test
     public void shouldAddAndRangeNormalNoScore() {
         z().add("key", "a", 1.0D);
         z().add("key", "b", 1.1D);
@@ -65,6 +75,140 @@ public class SortedSetModuleTemplateTest extends BasePureTemplateTest {
         assertEquals(list.get(1), "c");
         assertEquals(list.get(2), "f");
 
+    }
+
+    @Test
+    public void shouldZCount() {
+        z().add("key", "a", 1.0D);
+        z().add("key", "b", 1.1D);
+        z().add("key", "c", 1.2D);
+        z().add("key", "d", 1.3D);
+        z().add("key", "e", 1.15D);
+        z().add("key", "f", 1.25D);
+
+        z().add("key", "b", 2.0D);
+        //a    e    c   f       d       b
+        //1.0  1.15 1.2 1.25    1.3     2
+        assertEquals(z().count("key", 1.15D, 1.3D).intValue(), 4);
+        assertEquals(z().count("key", 2D, 3D).intValue(), 1);
+        assertEquals(z().count("key", 3D, 3D).intValue(), 0);
+        assertEquals(z().count("key", -33D, -3D).intValue(), 0);
+        assertEquals(z().count("key", -33D, 1D).intValue(), 1);
+    }
+
+    @Test
+    public void shouldZCount2() {
+        z().add("key", "a", 1.0D);
+        z().add("key", "b", 1.1D);
+        z().add("key", "c", 1.2D);
+        z().add("key", "d", 1.3D);
+        z().add("key", "e", 1.15D);
+        z().add("key", "f", 1.25D);
+
+        z().add("key", "b", 2.0D);
+        //a    e    c   f       d       b
+        //1.0  1.15 1.2 1.25    1.3     2
+        Long key = t().execute((RedisCallback<Long>) con -> con.zCount(bytes("key"), RedisZSetCommands.Range.range().gt(1.2D)));
+        assertEquals(key.intValue(), 3);
+        key = t().execute((RedisCallback<Long>) con -> con.zCount(bytes("key"), RedisZSetCommands.Range.range().lt(1.25D)));
+        assertEquals(key.intValue(), 3);
+        key = t().execute((RedisCallback<Long>) con -> con.zCount(bytes("key"), RedisZSetCommands.Range.range()));
+        assertEquals(key.intValue(), 6);
+    }
+
+    @Test
+    public void shouldZPopMax() {
+        if (isRedisson()) {
+            return; //StackOverflowError not imple
+        }
+        z().add("key", "a", 1.0D);
+        z().add("key", "b", 1.1D);
+        z().add("key", "c", 1.2D);
+        z().add("key", "d", 1.3D);
+        z().add("key", "e", 1.15D);
+        z().add("key", "f", 1.25D);
+
+        z().add("key", "b", 2.0D);
+        //a    e    c   f       d       b
+        //1.0  1.15 1.2 1.25    1.3     2
+        ZSetOperations.TypedTuple<Object> t = z().popMax("key");
+        assertEquals(t.getValue(), "b");
+        assertEquals(NumberUtils.formatDouble(t.getScore()), "2");
+
+        List<ZSetOperations.TypedTuple<Object>> list = new ArrayList<>(z().popMax("key", 3));
+        assertEquals(list.size(), 3);
+        assertEquals(list.get(0).getValue(), "d");
+        assertEquals(list.get(1).getValue(), "f");
+        assertEquals(list.get(2).getValue(), "c");
+        assertEquals(NumberUtils.formatDouble(list.get(0).getScore()), "1.3");
+        assertEquals(NumberUtils.formatDouble(list.get(1).getScore()), "1.25");
+        assertEquals(NumberUtils.formatDouble(list.get(2).getScore()), "1.2");
+
+        list = new ArrayList<>(z().popMax("key", 4));
+        assertEquals(list.size(), 2);
+        assertEquals(list.get(0).getValue(), "e");
+        assertEquals(list.get(1).getValue(), "a");
+        assertEquals(NumberUtils.formatDouble(list.get(0).getScore()), "1.15");
+        assertEquals(NumberUtils.formatDouble(list.get(1).getScore()), "1");
+
+        list = new ArrayList<>(z().popMax("key", 3));
+        assertEquals(list.size(), 0);
+    }
+
+    @Test
+    public void shouldZPopMin() {
+        if (isRedisson()) {
+            return; //StackOverflowError not imple
+        }
+        z().add("key", "a", 1.0D);
+        z().add("key", "b", 1.1D);
+        z().add("key", "c", 1.2D);
+        z().add("key", "d", 1.3D);
+        z().add("key", "e", 1.15D);
+        z().add("key", "f", 1.25D);
+
+        z().add("key", "b", 2.0D);
+        //a    e    c   f       d       b
+        //1.0  1.15 1.2 1.25    1.3     2
+        ZSetOperations.TypedTuple<Object> t = z().popMin("key");
+        assertEquals(t.getValue(), "a");
+        assertEquals(NumberUtils.formatDouble(t.getScore()), "1");
+
+        List<ZSetOperations.TypedTuple<Object>> list = new ArrayList<>(z().popMin("key", 4));
+        assertEquals(list.size(), 4);
+        assertEquals(list.get(0).getValue(), "e");
+        assertEquals(list.get(1).getValue(), "c");
+        assertEquals(list.get(2).getValue(), "f");
+        assertEquals(list.get(3).getValue(), "d");
+        assertEquals(NumberUtils.formatDouble(list.get(0).getScore()), "1.15");
+        assertEquals(NumberUtils.formatDouble(list.get(1).getScore()), "1.2");
+        assertEquals(NumberUtils.formatDouble(list.get(2).getScore()), "1.25");
+        assertEquals(NumberUtils.formatDouble(list.get(3).getScore()), "1.3");
+
+        list = new ArrayList<>(z().popMin("key", 4));
+        assertEquals(list.size(), 1);
+        assertEquals(list.get(0).getValue(), "b");
+        assertEquals(NumberUtils.formatDouble(list.get(0).getScore()), "2");
+
+        list = new ArrayList<>(z().popMin("key", 3));
+        assertEquals(list.size(), 0);
+    }
+
+    @Test
+    public void shouldBZPopMinNormal() {
+        if (isRedisson()) {
+            return; //StackOverflowError not imple
+        }
+        z().add("key", "a", 1.0D);
+
+        Tuple<Long, ZSetOperations.TypedTuple<Object>> v1 = block(() -> z().popMin("key", 1, TimeUnit.SECONDS));
+        assertEquals(v1.b.getValue(), "a");
+        assertEquals(NumberUtils.formatDouble(v1.b.getScore()), "1");
+        assertTrue(v1.a < 1000);
+
+        v1 = block(() -> z().popMin("key", 100, TimeUnit.MILLISECONDS));
+        assertNull(v1.b);
+        assertTrue(v1.a > 100);
     }
 
     @Test
@@ -131,6 +275,126 @@ public class SortedSetModuleTemplateTest extends BasePureTemplateTest {
         assertEquals(NumberUtils.formatDouble(list.get(0).getScore()), "1.15");
         assertEquals(NumberUtils.formatDouble(list.get(1).getScore()), "1.2");
         assertEquals(NumberUtils.formatDouble(list.get(2).getScore()), "1.25");
+    }
+
+    @Test
+    public void shouldZDiffNormal() {
+        if (isRedisson()) {
+            return; //StackOverflowError
+        }
+        z().add("key", "a", 1.0D);
+        z().add("key", "b", 1.1D);
+        z().add("key", "c", 1.2D);
+        z().add("key", "d", 1.3D);
+        z().add("key", "e", 1.15D);
+        z().add("key", "f", 1.25D);
+
+        z().add("key2", "b", 1.1D);
+        z().add("key3", "e", 1.1D);
+        z().add("key4", "f", 1.1D);
+
+        Set<Object> diff = z().difference("key", Arrays.asList("key2", "key3", "key4"));
+        assertEquals(diff.size(), 3);
+        assertTrue(diff.contains("a"));
+        assertTrue(diff.contains("c"));
+        assertTrue(diff.contains("d"));
+    }
+
+    @Test
+    public void shouldZDiffStoreNormal() {
+        if (isRedisson()) {
+            return; //StackOverflowError
+        }
+        z().add("key", "a", 1.0D);
+        z().add("key", "b", 1.1D);
+        z().add("key", "c", 1.2D);
+        z().add("key", "d", 1.3D);
+        z().add("key", "e", 1.15D);
+        z().add("key", "f", 1.25D);
+
+        z().add("key2", "b", 1.1D);
+        z().add("key3", "e", 1.1D);
+        z().add("key4", "f", 1.1D);
+
+        Long diff = z().differenceAndStore("key", Arrays.asList("key2", "key3", "key4"), "dest");
+        LinkedList<ZSetOperations.TypedTuple<Object>> dest = new LinkedList<>(z().rangeWithScores("dest", 0, -1));
+
+        assertEquals(diff.intValue(), 3);
+        assertEquals(dest.get(0).getValue(), "a");
+        assertEquals(dest.get(1).getValue(), "c");
+        assertEquals(dest.get(2).getValue(), "d");
+        assertEquals(NumberUtils.formatDouble(dest.get(0).getScore()), "1");
+        assertEquals(NumberUtils.formatDouble(dest.get(1).getScore()), "1.2");
+        assertEquals(NumberUtils.formatDouble(dest.get(2).getScore()), "1.3");
+
+    }
+
+    @Test
+    public void shouldZDiffStoreNormalEmpty() {
+        if (isRedisson()) {
+            return; //StackOverflowError
+        }
+        z().add("key", "a", 1.0D);
+        z().add("key", "c", 1.2D);
+        z().add("key", "d", 1.3D);
+
+        Long diff = z().differenceAndStore("key", Collections.emptyList(), "dest");
+        LinkedList<ZSetOperations.TypedTuple<Object>> dest = new LinkedList<>(z().rangeWithScores("dest", 0, -1));
+
+        assertEquals(diff.intValue(), 3);
+        assertEquals(dest.get(0).getValue(), "a");
+        assertEquals(dest.get(1).getValue(), "c");
+        assertEquals(dest.get(2).getValue(), "d");
+        assertEquals(NumberUtils.formatDouble(dest.get(0).getScore()), "1");
+        assertEquals(NumberUtils.formatDouble(dest.get(1).getScore()), "1.2");
+        assertEquals(NumberUtils.formatDouble(dest.get(2).getScore()), "1.3");
+
+    }
+
+    @Test
+    public void shouldZDiffNormalToEmpty() {
+        if (isRedisson()) {
+            return; //StackOverflowError
+        }
+        z().add("key", "a", 1.0D);
+        z().add("key", "b", 1.1D);
+        z().add("key", "c", 1.2D);
+        z().add("key", "d", 1.3D);
+        z().add("key", "e", 1.15D);
+        z().add("key", "f", 1.25D);
+
+        z().add("key2", "b", 1.1D);
+        z().add("key3", "e", 1.1D);
+        z().add("key4", "f", 1.1D);
+        z().add("key5", "a", 1.1D);
+        z().add("key5", "c", 1.1D);
+        z().add("key5", "d", 1.1D);
+
+        Set<Object> diff = z().difference("key", Arrays.asList("key2", "key3", "key4", "key5", "key-not-exist"));
+        assertEquals(diff.size(), 0);
+    }
+
+    @Test
+    public void shouldZDiffNormalWithScore() {
+        if (isRedisson()) {
+            return; //StackOverflowError
+        }
+        z().add("key", "a", 1.0D);
+        z().add("key", "b", 1.1D);
+        z().add("key", "c", 1.2D);
+        z().add("key", "d", 1.3D);
+        z().add("key", "e", 1.15D);
+        z().add("key", "f", 1.25D);
+
+        z().add("key2", "b", 1.1D);
+        z().add("key3", "e", 1.1D);
+        z().add("key4", "f", 1.1D);
+
+        Set<ZSetOperations.TypedTuple<Object>> diff = z().differenceWithScores("key", Arrays.asList("key2", "key3", "key4"));
+        assertEquals(diff.size(), 3);
+        assertEquals(NumberUtils.formatDouble(diff.stream().filter(s -> s.getValue().equals("a")).findFirst().get().getScore()), "1");
+        assertEquals(NumberUtils.formatDouble(diff.stream().filter(s -> s.getValue().equals("c")).findFirst().get().getScore()), "1.2");
+        assertEquals(NumberUtils.formatDouble(diff.stream().filter(s -> s.getValue().equals("d")).findFirst().get().getScore()), "1.3");
     }
 
     @Test
@@ -642,5 +906,45 @@ public class SortedSetModuleTemplateTest extends BasePureTemplateTest {
         assertEquals(NumberUtils.formatDouble(z().score("src", "a")), "1.1");
         assertNull(z().score("src", "d"));
         assertNull(z().score("not-exist-key", "d"));
+    }
+
+    @Test
+    public void shouldZIncreBy0() {
+        z().add("key", "a", 1.0D);
+        z().add("key", "b", 1.1D);
+        z().add("key", "c", 1.2D);
+        z().add("key", "d", 1.3D);
+        z().add("key", "e", 1.15D);
+        z().add("key", "f", 1.25D);
+
+        z().add("key", "b", 2.0D);
+        //a    e    c   f       d       b
+        //1.0  1.15 1.2 1.25    1.3     2
+        Double newV = z().incrementScore("key", "a", 3D);
+        assertEquals(NumberUtils.formatDouble(newV), "4");
+
+        if (isRedisson()) {
+            return;
+        }
+        List<ZSetOperations.TypedTuple<Object>> key = new ArrayList<>(z().popMax("key", 1));
+        assertEquals(key.size(), 1);
+        assertEquals(key.get(0).getValue(), "a");
+
+    }
+
+    @Test
+    public void shouldZIncreBy1() {
+        Double newV = z().incrementScore("key", "a", 3D);
+        assertEquals(NumberUtils.formatDouble(newV), "3");
+        assertEquals(z().size("key").intValue(), 1);
+    }
+
+    @Test
+    public void shouldZIncreBy2() {
+        z().add("key", "a", 4.5D);
+
+        Double newV = z().incrementScore("key", "b", 3D);
+        assertEquals(NumberUtils.formatDouble(newV), "3");
+        assertEquals(z().size("key").intValue(), 2);
     }
 }

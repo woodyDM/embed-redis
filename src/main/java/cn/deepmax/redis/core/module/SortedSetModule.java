@@ -21,6 +21,7 @@ import io.netty.handler.codec.redis.RedisMessage;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -32,8 +33,17 @@ public class SortedSetModule extends BaseModule {
     public SortedSetModule() {
         super("sortedSet");
         register(new ZAdd());
+        register(new ZCard());
+        register(new ZCount());
         register(new ZScore());
         register(new ZMScore());
+        register(new ZDiff());
+        register(new ZIncrBy());
+        register(new ZDiffStore());
+        register(new ZPop(true, "zpopmax"));
+        register(new ZPop(false, "zpopmin"));
+        register(new BZPop(true, "bzpopmax"));
+        register(new BZPop(false, "bzpopmin"));
         register(new ZRange());
         register(new ZRevRange());
         register(new ZRangeByScore(false, "zrangebyscore"));
@@ -48,6 +58,34 @@ public class SortedSetModule extends BaseModule {
         register(new ZRemRangeByLex());
         register(new ZRem());
     }
+
+    public static class ZCard extends ArgsCommand.TwoExWith<SortedSet> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            SortedSet set = get(key);
+            if (set == null) {
+                return Constants.INT_ZERO;
+            }
+            return new IntegerRedisMessage(set.size());
+        }
+    }
+
+    public static class ZCount extends ArgsCommand.FourExWith<SortedSet> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            String min = msg.getAt(2).str();
+            String max = msg.getAt(3).str();
+            Range<Double> range = NumberUtils.parseScoreRange(min, max);
+            SortedSet set = get(key);
+            if (set == null) {
+                return Constants.INT_ZERO;
+            }
+            return new IntegerRedisMessage(set.zcount(range));
+        }
+    }
+
 
     /**
      * todo
@@ -80,6 +118,7 @@ public class SortedSetModule extends BaseModule {
         }
     }
 
+
     public static class ZRem extends ArgsCommand.ThreeWith<SortedSet> {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
@@ -111,7 +150,7 @@ public class SortedSetModule extends BaseModule {
             if (d == null) {
                 return FullBulkStringRedisMessage.NULL_INSTANCE;
             }
-            return FullBulkValueRedisMessage.ofString(NumberUtils.formatDouble(d));
+            return FullBulkValueRedisMessage.ofDouble(d);
         }
     }
 
@@ -129,7 +168,7 @@ public class SortedSetModule extends BaseModule {
                 if (score == null) {
                     return FullBulkValueRedisMessage.NULL_INSTANCE;
                 } else {
-                    return FullBulkValueRedisMessage.ofString(NumberUtils.formatDouble(score));
+                    return FullBulkValueRedisMessage.ofDouble(score);
                 }
             }).collect(Collectors.toList());
             return new ListRedisMessage(list);
@@ -372,7 +411,7 @@ public class SortedSetModule extends BaseModule {
         List<RedisMessage> msgList = new ArrayList<>();
         for (ZSet.Pair<Double, Key> p : list) {
             msgList.add(FullBulkValueRedisMessage.ofString(p.ele.getContent()));
-            if (withScores) msgList.add(FullBulkValueRedisMessage.ofString(NumberUtils.formatDouble(p.score)));
+            if (withScores) msgList.add(FullBulkValueRedisMessage.ofDouble(p.score));
         }
         return new ListRedisMessage(msgList);
     }
@@ -461,6 +500,173 @@ public class SortedSetModule extends BaseModule {
         }
     }
 
+
+    public static class ZPop extends ArgsCommand<SortedSet> {
+        final boolean max;
+        final String name;
+
+        public ZPop(boolean fromMax, String name) {
+            super(2, 3);
+            this.max = fromMax;
+            this.name = name;
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            long count = 1;
+            if (msg.children().size() == 3) {
+                count = NumberUtils.parse(msg.getAt(2).str());
+            }
+            SortedSet set = get(key);
+            if (set == null) {
+                return ListRedisMessage.empty();
+            }
+            List<ZSet.Pair<Double, Key>> list = set.pop(count, max);
+            deleteSetIfNeed(key, engine, client);
+            return transPair(list, true);
+        }
+    }
+
+    public static class BZPop extends ArgsCommand.ThreeWith<SortedSet> {
+        final boolean fromMax;
+        final String name;
+
+        public BZPop(boolean fromMax, String name) {
+            this.fromMax = fromMax;
+            this.name = name;
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            long timeout = NumberUtils.parseTimeout(msg.getAt(msg.children().size() - 1).str());
+            List<Key> keys = super.genKeys(msg.children(), 1, msg.children().size() - 1);
+            //first try pop
+            Optional<RedisMessage> ok = tryPop(keys);
+            if (ok.isPresent()) {
+                return ok.get();
+            }
+            //block
+            new BlockTask(client, keys, timeout, engine,
+                    () -> this.tryPop(keys),
+                    () -> ListRedisMessage.NULL_INSTANCE).block();
+            return null;
+        }
+
+        protected Optional<RedisMessage> tryPop(List<Key> keys) {
+            for (Key key : keys) {
+                SortedSet set = get(key.getContent());
+                if (set == null) {
+                    continue;
+                }
+                List<ZSet.Pair<Double, Key>> poped = set.pop(1, fromMax);
+                if (poped.isEmpty()) {
+                    continue;
+                }
+                deleteSetIfNeed(key.getContent(), engine, client);
+                ListRedisMessage msg = ListRedisMessage.newBuilder()
+                        .append(FullBulkValueRedisMessage.ofString(key.getContent()))
+                        .append(FullBulkValueRedisMessage.ofString(poped.get(0).ele.getContent()))
+                        .append(FullBulkValueRedisMessage.ofDouble(poped.get(0).score))
+                        .build();
+                return Optional.of(msg);
+            }
+            return Optional.empty();
+        }
+    }
+
+    public static class ZDiff extends ArgsCommand.ThreeWith<SortedSet> {
+
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            Long numberKeys = msg.getAt(1).val();
+            int argLen = msg.children().size();
+            boolean withScores;
+            if (argLen == numberKeys + 2) {
+                withScores = false;
+            } else if (argLen == numberKeys + 3) {
+                boolean s = ArgParser.parseFlag(msg, "withscores", argLen - 1);
+                if (!s) {
+                    return Constants.ERR_SYNTAX;
+                }
+                withScores = true;
+            } else {
+                return Constants.ERR_SYNTAX;
+            }
+            List<Key> keys = genKeys(msg.children(), 2, 2 + numberKeys.intValue());
+            SortedSet target = get(keys.get(0).getContent());
+            if (target == null) {
+                return ListRedisMessage.empty();
+            }
+            List<SortedSet> sets = keys.stream().map(k -> get(k.getContent())).filter(Objects::nonNull).collect(Collectors.toList());
+            return transPair(ZSet.diff(sets), withScores);
+        }
+    }
+
+    public static class ZDiffStore extends ArgsCommand.FourWith<SortedSet> {
+
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] dest = msg.getAt(1).bytes();
+            Long numberKeys = msg.getAt(2).val();
+            int argLen = msg.children().size();
+            if (numberKeys + 3 != argLen) {
+                return Constants.ERR_SYNTAX;
+            }
+            //check type
+            List<Key> keys = genKeys(msg.children(), 3);
+            List<SortedSet> sets = keys.stream().map(k -> get(k.getContent())).filter(Objects::nonNull).collect(Collectors.toList());
+            //do diff and store
+            byte[] baseKey = keys.get(0).getContent();
+            SortedSet target = get(baseKey);
+            engine.getDb(client).del(client, dest);
+            if (target == null) {
+                return Constants.INT_ZERO;
+            }
+            List<ZSet.Pair<Double, Key>> diff = ZSet.diff(sets);
+            if (diff.isEmpty()) {
+                return Constants.INT_ZERO;
+            }
+            //to score
+            SortedSet set = new SortedSet(engine.timeProvider());
+            set.add(diff);
+            engine.getDb(client).set(client, dest, set);
+            return new IntegerRedisMessage(diff.size());
+        }
+    }
+
+    public static class ZIncrBy extends ArgsCommand.FourExWith<SortedSet> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            Double incr = NumberUtils.parseDouble(msg.getAt(2).str());
+            byte[] member = msg.getAt(3).bytes();
+            SortedSet set = get(key);
+            Key memberKey = new Key(member);
+            if (set == null) {
+                SortedSet sortedSet = new SortedSet(engine.timeProvider());
+                sortedSet.add(incr, memberKey);
+                engine.getDb(client).set(client, key, sortedSet);
+                return FullBulkValueRedisMessage.ofDouble(incr);
+            }
+            Double old = set.get(memberKey);
+            Double newV = (old == null ? incr : old + incr);
+            set.add(newV, memberKey);
+            engine.fireChangeEvent(client, key, DbManager.EventType.UPDATE);
+            return FullBulkValueRedisMessage.ofDouble(newV);
+        }
+    }
+
     /**
      * remove set which size = 0 or fire update event
      *
@@ -476,5 +682,4 @@ public class SortedSetModule extends BaseModule {
             engine.fireChangeEvent(client, key, DbManager.EventType.UPDATE);
         }
     }
-
 }

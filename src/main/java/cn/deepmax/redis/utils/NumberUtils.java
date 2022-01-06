@@ -21,12 +21,19 @@ public class NumberUtils {
         return parseO(s).orElseThrow(() -> new RedisServerException(Constants.ERR_SYNTAX_NUMBER));
     }
 
-    public static Long parseTimeout(String s) {
-        Long t = parseO(s).orElseThrow(() -> new RedisServerException("ERR timeout is not a float or out of range"));
+    /**
+     * @param s
+     * @return mills
+     */
+    public static long parseTimeout(String s) {
+        if ("0".equals(s)) {
+            return 0;
+        }
+        Double t = parseDoubleO(s).orElseThrow(() -> new RedisServerException("ERR timeout is not a float or out of range"));
         if (t < 0) {
             throw new RedisServerException("ERR timeout is negative");
         }
-        return t;
+        return (long) (t * 1000);
     }
 
     public static Long parse(String s, String errorMessage) {

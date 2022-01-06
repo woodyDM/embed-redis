@@ -3,6 +3,7 @@ package cn.deepmax.redis.core.mixed;
 import cn.deepmax.redis.Constants;
 import cn.deepmax.redis.api.DbManager;
 import cn.deepmax.redis.base.BaseMixedTemplateTest;
+import cn.deepmax.redis.base.BlockTest;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.utils.Tuple;
@@ -15,7 +16,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
@@ -24,7 +24,7 @@ import static org.junit.Assert.*;
  * @author wudi
  * @date 2021/12/28
  */
-public class ListModuleMixedTest extends BaseMixedTemplateTest {
+public class ListModuleMixedTest extends BaseMixedTemplateTest implements BlockTest {
     public ListModuleMixedTest(RedisTemplate<String, Object> redisTemplate) {
         super(redisTemplate);
     }
@@ -472,11 +472,4 @@ public class ListModuleMixedTest extends BaseMixedTemplateTest {
         assertEquals(events.triggerTimes, 0);
     }
 
-    private <T> Tuple<Long, T> block(Supplier<T> action) {
-        long start = System.nanoTime();
-        T v = action.get();
-        long cost = System.nanoTime() - start;
-        long mills = cost / 1000_000;
-        return new Tuple<>(mills, v);
-    }
 }

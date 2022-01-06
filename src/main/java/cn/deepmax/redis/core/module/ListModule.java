@@ -106,9 +106,7 @@ public class ListModule extends BaseModule {
                 return ListRedisMessage.empty();
             }
             List<Key> values = list.lrange((int) start, (int) end);
-            List<RedisMessage> r = values.stream().map(k -> FullBulkValueRedisMessage.ofString(k.getContent()))
-                    .collect(Collectors.toList());
-            return new ListRedisMessage(r);
+            return ListRedisMessage.wrapKeys(values);
         }
     }
 
@@ -415,7 +413,7 @@ public class ListModule extends BaseModule {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             List<Key> keys = genKeys(msg.children(), 1, msg.children().size() - 1);
-            Long timeout = NumberUtils.parseTimeout(msg.getAt(msg.children().size() - 1).str());
+            long timeout = NumberUtils.parseTimeout(msg.getAt(msg.children().size() - 1).str());
             Optional<RedisMessage> returnMsg = tryLPop(keys, client);
             if (returnMsg.isPresent()) {
                 return returnMsg.get();
@@ -460,7 +458,6 @@ public class ListModule extends BaseModule {
             if (fetch.isPresent()) {
                 return fetch.get();
             }
-
             Long timeout = NumberUtils.parseTimeout(msg.getAt(3).str());
             new BlockTask(client, Collections.singletonList(new Key(sourceKey)), timeout, engine,
                     () -> doResponseO(client, engine, RList::rPop, RList::lpush, sourceKey, destKey),
