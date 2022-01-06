@@ -1,31 +1,24 @@
 package cn.deepmax.redis.core.module;
 
-import cn.deepmax.redis.core.Key;
-import cn.deepmax.redis.core.RPattern;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
-import java.util.*;
-
-/**
- * @author wudi
- * @date 2021/7/2
- */
-public class NavMap<T> {
-    private final Map<Key, Node<T>> container = new HashMap<>();
-    private final Map<Long, Node<T>> numberContainer = new HashMap<>();
-    Node<T> tail;
-    Node<T> head;
+public class ScanMap<K, V> {
+    private final Map<K, Node<K, V>> container = new HashMap<>();
+    private final Map<Long, Node<K, V>> numberContainer = new HashMap<>();
+    Node<K, V> tail;
+    Node<K, V> head;
     private long preIndex = 0L;
 
-    public T get(byte[] k) {
-        return this.get(new Key(k));
-    }
-
-    public T get(Key key) {
-        Node<T> n = container.get(key);
+    public V get(K key) {
+        Node<K, V> n = container.get(key);
         return n == null ? null : n.value;
     }
 
-    public Node<T> get(Long idx) {
+    public Node<K, V> get(Long idx) {
         return numberContainer.get(idx);
     }
 
@@ -33,12 +26,8 @@ public class NavMap<T> {
         return container.size();
     }
 
-    public Node<T> delete(byte[] key) {
-        return delete(new Key(key));
-    }
-
-    public Node<T> delete(Key key) {
-        Node<T> old = container.remove(key);
+    public Node<K, V> delete(K key) {
+        Node<K, V> old = container.remove(key);
         if (old == null) {
             return null;
         }
@@ -49,7 +38,7 @@ public class NavMap<T> {
         return old;
     }
 
-    private void removeOld(Node<T> old) {
+    private void removeOld(Node<K, V> old) {
         if (old == head) {
             head = head.next;
         }
@@ -64,14 +53,11 @@ public class NavMap<T> {
         numberContainer.remove(old.idx);
     }
 
-    public T set(byte[] k, T t) {
-        return this.set(new Key(k), t);
-    }
 
-    public T set(Key key, T t) {
+    public V set(K key, V t) {
         preIndex++;
         //append node to last
-        Node<T> node = new Node<>(key, t, preIndex);
+        Node<K, V> node = new Node<>(key, t, preIndex);
         node.pre = tail;
         if (tail != null) {
             tail.next = node;
@@ -83,7 +69,7 @@ public class NavMap<T> {
 
         numberContainer.put(preIndex, node);
         //remove old if need
-        Node<T> old = container.put(key, node);
+        Node<K, V> old = container.put(key, node);
         if (old != null) {
             removeOld(old);
         }
@@ -98,16 +84,15 @@ public class NavMap<T> {
         preIndex = 0L;
     }
 
-    public ScanResult scan(Long cursor, long count, Optional<String> pattern) {
-        Optional<RPattern> p = pattern.map(RPattern::compile);
-        Node<T> node = findScanBegin(cursor);
-        ScanResult result = new ScanResult();
+    public ScanResult<K> scan(Long cursor, long count, Function<K, Boolean> matcherAction) {
+        Node<K, V> node = findScanBegin(cursor);
+        ScanResult<K> result = new ScanResult();
         if (node == null) {
             result.setNextCursor(0L);
             return result;
         }
         while (node != null && count-- > 0) {
-            boolean matches = !p.isPresent() || p.get().matches(node.key.str());
+            boolean matches = matcherAction.apply(node.key);
             if (matches) result.add(node.key);
             node = node.next;
         }
@@ -116,22 +101,22 @@ public class NavMap<T> {
         return result;
     }
 
-    private Node<T> findScanBegin(long cursor) {
+    private Node<K, V> findScanBegin(long cursor) {
         if (cursor == 0) {
             return head;
         }
-        Node<T> t = null;
+        Node<K, V> t = null;
         while (t == null && cursor <= preIndex) {
             t = numberContainer.get(cursor++);
         }
         return t;
     }
 
-    public static class ScanResult {
+    public static class ScanResult<K> {
         private Long nextCursor;
-        private final List<Key> keyNames = new ArrayList<>();
+        private final List<K> keyNames = new ArrayList<>();
 
-        private void add(Key k) {
+        private void add(K k) {
             keyNames.add(k);
         }
 
@@ -143,20 +128,19 @@ public class NavMap<T> {
             return nextCursor;
         }
 
-        public List<Key> getKeyNames() {
+        public List<K> getKeyNames() {
             return keyNames;
         }
     }
 
-
-    public static class Node<T> {
-        final Key key;
-        final T value;
+    public static class Node<K, V> {
+        final K key;
+        final V value;
         final long idx;
-        Node<T> pre;
-        Node<T> next;
+        Node<K, V> pre;
+        Node<K, V> next;
 
-        private Node(Key key, T value, long idx) {
+        private Node(K key, V value, long idx) {
             this.key = key;
             this.value = value;
             this.idx = idx;
@@ -166,15 +150,15 @@ public class NavMap<T> {
             return idx;
         }
 
-        public Node<T> getPre() {
+        public Node<K, V> getPre() {
             return pre;
         }
 
-        public Node<T> getNext() {
+        public Node<K, V> getNext() {
             return next;
         }
 
-        public T getValue() {
+        public V getValue() {
             return value;
         }
 
@@ -188,4 +172,5 @@ public class NavMap<T> {
             return sb.toString();
         }
     }
+
 }

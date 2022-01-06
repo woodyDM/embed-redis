@@ -2,6 +2,7 @@ package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.Constants;
 import cn.deepmax.redis.api.Client;
+import cn.deepmax.redis.api.DbManager;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.api.RedisServerException;
 import cn.deepmax.redis.core.Key;
@@ -13,6 +14,7 @@ import cn.deepmax.redis.utils.NumberUtils;
 import cn.deepmax.redis.utils.Range;
 import cn.deepmax.redis.utils.Tuple;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
+import io.netty.handler.codec.redis.FullBulkStringRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 
@@ -20,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * @author wudi
@@ -29,15 +32,25 @@ public class SortedSetModule extends BaseModule {
     public SortedSetModule() {
         super("sortedSet");
         register(new ZAdd());
+        register(new ZScore());
+        register(new ZMScore());
         register(new ZRange());
         register(new ZRevRange());
         register(new ZRangeByScore(false, "zrangebyscore"));
         register(new ZRangeByScore(true, "zrevrangebyscore"));
         register(new ZRangeByLex(false, "zrangebylex"));
         register(new ZRangeByLex(true, "zrevrangebylex"));
+        register(new ZRangeStore());
+        register(new ZRank());
+        register(new ZRevRank());
+        register(new ZRemRangeByRank());
+        register(new ZRemRangeByScore());
+        register(new ZRemRangeByLex());
+        register(new ZRem());
     }
 
     /**
+     * todo
      * ZADD key [NX|XX] [GT|LT] [CH] [INCR] score member [score member ...]
      */
     public static class ZAdd extends ArgsCommand.FourWith<SortedSet> {
@@ -66,6 +79,63 @@ public class SortedSetModule extends BaseModule {
             return new IntegerRedisMessage(updated);
         }
     }
+
+    public static class ZRem extends ArgsCommand.ThreeWith<SortedSet> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            List<Key> members = genKeys(msg.children(), 2);
+            SortedSet set = get(key);
+            if (set == null) {
+                return Constants.INT_ZERO;
+            }
+            int c = 0;
+            for (Key member : members) {
+                c += set.remove(member);
+            }
+            deleteSetIfNeed(key, engine, client);
+            return new IntegerRedisMessage(c);
+        }
+    }
+
+    public static class ZScore extends ArgsCommand.ThreeExWith<SortedSet> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            byte[] member = msg.getAt(2).bytes();
+            SortedSet set = get(key);
+            if (set == null) {
+                return FullBulkStringRedisMessage.NULL_INSTANCE;
+            }
+            Double d = set.score(new Key(member));
+            if (d == null) {
+                return FullBulkStringRedisMessage.NULL_INSTANCE;
+            }
+            return FullBulkValueRedisMessage.ofString(NumberUtils.formatDouble(d));
+        }
+    }
+
+    public static class ZMScore extends ArgsCommand.ThreeWith<SortedSet> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            List<Key> members = genKeys(msg.children(), 2);
+            SortedSet set = get(key);
+            if (set == null) {
+                return ListRedisMessage.empty();
+            }
+            List<RedisMessage> list = members.stream().map(k -> {
+                Double score = set.score(k);
+                if (score == null) {
+                    return FullBulkValueRedisMessage.NULL_INSTANCE;
+                } else {
+                    return FullBulkValueRedisMessage.ofString(NumberUtils.formatDouble(score));
+                }
+            }).collect(Collectors.toList());
+            return new ListRedisMessage(list);
+        }
+    }
+
 
     public static class ZRange extends BaseRange {
         public ZRange() {
@@ -175,6 +245,34 @@ public class SortedSetModule extends BaseModule {
         }
     }
 
+    public static class ZRangeStore extends BaseRange {
+        public ZRangeStore() {
+            super(5, 6, 7, 8, 9, 10);
+        }
+
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] dest = msg.getAt(1).bytes();
+            byte[] src = msg.getAt(2).bytes();
+            byte[] min = msg.getAt(3).bytes();
+            byte[] max = msg.getAt(4).bytes();
+            boolean withscores = ArgParser.parseFlag(msg, "WITHSCORES", 5);
+            boolean byScore = ArgParser.parseFlag(msg, "BYSCORE", 5);
+            boolean byLex = ArgParser.parseFlag(msg, "BYLEX", 5);
+            boolean reverse = ArgParser.parseFlag(msg, "REV", 5);
+            Optional<Tuple<Long, Long>> limit = ArgParser.parseLongArgTwo(msg, "LIMIT", 5, msg.children().size());
+            RangeType type = RangeType.of(byScore, byLex);
+            //checks
+            if (limit.isPresent() && type == RangeType.INDEX) {
+                return new ErrorRedisMessage("syntax error, LIMIT is only supported in combination with either BYSCORE or BYLEX");
+            }
+            if (withscores && type == RangeType.LEX) {
+                return new ErrorRedisMessage("syntax error, WITHSCORES not supported in combination with BYLEX");
+            }
+            return genericZRangeStore(src, dest, type, min, max, reverse, limit);
+        }
+    }
+
     abstract static class BaseRange extends ArgsCommand<SortedSet> {
         public BaseRange(int limit) {
             super(limit);
@@ -184,8 +282,16 @@ public class SortedSetModule extends BaseModule {
             super(valid);
         }
 
-        protected RedisMessage genericZRange(byte[] key, RangeType type, byte[] startB, byte[] endB, boolean rev,
-                                             boolean withScores, Optional<Tuple<Long, Long>> optLimit) {
+        /**
+         * @param key
+         * @param type
+         * @param startB
+         * @param endB
+         * @param rev
+         * @param optLimit
+         * @return null if key not found!
+         */
+        protected List<ZSet.Pair<Double, Key>> genericZRange0(byte[] key, RangeType type, byte[] startB, byte[] endB, boolean rev, Optional<Tuple<Long, Long>> optLimit) {
 
             if (rev && (type == RangeType.SCORE || type == RangeType.LEX)) {
                 /* Range is given as [max,min] */
@@ -201,26 +307,44 @@ public class SortedSetModule extends BaseModule {
                 int min = NumberUtils.parse(start).intValue();
                 int max = NumberUtils.parse(end).intValue();
                 if (set == null) {
-                    return Constants.LIST_EMPTY;
+                    return null;
                 }
-                List<ZSet.Pair<Double, Key>> range = set.indexRange(min, max, rev);
-                return transPair(range, withScores);
+                return set.indexRange(min, max, rev);
             } else if (type == RangeType.SCORE) {
                 Range<Double> r = NumberUtils.parseScoreRange(start, end);
                 if (set == null) {
-                    return Constants.LIST_EMPTY;
+                    return null;
                 }
-                List<ZSet.Pair<Double, Key>> range = set.scoreRange(r, rev, optLimit);
-                return transPair(range, withScores);
+                return set.scoreRange(r, rev, optLimit);
             } else if (type == RangeType.LEX) {
                 Range<Key> r = NumberUtils.parseLexRange(startB, endB);
                 if (set == null) {
-                    return Constants.LIST_EMPTY;
+                    return null;
                 }
-                List<ZSet.Pair<Double, Key>> range = set.lexRange(r, rev, optLimit);
-                return transPair(range, withScores);
+                return set.lexRange(r, rev, optLimit);
             } else {
                 throw new Error();
+            }
+        }
+
+        protected RedisMessage genericZRange(byte[] key, RangeType type, byte[] startB, byte[] endB, boolean rev,
+                                             boolean withScores, Optional<Tuple<Long, Long>> optLimit) {
+            List<ZSet.Pair<Double, Key>> range = this.genericZRange0(key, type, startB, endB, rev, optLimit);
+            return range == null ? ListRedisMessage.empty() : transPair(range, withScores);
+        }
+
+        protected RedisMessage genericZRangeStore(byte[] src, byte[] dest, RangeType type, byte[] startB, byte[] endB, boolean rev,
+                                                  Optional<Tuple<Long, Long>> optLimit) {
+            List<ZSet.Pair<Double, Key>> range = this.genericZRange0(src, type, startB, endB, rev, optLimit);
+            engine.getDb(client).del(client, dest);
+            //del dest key and add if need
+            if (range != null && !range.isEmpty()) {
+                SortedSet set = new SortedSet(engine.timeProvider());
+                int i = set.add(range);
+                engine.getDb(client).set(client, dest, set);
+                return new IntegerRedisMessage(i);
+            } else {
+                return Constants.INT_ZERO;
             }
         }
     }
@@ -243,7 +367,7 @@ public class SortedSetModule extends BaseModule {
 
     static RedisMessage transPair(List<ZSet.Pair<Double, Key>> list, boolean withScores) {
         if (list == null) {
-            return Constants.LIST_EMPTY;
+            return ListRedisMessage.empty();
         }
         List<RedisMessage> msgList = new ArrayList<>();
         for (ZSet.Pair<Double, Key> p : list) {
@@ -252,4 +376,105 @@ public class SortedSetModule extends BaseModule {
         }
         return new ListRedisMessage(msgList);
     }
+
+    public static class ZRank extends ArgsCommand.ThreeExWith<SortedSet> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            byte[] member = msg.getAt(2).bytes();
+            SortedSet set = get(key);
+            if (set == null) {
+                return FullBulkStringRedisMessage.NULL_INSTANCE;
+            }
+            int r = set.rank(new Key(member));
+            if (r == -1) {
+                return FullBulkStringRedisMessage.NULL_INSTANCE;
+            }
+            return new IntegerRedisMessage(r);
+        }
+    }
+
+    public static class ZRevRank extends ArgsCommand.ThreeExWith<SortedSet> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            byte[] member = msg.getAt(2).bytes();
+            SortedSet set = get(key);
+            if (set == null) {
+                return FullBulkStringRedisMessage.NULL_INSTANCE;
+            }
+            int r = set.revRank(new Key(member));
+            if (r == -1) {
+                return FullBulkStringRedisMessage.NULL_INSTANCE;
+            }
+            return new IntegerRedisMessage(r);
+        }
+    }
+
+    public static class ZRemRangeByRank extends ArgsCommand.FourExWith<SortedSet> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            Long min = msg.getAt(2).val();
+            Long max = msg.getAt(3).val();
+            SortedSet set = get(key);
+            if (set == null) {
+                return Constants.INT_ZERO;
+            }
+            int r = set.removeByRank(min.intValue(), max.intValue());
+            deleteSetIfNeed(key, engine, client);
+            return new IntegerRedisMessage(r);
+        }
+    }
+
+    public static class ZRemRangeByScore extends ArgsCommand.FourExWith<SortedSet> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            String min = msg.getAt(2).str();
+            String max = msg.getAt(3).str();
+            SortedSet set = get(key);
+            if (set == null) {
+                return Constants.INT_ZERO;
+            }
+            Range<Double> range = NumberUtils.parseScoreRange(min, max);
+            int r = set.removeByScore(range);
+            deleteSetIfNeed(key, engine, client);
+            return new IntegerRedisMessage(r);
+        }
+    }
+
+    public static class ZRemRangeByLex extends ArgsCommand.FourExWith<SortedSet> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            byte[] min = msg.getAt(2).bytes();
+            byte[] max = msg.getAt(3).bytes();
+            SortedSet set = get(key);
+            if (set == null) {
+                return Constants.INT_ZERO;
+            }
+            Range<Key> range = NumberUtils.parseLexRange(min, max);
+            int r = set.removeByLex(range);
+            deleteSetIfNeed(key, engine, client);
+            return new IntegerRedisMessage(r);
+        }
+    }
+
+    /**
+     * remove set which size = 0 or fire update event
+     *
+     * @param key
+     * @param engine
+     * @param client
+     */
+    static void deleteSetIfNeed(byte[] key, RedisEngine engine, Client client) {
+        SortedSet afterSet = (SortedSet) engine.getDb(client).get(client, key);
+        if (afterSet.size() == 0) {
+            engine.getDb(client).del(client, key);
+        } else {
+            engine.fireChangeEvent(client, key, DbManager.EventType.UPDATE);
+        }
+    }
+
 }

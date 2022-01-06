@@ -5,6 +5,8 @@ import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.DbManager;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.api.RedisObject;
+import cn.deepmax.redis.core.Key;
+import cn.deepmax.redis.core.RPattern;
 import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.core.support.BaseModule;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
@@ -20,6 +22,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class KeyModule extends BaseModule {
@@ -39,6 +42,7 @@ public class KeyModule extends BaseModule {
     }
 
     public static class Scan extends ArgsCommand.Two {
+        @SuppressWarnings("unchecked")
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             Long cursor = msg.getAt(1).val();
@@ -47,8 +51,8 @@ public class KeyModule extends BaseModule {
                     .orElse(10L);
             Optional<String> type = ArgParser.parseArg(msg, 2, "type");
             Object container = engine.getDb(client).getContainer();
-            if (container instanceof NavMap) {
-                return genericScan((NavMap<?>) container, true, cursor, count, pattern, type);
+            if (container instanceof ScanMap<?, ?>) {
+                return genericScan((ScanMap<Key, ?>) container, true, cursor, count, pattern, type);
             } else {
                 return Constants.ERR_IMPL_MISMATCH;
             }
@@ -64,8 +68,10 @@ public class KeyModule extends BaseModule {
      * @param type      globalMap=true时有效，对key忽略
      * @return
      */
-    static RedisMessage genericScan(NavMap<?> map, boolean globalMap, Long cursor, Long count, Optional<String> pattern, Optional<String> type) {
-        NavMap.ScanResult result = map.scan(cursor, count, pattern);
+    static RedisMessage genericScan(ScanMap<Key, ?> map, boolean globalMap, Long cursor, Long count, Optional<String> pattern, Optional<String> type) {
+        Optional<RPattern> p = pattern.map(RPattern::compile);
+        Function<Key, Boolean> mapper = k -> !p.isPresent() || p.get().matches(k.str());
+        ScanMap.ScanResult<Key> result = map.scan(cursor, count, mapper);
         List<RedisMessage> keys = result.getKeyNames().stream().map(k -> FullBulkValueRedisMessage.ofString(k.getContent()))
                 .collect(Collectors.toList());
         return ListRedisMessage.newBuilder()

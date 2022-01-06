@@ -16,11 +16,11 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
     static final int ZSKIPLIST_MAXLEVEL = 32;
     static final double ZSKIPLIST_P = 0.25D;
     final ZSkipList<S, T> zsl;
-    final Map<T, S> dict;
+    final ScanMap<T, S> dict;
 
     public ZSet() {
         this.zsl = ZSkipList.newInstance();
-        this.dict = new HashMap<>();
+        this.dict = new ScanMap<>();
     }
 
     @Override
@@ -34,7 +34,7 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
     public int add(List<Pair<S, T>> values) {
         int c = 0;
         for (Pair<S, T> t : values) {
-            S old = dict.put(t.ele, t.score);
+            S old = dict.set(t.ele, t.score);
             if (old == null) {
                 c++;
                 zsl.insert(t.score, t.ele);
@@ -148,6 +148,69 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
             cur = cur.next(rev);
         }
         return result;
+    }
+
+    public int rank(T member) {
+        S score = dict.get(member);
+        if (score == null) {
+            return -1;
+        }
+        // 1-based
+        long rank = zsl.getRank(member, score);
+        return (int) (rank - 1);
+    }
+
+    /**
+     * 倒序
+     *
+     * @param member
+     * @return
+     */
+    public int revRank(T member) {
+        S score = dict.get(member);
+        if (score == null) {
+            return -1;
+        }
+        // 1-based
+        long rank = zsl.getRank(member, score);
+        if (rank == 0) {
+            return -1;
+        }
+        return (int) (zsl.length - rank);
+    }
+
+    public int removeByRank(int min, int max) {
+        min = tranStart(min);
+        max = tranEnd(max);
+        if (min > max) {
+            return 0;
+        }
+        List<T> ele = zsl.zslDeleteRangeByRank(min + 1, max + 1);
+        ele.forEach(dict::delete);
+        return ele.size();
+    }
+
+    public int removeByScore(Range<S> range) {
+        List<T> ele = zsl.zslDeleteRangeByRange(range);
+        ele.forEach(dict::delete);
+        return ele.size();
+    }
+
+    public int removeByLex(Range<T> range) {
+        List<T> ele = zsl.zslDeleteRangeByLex(range);
+        ele.forEach(dict::delete);
+        return ele.size();
+    }
+
+    public int remove(T member) {
+        ScanMap.Node<T, S> s = dict.delete(member);
+        if (s == null) return 0;
+        zsl.delete(s.value, member);
+        return 1;
+    }
+
+    public S score(T key) {
+        return dict.get(key);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -389,6 +452,89 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
                 }
             }
             return 0L;
+        }
+
+        /**
+         * @param start 1-based include
+         * @param end   1-based include
+         * @return removed node values
+         */
+        public List<T> zslDeleteRangeByRank(long start, long end) {
+            ZSkipListNode[] update = new ZSkipListNode[ZSKIPLIST_MAXLEVEL];
+            ZSkipListNode<S, T> x = header;
+            long c = 0;
+            for (int i = level - 1; i >= 0; i--) {
+                while (x.level[i].forward != null && x.level[i].span + c < start) {
+                    c += x.level[i].span;
+                    x = x.level[i].forward;
+                }
+                update[i] = x;
+            }
+            //should delete update.next;
+            List<T> list = new ArrayList<>();
+            x = x.next();
+            c++;
+            while (x != null && c <= end) {
+                list.add(x.ele);
+                deleteNode(x, update);
+                c++;
+                x = x.next();
+            }
+            return list;
+        }
+
+        /**
+         * @param range
+         * @return removed node values
+         */
+        public List<T> zslDeleteRangeByRange(Range<S> range) {
+            if (!inRange(range)) {
+                return Collections.emptyList();
+            }
+            ZSkipListNode[] update = new ZSkipListNode[ZSKIPLIST_MAXLEVEL];
+            ZSkipListNode<S, T> x = header;
+            for (int i = level - 1; i >= 0; i--) {
+                while (x.level[i].forward != null && !x.level[i].forward.scoreGreaterOrEqualThanMinOf(range)) {
+                    x = x.level[i].forward;
+                }
+                update[i] = x;
+            }
+            //should delete update.next;
+            List<T> list = new ArrayList<>();
+            x = x.next();
+            while (x != null && x.scoreLessOrEqualThanMaxOf(range)) {
+                list.add(x.ele);
+                deleteNode(x, update);
+                x = x.next();
+            }
+            return list;
+        }
+
+        /**
+         * @param range
+         * @return removed node values
+         */
+        public List<T> zslDeleteRangeByLex(Range<T> range) {
+            if (!lexInRange(range)) {
+                return Collections.emptyList();
+            }
+            ZSkipListNode[] update = new ZSkipListNode[ZSKIPLIST_MAXLEVEL];
+            ZSkipListNode<S, T> x = header;
+            for (int i = level - 1; i >= 0; i--) {
+                while (x.level[i].forward != null && !x.level[i].forward.eleGreaterOrEqualThanMinOf(range)) {
+                    x = x.level[i].forward;
+                }
+                update[i] = x;
+            }
+            //should delete update.next;
+            List<T> list = new ArrayList<>();
+            x = x.next();
+            while (x != null && x.eleLessOrEqualThanMaxOf(range)) {
+                list.add(x.ele);
+                deleteNode(x, update);
+                x = x.next();
+            }
+            return list;
         }
 
         public ZSkipListNode<S, T> delete(S score, T ele) {

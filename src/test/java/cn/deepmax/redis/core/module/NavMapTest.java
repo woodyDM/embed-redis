@@ -1,7 +1,6 @@
 package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.core.Key;
-import cn.deepmax.redis.core.module.NavMap;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -16,7 +15,7 @@ public class NavMapTest {
 
     @Test
     public void shouldAddFirst() {
-        NavMap<String> map = new NavMap<>();
+        ScanMap<Key, String> map = new ScanMap<>();
 
         map.set(k("a"), "1");
         map.set(k("b"), "2");
@@ -42,7 +41,8 @@ public class NavMapTest {
 
     @Test
     public void shouldAddAndRemove() {
-        NavMap<String> map = new NavMap<>();
+        ScanMap<Key, String> map = new ScanMap<>();
+
 
         map.set(k("a"), "1");
         map.set(k("b"), "2");
@@ -68,7 +68,8 @@ public class NavMapTest {
 
     @Test
     public void shouldAddAndRemoveMid() {
-        NavMap<String> map = new NavMap<>();
+        ScanMap<Key, String> map = new ScanMap<>();
+
 
         map.set(k("a"), "1");
         map.set(k("b"), "2");
@@ -94,7 +95,8 @@ public class NavMapTest {
 
     @Test
     public void shouldAddAndRemoveLast() {
-        NavMap<String> map = new NavMap<>();
+        ScanMap<Key, String> map = new ScanMap<>();
+
 
         map.set(k("a"), "1");
         map.set(k("b"), "2");
@@ -119,7 +121,7 @@ public class NavMapTest {
 
     @Test
     public void shouldAddAndSetTail() {
-        NavMap<String> map = new NavMap<>();
+        ScanMap<Key, String> map = new ScanMap<>();
 
         map.set(k("a"), "1");
         map.set(k("b"), "2");
@@ -150,7 +152,7 @@ public class NavMapTest {
 
     @Test
     public void shouldAddAndSetHead() {
-        NavMap<String> map = new NavMap<>();
+        ScanMap<Key, String> map = new ScanMap<>();
 
         map.set(k("a"), "1");
         map.set(k("b"), "2");
@@ -180,7 +182,7 @@ public class NavMapTest {
 
     @Test
     public void shouldAddAndSetHead2() {
-        NavMap<String> map = new NavMap<>();
+        ScanMap<Key, String> map = new ScanMap<>();
 
         map.set(k("a"), "1");
         map.set(k("a"), "11");
@@ -203,7 +205,7 @@ public class NavMapTest {
 
     @Test
     public void shouldAddAndSetMid() {
-        NavMap<String> map = new NavMap<>();
+        ScanMap<Key, String> map = new ScanMap<>();
 
         map.set(k("a"), "1");
         map.set(k("b"), "2");

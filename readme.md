@@ -1,3 +1,7 @@
+
+## Debug  
+-Dio.netty.leakDetectionLevel=PARANOID
+
 ## Commands
 ### List
 |name|supported|description|
@@ -42,25 +46,25 @@
 |ZINTERSTORE|||
 |ZLEXCOUNT|||
 |ZMPOP|||
-|ZMSCORE|||
+|ZMSCORE|Y||
 |ZPOPMAX|||
 |ZPOPMIN|||
 |ZRANDMEMBER|||
 |ZRANGE|||
-|ZRANGEBYLEX|||
-|ZRANGEBYSCORE|||
-|ZRANGESTORE|||
-|ZRANK|||
-|ZREM|||
-|ZREMRANGEBYLEX|||
-|ZREMRANGEBYRANK|||
-|ZREMRANGEBYSCORE|||
+|ZRANGEBYLEX|Y||
+|ZRANGEBYSCORE|Y||
+|ZRANGESTORE|Y||
+|ZRANK|Y||
+|ZREM|Y||
+|ZREMRANGEBYLEX|Y||
+|ZREMRANGEBYRANK|Y||
+|ZREMRANGEBYSCORE|Y||
 |ZREVRANGE|Y||
-|ZREVRANGEBYLEX|||
-|ZREVRANGEBYSCORE|||
-|ZREVRANK|||
+|ZREVRANGEBYLEX|Y||
+|ZREVRANGEBYSCORE|Y||
+|ZREVRANK|Y||
 |ZSCAN|||
-|ZSCORE|||
+|ZSCORE|Y||
 |ZUNION|||
 |ZUNIONSTORE|||
 
@@ -71,7 +75,7 @@
 -[ ] cluster support.  
 -[ ] scans.     
 -[ ] Upgrade redisson 3.16.7.   
--[ ] Fix lpos 
+-[X] Fix RedissonConnection lpos 
 
   
 

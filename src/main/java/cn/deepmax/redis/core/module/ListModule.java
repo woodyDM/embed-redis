@@ -103,7 +103,7 @@ public class ListModule extends BaseModule {
             long end = msg.getAt(3).val();
             RList list = get(key);
             if (list == null) {
-                return Constants.LIST_EMPTY;
+                return ListRedisMessage.empty();
             }
             List<Key> values = list.lrange((int) start, (int) end);
             List<RedisMessage> r = values.stream().map(k -> FullBulkValueRedisMessage.ofString(k.getContent()))

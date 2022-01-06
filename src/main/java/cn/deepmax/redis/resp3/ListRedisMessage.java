@@ -5,11 +5,17 @@ import io.netty.handler.codec.redis.ArrayRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ListRedisMessage extends ArrayRedisMessage implements RedisMessage {
+
     public ListRedisMessage(List<RedisMessage> children) {
         super(children);
+    }
+
+    public static ListRedisMessage empty() {
+        return new ListRedisMessage(Collections.emptyList());
     }
 
     public FullBulkValueRedisMessage getAt(int i) {

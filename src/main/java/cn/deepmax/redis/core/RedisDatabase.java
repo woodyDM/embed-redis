@@ -4,7 +4,7 @@ import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.DbManager;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.api.RedisObject;
-import cn.deepmax.redis.core.module.NavMap;
+import cn.deepmax.redis.core.module.ScanMap;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  */
 public class RedisDatabase implements RedisEngine.Db {
 
-    private final NavMap<RedisObject> data = new NavMap<>();
+    private final ScanMap<Key, RedisObject> data = new ScanMap<>();
     private final DbManager manager;
     private final int idx;
 
@@ -32,7 +32,7 @@ public class RedisDatabase implements RedisEngine.Db {
     @Override
     public RedisObject set(Client client, byte[] key, RedisObject newValue) {
         getDbManager().fireChangeEvent(client, new DbManager.KeyEvent(key, selfIndex(), DbManager.EventType.NEW_OR_REPLACE));
-        return data.set(key, newValue);
+        return data.set(new Key(key), newValue);
     }
 
     @Override
@@ -74,7 +74,7 @@ public class RedisDatabase implements RedisEngine.Db {
 
     @Override
     public RedisObject del(Client client, byte[] key) {
-        NavMap.Node<RedisObject> node = data.delete(key);
+        ScanMap.Node<Key, RedisObject> node = data.delete(new Key(key));
         if (node == null) {
             return null;
         }
