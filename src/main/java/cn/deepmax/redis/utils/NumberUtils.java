@@ -21,6 +21,10 @@ public class NumberUtils {
         return parseO(s).orElseThrow(() -> new RedisServerException(Constants.ERR_SYNTAX_NUMBER));
     }
 
+    public static Long parseNumber(String s) {
+        return parseO(s).filter(v -> v > 0).orElseThrow(() -> new RedisServerException(Constants.ERR_SYNTAX_NUMBER));
+    }
+
     /**
      * @param s
      * @return mills
@@ -34,10 +38,6 @@ public class NumberUtils {
             throw new RedisServerException("ERR timeout is negative");
         }
         return (long) (t * 1000);
-    }
-
-    public static Long parse(String s, String errorMessage) {
-        return parseO(s).orElseThrow(() -> new RedisServerException(errorMessage));
     }
 
     public static Double parseDouble(String s) {

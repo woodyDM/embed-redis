@@ -947,4 +947,205 @@ public class SortedSetModuleTemplateTest extends BasePureTemplateTest implements
         assertEquals(NumberUtils.formatDouble(newV), "3");
         assertEquals(z().size("key").intValue(), 2);
     }
+
+    @Test
+    public void shouldZUnionMin() {
+        if (isRedisson()) {
+            return;//StackOverflowError
+        }
+        z().add("key1", "a", 1.5D);
+        z().add("key1", "b", 2.5D);
+        z().add("key1", "c", 3.5D);
+
+        z().add("key2", "a", 2.5D);
+        z().add("key2", "b", 3.5D);
+        z().add("key2", "d", 4.5D);
+
+        z().add("key3", "a", 4.5D);
+        z().add("key3", "b", 5.5D);
+        z().add("key3", "e", 6.5D);
+        
+        List<ZSetOperations.TypedTuple<Object>> l = new LinkedList<>(z().unionWithScores("key1", Arrays.asList("key2", "key3"), RedisZSetCommands.Aggregate.MIN,
+                RedisZSetCommands.Weights.of(2, 2, 1)));
+        //a 3
+        //b 5
+        //e 6.5
+        //c 7
+        //d 9
+        assertEquals(l.size(), 5);
+        assertEquals(l.get(0).getValue(),"a");
+        assertEquals(l.get(1).getValue(),"b");
+        assertEquals(l.get(2).getValue(),"e");
+        assertEquals(l.get(3).getValue(),"c");
+        assertEquals(l.get(4).getValue(),"d");
+        assertEquals(NumberUtils.formatDouble(l.get(0).getScore()),"3");
+        assertEquals(NumberUtils.formatDouble(l.get(1).getScore()),"5");
+        assertEquals(NumberUtils.formatDouble(l.get(2).getScore()),"6.5");
+        assertEquals(NumberUtils.formatDouble(l.get(3).getScore()),"7");
+        assertEquals(NumberUtils.formatDouble(l.get(4).getScore()),"9");
+    }
+
+    @Test
+    public void shouldZInterMin() {
+        if (isRedisson()) {
+            return;//StackOverflowError
+        }
+        z().add("key1", "a", 1.5D);
+        z().add("key1", "b", 2.5D);
+        z().add("key1", "c", 3.5D);
+
+        z().add("key2", "a", 2.5D);
+        z().add("key2", "b", 3.5D);
+        z().add("key2", "d", 4.5D);
+
+        z().add("key3", "a", 4.5D);
+        z().add("key3", "b", 5.5D);
+        z().add("key3", "e", 6.5D);
+
+        List<ZSetOperations.TypedTuple<Object>> l = new LinkedList<>(z().intersectWithScores("key1", Arrays.asList("key2", "key3"), RedisZSetCommands.Aggregate.MIN,
+                RedisZSetCommands.Weights.of(2, 2, 1)));
+        //a 3
+        //b 5
+      
+        assertEquals(l.size(), 2);
+        assertEquals(l.get(0).getValue(),"a");
+        assertEquals(l.get(1).getValue(),"b");
+        assertEquals(NumberUtils.formatDouble(l.get(0).getScore()),"3");
+        assertEquals(NumberUtils.formatDouble(l.get(1).getScore()),"5");
+         
+    }
+
+    @Test
+    public void shouldZUnionMax() {
+        if (isRedisson()) {
+            return;//StackOverflowError
+        }
+        z().add("key1", "a", 1.5D);
+        z().add("key1", "b", 2.5D);
+        z().add("key1", "c", 3.5D);
+
+        z().add("key2", "a", 2.5D);
+        z().add("key2", "b", 3.5D);
+        z().add("key2", "d", 4.5D);
+
+        z().add("key3", "a", 4.5D);
+        z().add("key3", "b", 5.5D);
+        z().add("key3", "e", 6.5D);
+        
+        List<ZSetOperations.TypedTuple<Object>> l = new LinkedList<>(z().unionWithScores("key1", Arrays.asList("key2", "key3"), RedisZSetCommands.Aggregate.MAX,
+                RedisZSetCommands.Weights.of(2, 2, 1)));
+        //a 5
+        //e 6.5
+        //b 7
+        //c 7
+        //d 9
+        assertEquals(l.size(), 5);
+        assertEquals(l.get(0).getValue(),"a");
+        assertEquals(l.get(1).getValue(),"e");
+        assertEquals(l.get(2).getValue(),"b");
+        assertEquals(l.get(3).getValue(),"c");
+        assertEquals(l.get(4).getValue(),"d");
+        assertEquals(NumberUtils.formatDouble(l.get(0).getScore()),"5");
+        assertEquals(NumberUtils.formatDouble(l.get(1).getScore()),"6.5");
+        assertEquals(NumberUtils.formatDouble(l.get(2).getScore()),"7");
+        assertEquals(NumberUtils.formatDouble(l.get(3).getScore()),"7");
+        assertEquals(NumberUtils.formatDouble(l.get(4).getScore()),"9");
+    }
+
+    @Test
+    public void shouldZInterMax() {
+        if (isRedisson()) {
+            return;//StackOverflowError
+        }
+        z().add("key1", "a", 1.5D);
+        z().add("key1", "b", 2.5D);
+        z().add("key1", "c", 3.5D);
+
+        z().add("key2", "a", 2.5D);
+        z().add("key2", "b", 3.5D);
+        z().add("key2", "d", 4.5D);
+
+        z().add("key3", "a", 4.5D);
+        z().add("key3", "b", 5.5D);
+        z().add("key3", "e", 6.5D);
+
+        List<ZSetOperations.TypedTuple<Object>> l = new LinkedList<>(z().intersectWithScores("key1", Arrays.asList("key2", "key3"), RedisZSetCommands.Aggregate.MAX,
+                RedisZSetCommands.Weights.of(2, 2, 1)));
+        //a 5
+        //b 7
+
+        assertEquals(l.size(), 2);
+        assertEquals(l.get(0).getValue(),"a");
+        assertEquals(l.get(1).getValue(),"b");
+        assertEquals(NumberUtils.formatDouble(l.get(0).getScore()),"5");
+        assertEquals(NumberUtils.formatDouble(l.get(1).getScore()),"7");
+
+    }
+    
+    @Test
+    public void shouldZUnionSum() {
+        if (isRedisson()) {
+            return;//StackOverflowError
+        }
+        z().add("key1", "a", 1.5D);
+        z().add("key1", "b", 2.5D);
+        z().add("key1", "c", 3.5D);
+
+        z().add("key2", "a", 2.5D);
+        z().add("key2", "b", 3.5D);
+        z().add("key2", "d", 4.5D);
+
+        z().add("key3", "a", 4.5D);
+        z().add("key3", "b", 5.5D);
+        z().add("key3", "e", 6.5D);
+        
+        List<ZSetOperations.TypedTuple<Object>> l = new LinkedList<>(z().unionWithScores("key1", Arrays.asList("key2", "key3"), RedisZSetCommands.Aggregate.SUM,
+                RedisZSetCommands.Weights.of(2, 2, 1)));
+        //e 6.5
+        //c 7
+        //d 9
+        //a 12.5
+        //b 17.5
+        assertEquals(l.size(), 5);
+        assertEquals(l.get(0).getValue(),"e");
+        assertEquals(l.get(1).getValue(),"c");
+        assertEquals(l.get(2).getValue(),"d");
+        assertEquals(l.get(3).getValue(),"a");
+        assertEquals(l.get(4).getValue(),"b");
+        assertEquals(NumberUtils.formatDouble(l.get(0).getScore()),"6.5");
+        assertEquals(NumberUtils.formatDouble(l.get(1).getScore()),"7");
+        assertEquals(NumberUtils.formatDouble(l.get(2).getScore()),"9");
+        assertEquals(NumberUtils.formatDouble(l.get(3).getScore()),"12.5");
+        assertEquals(NumberUtils.formatDouble(l.get(4).getScore()),"17.5");
+    }
+
+    @Test
+    public void shouldZInterSum() {
+        if (isRedisson()) {
+            return;//StackOverflowError
+        }
+        z().add("key1", "a", 1.5D);
+        z().add("key1", "b", 2.5D);
+        z().add("key1", "c", 3.5D);
+
+        z().add("key2", "a", 2.5D);
+        z().add("key2", "b", 3.5D);
+        z().add("key2", "d", 4.5D);
+
+        z().add("key3", "a", 4.5D);
+        z().add("key3", "b", 5.5D);
+        z().add("key3", "e", 6.5D);
+
+        List<ZSetOperations.TypedTuple<Object>> l = new LinkedList<>(z().intersectWithScores("key1", Arrays.asList("key2", "key3"), RedisZSetCommands.Aggregate.SUM,
+                RedisZSetCommands.Weights.of(2, 2, 1)));
+        //a 12.5
+        //b 17.5
+
+        assertEquals(l.size(), 2);
+        assertEquals(l.get(0).getValue(),"a");
+        assertEquals(l.get(1).getValue(),"b");
+        assertEquals(NumberUtils.formatDouble(l.get(0).getScore()),"12.5");
+        assertEquals(NumberUtils.formatDouble(l.get(1).getScore()),"17.5");
+
+    }
 }

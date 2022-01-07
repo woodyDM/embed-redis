@@ -11,7 +11,8 @@ public class Key implements Comparable<Key> {
     private final byte[] content;
     public static final Key INF = new Key(new byte[]{});
     public static final Key NEG_INF = new Key(new byte[]{});
-
+    public static final Key DUMMY = new Key(new byte[]{});
+    
     public Key(byte[] content) {
         this.content = content;
     }

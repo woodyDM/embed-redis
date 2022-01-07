@@ -1,9 +1,6 @@
 package cn.deepmax.redis.core.module;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -17,6 +14,10 @@ public class ScanMap<K, V> {
     public V get(K key) {
         Node<K, V> n = container.get(key);
         return n == null ? null : n.value;
+    }
+
+    public Set<Map.Entry<K, Node<K, V>>> entrySet() {
+        return  container.entrySet();
     }
 
     public void forEach(BiConsumer<? super K, ? super V> c) {

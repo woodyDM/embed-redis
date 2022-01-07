@@ -15,14 +15,14 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
 
     static final int ZSKIPLIST_MAXLEVEL = 32;
     static final double ZSKIPLIST_P = 0.25D;
-    final ZSkipList<S, T> zsl;
-    final ScanMap<T, S> dict;
+    protected final ZSkipList<S, T> zsl;
+    protected final ScanMap<T, S> dict;
 
     public ZSet() {
         this.zsl = ZSkipList.newInstance();
         this.dict = new ScanMap<>();
     }
-
+    
     /**
      * diff
      *
@@ -31,12 +31,12 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
      * @param <T>
      * @return
      */
-    public static <S extends Comparable<S>, T extends Comparable<T>> List<ZSet.Pair<S, T>> diff(List<? extends ZSet<S, T>> sets) {
+    public static <S extends Comparable<S>, T extends Comparable<T>> ZSet<S, T> diff(List<? extends ZSet<S, T>> sets) {
         if (sets == null || sets.isEmpty()) {
-            return Collections.emptyList();
+            return null;
         }
-        List<ZSet.Pair<S, T>> list = new LinkedList<>();
         ZSet<S, T> base = sets.get(0);
+        ZSet<S, T> set = new ZSet<>();
         base.dict.forEach((t, s) -> {
             boolean exist = false;
             for (int i = 1; i < sets.size(); i++) {
@@ -46,10 +46,10 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
                 }
             }
             if (!exist) {
-                list.add(new Pair<>(s, t));
+                set.add(s, t);
             }
         });
-        return list;
+        return set;
     }
 
     @Override
@@ -74,6 +74,19 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
             zsl.updateScore(ele, old, score);
             return 0;
         }
+    }
+
+    public List<Pair<S, T>> toPairs() {
+        if (size() == 0) {
+            return Collections.emptyList();
+        }
+        List<Pair<S, T>> l = new LinkedList<>();
+        ZSkipListNode<S, T> x = zsl.header.next();
+        while (x != null) {
+            l.add(new Pair<>(x.score, x.ele));
+            x = x.next();
+        }
+        return l;
     }
 
     public int add(List<Pair<S, T>> values) {
