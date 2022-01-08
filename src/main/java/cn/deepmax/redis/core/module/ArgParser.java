@@ -25,13 +25,12 @@ public class ArgParser {
     public static boolean parseFlag(ListRedisMessage msg, String flag, int start, int end) {
         for (int i = start; i < end; i++) {
             String key = msg.getAt(i).str();
-            if (flag.toLowerCase().equals(key.toLowerCase())) {
+            if (flag.equalsIgnoreCase(key.toLowerCase())) {
                 return true;
             }
         }
         return false;
     }
-
 
     public static boolean parseFlag(ListRedisMessage msg, String ex, int start) {
         return parseFlag(msg, ex, start, msg.children().size());

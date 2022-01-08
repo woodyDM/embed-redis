@@ -50,7 +50,9 @@ public class SortedSetModule extends BaseModule {
         register(new ZRangeStore());
         register(new ZRank());
         register(new ZUnion());
+        register(new ZUnionStore());
         register(new ZInter());
+        register(new ZInterStore());
         register(new ZRevRank());
         register(new ZRemRangeByRank());
         register(new ZRemRangeByScore());
@@ -85,9 +87,7 @@ public class SortedSetModule extends BaseModule {
         }
     }
 
-
     /**
-     * todo
      * ZADD key [NX|XX] [GT|LT] [CH] [INCR] score member [score member ...]
      */
     public static class ZAdd extends ArgsCommand.FourWith<SortedSet> {
@@ -95,28 +95,113 @@ public class SortedSetModule extends BaseModule {
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
             //scan from tail
-            int idx = msg.children().size() - 2;
-            List<ZSet.Pair<Double, Key>> values = new ArrayList<>();
-            Optional<Double> v;
-            while (idx >= 2 && (v = NumberUtils.parseDoubleO(msg.getAt(idx).str())).isPresent()) {
-                values.add(new ZSet.Pair<>(v.get(), new Key(msg.getAt(idx + 1).bytes())));
-                idx -= 2;
-            }
-            if (values.isEmpty()) {
+            Optional<ZAddArg> argO = parseZAdd(msg, 2);
+            if (!argO.isPresent()) {
                 return Constants.ERR_SYNTAX;
             }
-            //todo check from [2,idx+1] flags  
+            ZAddArg arg = argO.get();
+            if (arg.errorMsg().isPresent()) {
+                return new ErrorRedisMessage(arg.errorMsg().get());
+            }
+            if (arg.values.isEmpty()) {
+                return Constants.ERR_SYNTAX;
+            }
+            //to add with flags
             SortedSet set = get(key);
             if (set == null) {
+                if (arg.xx) return replyZAdd(arg.incr, 0, 0, null);
                 set = new SortedSet(engine.timeProvider(), new Key(key));
                 engine.getDb(client).set(client, key, set);
             }
-            //todo return values
-            int updated = set.add(values);
-            return new IntegerRedisMessage(updated);
+            int added = 0, updated = 0, processed = 0;
+            Double ts = null;
+            for (ZSet.Pair<Double, Key> p : arg.values) {
+                Optional<Tuple<Integer, Double>> flag = set.zadd(p.score, p.ele, arg.nx, arg.xx, arg.gt, arg.lt, arg.incr);
+                if (!flag.isPresent()) {
+                    return Constants.ERR_NAN;
+                }
+                int f = flag.get().a;
+                if (f == SortedSet.ZADD_OUT_ADDED) added++;
+                if (f == SortedSet.ZADD_OUT_UPDATED) updated++;
+                if (f != SortedSet.ZADD_OUT_NOP) processed++;
+                ts = flag.get().b;
+            }
+            if (processed > 0) {
+                engine.fireChangeEvent(client, key, DbManager.EventType.UPDATE);
+            }
+            return replyZAdd(arg.incr, processed, (arg.ch ? added + updated : added), ts);
+        }
+
+        private RedisMessage replyZAdd(boolean incr, int processed, int value, Double score) {
+            if (incr) {
+                if (processed > 0) {
+                    return FullBulkValueRedisMessage.ofDouble(score);
+                } else {
+                    return FullBulkValueRedisMessage.NULL_INSTANCE;
+                }
+            } else {
+                return new IntegerRedisMessage(value);
+            }
         }
     }
 
+    /**
+     * Parse
+     * ZADD key [NX|XX] [GT|LT] [CH] [INCR] score member [score member ...]
+     *
+     * @param msg
+     * @param pos
+     * @return
+     */
+    public static Optional<ZAddArg> parseZAdd(ListRedisMessage msg, int pos) {
+        int scoreIdx = pos;
+        while (!NumberUtils.parseDoubleO(msg.getAt(scoreIdx).str()).isPresent()) scoreIdx++;
+        //[pos,scoreIdx) is flags
+        ZAddArg arg = new ZAddArg();
+        arg.nx = ArgParser.parseFlag(msg, "nx", pos, scoreIdx);
+        arg.xx = ArgParser.parseFlag(msg, "xx", pos, scoreIdx);
+        arg.gt = ArgParser.parseFlag(msg, "gt", pos, scoreIdx);
+        arg.lt = ArgParser.parseFlag(msg, "lt", pos, scoreIdx);
+        arg.ch = ArgParser.parseFlag(msg, "ch", pos, scoreIdx);
+        arg.incr = ArgParser.parseFlag(msg, "incr", pos, scoreIdx);
+        //scores
+        Double v;
+        int s = scoreIdx;
+        while (s < msg.children().size()) {
+            v = NumberUtils.parseDouble(msg.getAt(s).str());
+            if (s + 1 >= msg.children().size()) {
+                return Optional.empty();
+            }
+            arg.values.add(new ZSet.Pair<>(v, new Key(msg.getAt(s + 1).bytes())));
+            s += 2;
+        }
+        return Optional.of(arg);
+    }
+
+    static class ZAddArg {
+        boolean nx = false;
+        boolean xx = false;
+        boolean gt = false;
+        boolean lt = false;
+        boolean ch = false;
+        boolean incr = false;
+        List<ZSet.Pair<Double, Key>> values = new LinkedList<>();
+
+        Optional<String> errorMsg() {
+            /* Check for incompatible options. */
+            if (nx && xx) {
+                return Optional.of("XX and NX options at the same time are not compatible");
+            }
+            if ((gt && nx) || (lt && nx) || (gt && lt)) {
+                return Optional.of("GT, LT, and/or NX options at the same time are not compatible");
+            }
+            /* Note that XX is compatible with either GT or LT */
+            if (incr && values.size() > 1) {
+                return Optional.of("INCR option supports a single increment-element pair");
+            }
+            return Optional.empty();
+        }
+    }
 
     public static class ZRem extends ArgsCommand.ThreeWith<SortedSet> {
         @Override
@@ -160,7 +245,12 @@ public class SortedSetModule extends BaseModule {
             List<Key> members = genKeys(msg.children(), 2);
             SortedSet set = get(key);
             if (set == null) {
-                return ListRedisMessage.empty();
+                //treat as nil
+                List<RedisMessage> list = new ArrayList<>();
+                for (int i = 0; i < members.size(); i++) {
+                    list.add(FullBulkValueRedisMessage.NULL_INSTANCE);
+                }
+                return new ListRedisMessage(list);
             }
             List<RedisMessage> list = members.stream().map(k -> {
                 Double score = set.score(k);
@@ -701,8 +791,36 @@ public class SortedSetModule extends BaseModule {
             if (sets.isEmpty()) {
                 return ListRedisMessage.empty();
             }
-            SortedSet newSet = SortedSet.union(engine.timeProvider(), arg, sets);
+            SortedSet newSet = SortedSet.union(engine.timeProvider(), Key.DUMMY, arg, sets);
             return transPair(newSet.toPairs(), arg.withScores);
+        }
+    }
+
+    /**
+     * ZUNIONSTORE destination numkeys key [key ...] [WEIGHTS weight [weight ...]] [AGGREGATE SUM|MIN|MAX]
+     */
+    public static class ZUnionStore extends ArgsCommand.FourWith<SortedSet> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] dest = msg.getAt(1).bytes();
+            Optional<ComplexArg> argO = parseZArgStore(msg, 2);
+            if (!argO.isPresent()) {
+                return Constants.ERR_SYNTAX;
+            }
+            //check type and collect
+            ComplexArg arg = argO.get();
+            List<SortedSet> sets = arg.keys.stream().map(m -> get(m.getContent()))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            //delete dest
+            engine.getDb(client).del(client, dest);
+            if (sets.isEmpty()) {
+                return Constants.INT_ZERO;
+            }
+            SortedSet newSet = SortedSet.union(engine.timeProvider(), new Key(dest), arg, sets);
+            engine.getDb(client).set(client, dest, newSet);
+            return new IntegerRedisMessage(newSet.size());
         }
     }
 
@@ -723,9 +841,38 @@ public class SortedSetModule extends BaseModule {
             if (sets.isEmpty() || hasEmpty) {
                 return ListRedisMessage.empty();
             }
-            SortedSet newSet = SortedSet.inter(engine.timeProvider(), arg, sets);
+            SortedSet newSet = SortedSet.inter(engine.timeProvider(), Key.DUMMY, arg, sets);
             List<ZSet.Pair<Double, Key>> list = (newSet == null ? Collections.emptyList() : newSet.toPairs());
             return transPair(list, arg.withScores);
+        }
+    }
+
+    /**
+     * ZINTERSTORE destination numkeys key [key ...] [WEIGHTS weight [weight ...]] [AGGREGATE SUM|MIN|MAX]
+     */
+    public static class ZInterStore extends ArgsCommand.ThreeWith<SortedSet> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] dest = msg.getAt(1).bytes();
+            Optional<ComplexArg> argO = parseZArgStore(msg, 2);
+            if (!argO.isPresent()) {
+                return Constants.ERR_SYNTAX;
+            }
+            ComplexArg arg = argO.get();
+            List<SortedSet> sets = arg.keys.stream().map(m -> get(m.getContent()))
+                    .collect(Collectors.toList());
+            boolean hasEmpty = sets.stream().anyMatch(Objects::isNull);
+
+            engine.getDb(client).del(client, dest);
+            if (sets.isEmpty() || hasEmpty) {
+                return Constants.INT_ZERO;
+            }
+            SortedSet newSet = SortedSet.inter(engine.timeProvider(), new Key(dest), arg, sets);
+            if (newSet == null) {
+                return Constants.INT_ZERO;
+            }
+            engine.getDb(client).set(client, dest, newSet);
+            return new IntegerRedisMessage(newSet.size());
         }
     }
 
@@ -737,13 +884,27 @@ public class SortedSetModule extends BaseModule {
      * @param pos
      * @return
      */
-    public static Optional<ComplexArg> parseZArg(ListRedisMessage msg, int pos) {
-        Optional<ComplexArg> ar = _parseZArg(msg, pos);
+    public static Optional<ComplexArg> parseZArgStore(ListRedisMessage msg, int pos) {
+        Optional<ComplexArg> ar = _parseZArg(msg, pos, false);
         ar.ifPresent(ComplexArg::normalize);
         return ar;
     }
 
-    private static Optional<ComplexArg> _parseZArg(ListRedisMessage msg, int pos) {
+    /**
+     * pos
+     * ZINTER numkeys key [key ...] [WEIGHTS weight [weight ...]] [AGGREGATE SUM|MIN|MAX] [WITHSCORES]
+     *
+     * @param msg
+     * @param pos
+     * @return
+     */
+    public static Optional<ComplexArg> parseZArg(ListRedisMessage msg, int pos) {
+        Optional<ComplexArg> ar = _parseZArg(msg, pos, true);
+        ar.ifPresent(ComplexArg::normalize);
+        return ar;
+    }
+
+    private static Optional<ComplexArg> _parseZArg(ListRedisMessage msg, int pos, boolean parseWithScores) {
         int size = msg.children().size();
         int numbers = NumberUtils.parseNumber(msg.getAt(pos).str()).intValue();
         pos++;    //move pointer
@@ -777,7 +938,7 @@ public class SortedSetModule extends BaseModule {
                 }
                 pos++;
                 arg.type = t;
-            } else if ("withscores".equalsIgnoreCase(msg.getAt(pos).str())) {
+            } else if (parseWithScores && "withscores".equalsIgnoreCase(msg.getAt(pos).str())) {
                 arg.withScores = true;
                 pos++;
             } else {

@@ -95,7 +95,52 @@ public class SortedSetModuleEngineTest extends BaseMemEngineTest {
         assertEquals(((FullBulkValueRedisMessage) msg).str(), "-0.45");
         assertEquals(events.triggerTimes, 1);
         assertEquals(events.events.get(0).type, DbManager.EventType.UPDATE);
-
-
     }
+
+    @Test
+    public void shouldZAddIncr() {
+        engine().execute(ListRedisMessage.ofString("zadd key 0.25 m1"), embeddedClient());
+
+        ExpectedEvents events = listen("key");
+
+        RedisMessage msg = engine().execute(ListRedisMessage.ofString("zadd key incr -0.45 m1"), embeddedClient());
+        assertEquals(((FullBulkValueRedisMessage)msg).str(),"-0.2");
+        assertEquals(events.triggerTimes, 1);
+        assertEquals(events.events.get(0).type, DbManager.EventType.UPDATE);
+    }
+
+    @Test
+    public void shouldZAddIncr2() {
+        engine().execute(ListRedisMessage.ofString("zadd key 0.25 m1"), embeddedClient());
+
+        ExpectedEvents events = listen("key");
+
+        RedisMessage msg = engine().execute(ListRedisMessage.ofString("zadd key nx incr -0.45 m2"), embeddedClient());
+        assertEquals(((FullBulkValueRedisMessage)msg).str(),"-0.45");
+        assertEquals(events.triggerTimes, 1);
+        assertEquals(events.events.get(0).type, DbManager.EventType.UPDATE);
+    }
+
+    @Test
+    public void shouldZAddIncr3() {
+        engine().execute(ListRedisMessage.ofString("zadd key 0.25 m1"), embeddedClient());
+
+        ExpectedEvents events = listen("key");
+
+        RedisMessage msg = engine().execute(ListRedisMessage.ofString("zadd key nx incr -0.45 m1"), embeddedClient());
+        assertEquals(msg,FullBulkValueRedisMessage.NULL_INSTANCE);
+        assertEquals(events.triggerTimes, 0);
+    }
+
+    @Test
+    public void shouldZAddIncr4() {
+        engine().execute(ListRedisMessage.ofString("zadd key 0.25 m2"), embeddedClient());
+
+        ExpectedEvents events = listen("key");
+
+        RedisMessage msg = engine().execute(ListRedisMessage.ofString("zadd key xx incr -0.45 m1"), embeddedClient());
+        assertEquals(msg,FullBulkValueRedisMessage.NULL_INSTANCE);
+        assertEquals(events.triggerTimes, 0);
+    }
+
 }

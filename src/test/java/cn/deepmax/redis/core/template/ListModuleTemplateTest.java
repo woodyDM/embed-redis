@@ -195,7 +195,7 @@ public class ListModuleTemplateTest extends BasePureTemplateTest {
 
     @Test
     public void shouldLRangeNil() {
-        List<Object> o = l().range("nil", 0, 0);
+        List<Object> o = l().range("not-exist", 0, 0);
         assertEquals(o.size(), 0);
     }
 

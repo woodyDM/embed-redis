@@ -5,6 +5,7 @@ import cn.deepmax.redis.base.BlockTest;
 import cn.deepmax.redis.utils.NumberUtils;
 import cn.deepmax.redis.utils.Tuple;
 import org.junit.Test;
+import org.springframework.data.redis.connection.DefaultTuple;
 import org.springframework.data.redis.connection.RedisZSetCommands;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -895,7 +896,9 @@ public class SortedSetModuleTemplateTest extends BasePureTemplateTest implements
         assertEquals(s.size(), 2);
         assertEquals(NumberUtils.formatDouble(s.get(0)), "1.1");
         assertNull(s.get(1));
-        assertEquals(z().score("not-exist", "a", "b").size(), 0);
+        List<Double> scores = z().score("not-exist", "a", "b");
+        assertEquals(scores.size(), 2);
+        assertTrue(scores.stream().allMatch(Objects::isNull));
     }
 
     @Test
@@ -1098,7 +1101,7 @@ public class SortedSetModuleTemplateTest extends BasePureTemplateTest implements
         z().add("key3", "a", 4.5D);
         z().add("key3", "b", 5.5D);
         z().add("key3", "e", 6.5D);
-        
+
         List<ZSetOperations.TypedTuple<Object>> l = new LinkedList<>(z().unionWithScores("key1", Arrays.asList("key2", "key3"), RedisZSetCommands.Aggregate.SUM,
                 RedisZSetCommands.Weights.of(2, 2, 1)));
         //e 6.5
@@ -1107,16 +1110,56 @@ public class SortedSetModuleTemplateTest extends BasePureTemplateTest implements
         //a 12.5
         //b 17.5
         assertEquals(l.size(), 5);
-        assertEquals(l.get(0).getValue(),"e");
-        assertEquals(l.get(1).getValue(),"c");
-        assertEquals(l.get(2).getValue(),"d");
-        assertEquals(l.get(3).getValue(),"a");
-        assertEquals(l.get(4).getValue(),"b");
-        assertEquals(NumberUtils.formatDouble(l.get(0).getScore()),"6.5");
-        assertEquals(NumberUtils.formatDouble(l.get(1).getScore()),"7");
-        assertEquals(NumberUtils.formatDouble(l.get(2).getScore()),"9");
-        assertEquals(NumberUtils.formatDouble(l.get(3).getScore()),"12.5");
-        assertEquals(NumberUtils.formatDouble(l.get(4).getScore()),"17.5");
+        assertEquals(l.get(0).getValue(), "e");
+        assertEquals(l.get(1).getValue(), "c");
+        assertEquals(l.get(2).getValue(), "d");
+        assertEquals(l.get(3).getValue(), "a");
+        assertEquals(l.get(4).getValue(), "b");
+        assertEquals(NumberUtils.formatDouble(l.get(0).getScore()), "6.5");
+        assertEquals(NumberUtils.formatDouble(l.get(1).getScore()), "7");
+        assertEquals(NumberUtils.formatDouble(l.get(2).getScore()), "9");
+        assertEquals(NumberUtils.formatDouble(l.get(3).getScore()), "12.5");
+        assertEquals(NumberUtils.formatDouble(l.get(4).getScore()), "17.5");
+    }
+
+    @Test
+    public void shouldZUnionStoreSum() {
+        if (isRedisson()) {
+            return;//StackOverflowError
+        }
+        z().add("key1", "a", 1.5D);
+        z().add("key1", "b", 2.5D);
+        z().add("key1", "c", 3.5D);
+
+        z().add("key2", "a", 2.5D);
+        z().add("key2", "b", 3.5D);
+        z().add("key2", "d", 4.5D);
+
+        z().add("key3", "a", 4.5D);
+        z().add("key3", "b", 5.5D);
+        z().add("key3", "e", 6.5D);
+
+        Long eff = z().unionAndStore("key1", Arrays.asList("key2", "key3"), "newKey", RedisZSetCommands.Aggregate.SUM,
+                RedisZSetCommands.Weights.of(2, 2, 1));
+        //e 6.5
+        //c 7
+        //d 9
+        //a 12.5
+        //b 17.5
+        LinkedList<ZSetOperations.TypedTuple<Object>> l = new LinkedList<>(z().rangeWithScores("newKey", 0, -1));
+
+        assertEquals(eff.intValue(), 5);
+        assertEquals(l.size(), 5);
+        assertEquals(l.get(0).getValue(), "e");
+        assertEquals(l.get(1).getValue(), "c");
+        assertEquals(l.get(2).getValue(), "d");
+        assertEquals(l.get(3).getValue(), "a");
+        assertEquals(l.get(4).getValue(), "b");
+        assertEquals(NumberUtils.formatDouble(l.get(0).getScore()), "6.5");
+        assertEquals(NumberUtils.formatDouble(l.get(1).getScore()), "7");
+        assertEquals(NumberUtils.formatDouble(l.get(2).getScore()), "9");
+        assertEquals(NumberUtils.formatDouble(l.get(3).getScore()), "12.5");
+        assertEquals(NumberUtils.formatDouble(l.get(4).getScore()), "17.5");
     }
 
     @Test
@@ -1142,10 +1185,427 @@ public class SortedSetModuleTemplateTest extends BasePureTemplateTest implements
         //b 17.5
 
         assertEquals(l.size(), 2);
-        assertEquals(l.get(0).getValue(),"a");
-        assertEquals(l.get(1).getValue(),"b");
-        assertEquals(NumberUtils.formatDouble(l.get(0).getScore()),"12.5");
-        assertEquals(NumberUtils.formatDouble(l.get(1).getScore()),"17.5");
+        assertEquals(l.get(0).getValue(), "a");
+        assertEquals(l.get(1).getValue(), "b");
+        assertEquals(NumberUtils.formatDouble(l.get(0).getScore()), "12.5");
+        assertEquals(NumberUtils.formatDouble(l.get(1).getScore()), "17.5");
 
     }
+
+    @Test
+    public void shouldZInterStoreSum() {
+        if (isRedisson()) {
+            return;//StackOverflowError
+        }
+        z().add("key1", "a", 1.5D);
+        z().add("key1", "b", 2.5D);
+        z().add("key1", "c", 3.5D);
+
+        z().add("key2", "a", 2.5D);
+        z().add("key2", "b", 3.5D);
+        z().add("key2", "d", 4.5D);
+
+        z().add("key3", "a", 4.5D);
+        z().add("key3", "b", 5.5D);
+        z().add("key3", "e", 6.5D);
+
+        Long eff = z().intersectAndStore("key1", Arrays.asList("key2", "key3"), "dest", RedisZSetCommands.Aggregate.SUM,
+                RedisZSetCommands.Weights.of(2, 2, 1));
+        //a 12.5
+        //b 17.5
+        List<ZSetOperations.TypedTuple<Object>> l = new LinkedList<>(z().rangeWithScores("dest", 0, -1));
+
+        assertEquals(eff.intValue(), 2);
+        assertEquals(l.size(), 2);
+        assertEquals(l.get(0).getValue(), "a");
+        assertEquals(l.get(1).getValue(), "b");
+        assertEquals(NumberUtils.formatDouble(l.get(0).getScore()), "12.5");
+        assertEquals(NumberUtils.formatDouble(l.get(1).getScore()), "17.5");
+    }
+
+    @Test
+    public void shouldZInterStoreSumWithEmpty() {
+        if (isRedisson()) {
+            return;//StackOverflowError
+        }
+        v().set("dest", "some");
+        z().add("key1", "a", 1.5D);
+        z().add("key1", "b", 2.5D);
+        z().add("key1", "c", 3.5D);
+
+        z().add("key2", "a", 2.5D);
+        z().add("key2", "b", 3.5D);
+        z().add("key2", "d", 4.5D);
+
+        z().add("key3", "a", 4.5D);
+        z().add("key3", "b", 5.5D);
+        z().add("key3", "e", 6.5D);
+
+        Long eff = z().intersectAndStore("key1", Arrays.asList("key2", "key3", "key-not-exist"), "dest", RedisZSetCommands.Aggregate.SUM,
+                RedisZSetCommands.Weights.of(2, 2, 1, 1.5));
+        //a 12.5
+        //b 17.5
+        List<ZSetOperations.TypedTuple<Object>> l = new LinkedList<>(z().rangeWithScores("dest", 0, -1));
+
+        assertEquals(eff.intValue(), 0);
+        assertEquals(l.size(), 0);
+        assertNull(v().get("dest"));
+    }
+
+    @Test
+    public void shouldZInterStoreDelOldSum() {
+        if (isRedisson()) {
+            return;//StackOverflowError
+        }
+        v().set("dest", "someValue");
+        z().add("key1", "a", 1.5D);
+        z().add("key1", "b", 2.5D);
+        z().add("key1", "c", 3.5D);
+
+        z().add("key2", "d", 2.5D);
+        z().add("key2", "e", 3.5D);
+        z().add("key2", "f", 4.5D);
+
+        z().add("key3", "g", 4.5D);
+        z().add("key3", "h", 5.5D);
+        z().add("key3", "i", 6.5D);
+
+        Long eff = z().intersectAndStore("key1", Arrays.asList("key2", "key3"), "dest", RedisZSetCommands.Aggregate.SUM,
+                RedisZSetCommands.Weights.of(2, 2, 1));
+        List<ZSetOperations.TypedTuple<Object>> l = new LinkedList<>(z().rangeWithScores("dest", 0, -1));
+
+        assertEquals(eff.intValue(), 0);
+        assertEquals(l.size(), 0);
+        assertNull(v().get("dest"));
+
+
+    }
+
+    @Test
+    public void shouldZInterSumOne() {
+        if (isRedisson()) {
+            return;//StackOverflowError
+        }
+        z().add("key1", "a", 1.5D);
+        z().add("key1", "b", 2.5D);
+        z().add("key1", "c", 3.5D);
+
+        z().add("key2", "a", 2.5D);
+        z().add("key2", "b", 3.5D);
+        z().add("key2", "d", 4.5D);
+
+        z().add("key3", "a", 4.5D);
+        z().add("key3", "b", 5.5D);
+        z().add("key3", "e", 6.5D);
+
+        List<ZSetOperations.TypedTuple<Object>> l = new LinkedList<>(z().intersectWithScores("key1", Collections.emptyList(), RedisZSetCommands.Aggregate.SUM,
+                RedisZSetCommands.Weights.of(2)));
+        //a 3
+        //b 5
+        //c 7
+        assertEquals(l.size(), 3);
+        assertEquals(l.get(0).getValue(), "a");
+        assertEquals(l.get(1).getValue(), "b");
+        assertEquals(l.get(2).getValue(), "c");
+        assertEquals(NumberUtils.formatDouble(l.get(0).getScore()), "3");
+        assertEquals(NumberUtils.formatDouble(l.get(1).getScore()), "5");
+        assertEquals(NumberUtils.formatDouble(l.get(2).getScore()), "7");
+
+    }
+
+    @Test
+    public void shouldZInterSumOneEmpty() {
+        if (isRedisson()) {
+            return;//StackOverflowError
+        }
+        z().add("key1", "a", 1.5D);
+
+        List<ZSetOperations.TypedTuple<Object>> l = new LinkedList<>(z().intersectWithScores("key1", Collections.singletonList("key-not-exist"), RedisZSetCommands.Aggregate.SUM,
+                RedisZSetCommands.Weights.of(2, 4)));
+
+        assertEquals(l.size(), 0);
+    }
+
+    @Test
+    public void shouldZUnionSumOne() {
+        if (isRedisson()) {
+            return;//StackOverflowError
+        }
+        z().add("key1", "a", 1.5D);
+        z().add("key1", "b", 2.5D);
+        z().add("key1", "c", 3.5D);
+
+        z().add("key2", "a", 2.5D);
+        z().add("key2", "b", 3.5D);
+        z().add("key2", "d", 4.5D);
+
+        z().add("key3", "a", 4.5D);
+        z().add("key3", "b", 5.5D);
+        z().add("key3", "e", 6.5D);
+
+        List<ZSetOperations.TypedTuple<Object>> l = new LinkedList<>(z().unionWithScores("key1", Collections.emptyList(), RedisZSetCommands.Aggregate.SUM,
+                RedisZSetCommands.Weights.of(2)));
+        //a 3
+        //b 5
+        //c 7
+        assertEquals(l.size(), 3);
+        assertEquals(l.get(0).getValue(), "a");
+        assertEquals(l.get(1).getValue(), "b");
+        assertEquals(l.get(2).getValue(), "c");
+        assertEquals(NumberUtils.formatDouble(l.get(0).getScore()), "3");
+        assertEquals(NumberUtils.formatDouble(l.get(1).getScore()), "5");
+        assertEquals(NumberUtils.formatDouble(l.get(2).getScore()), "7");
+
+    }
+
+    @Test
+    public void shouldZUnionSumOneEmpty() {
+        if (isRedisson()) {
+            return;//StackOverflowError
+        }
+        z().add("key1", "a", 1.5D);
+
+        List<ZSetOperations.TypedTuple<Object>> l = new LinkedList<>(z().unionWithScores("key1", Collections.singletonList("key-not-exist"), RedisZSetCommands.Aggregate.SUM,
+                RedisZSetCommands.Weights.of(2, 4)));
+
+        assertEquals(l.size(), 1);
+        assertEquals(l.get(0).getValue(), "a");
+        assertEquals(NumberUtils.formatDouble(l.get(0).getScore()), "3");
+    }
+
+    @Test
+    public void shouldZAddWithNx() {
+        z().add("key", "m1", 0.1D);
+
+        Long eff = z().addIfAbsent("key", new HashSet<>(Arrays.asList(ZSetOperations.TypedTuple.of("m1", 4.5),
+                ZSetOperations.TypedTuple.of("m2", 0.5),
+                ZSetOperations.TypedTuple.of("m3", 2.5))));
+
+        assertEquals(eff.intValue(), 2);
+        LinkedList<ZSetOperations.TypedTuple<Object>> list = new LinkedList<>(z().rangeWithScores("key", 0, -1));
+        assertEquals(list.get(0).getValue(), "m1");
+        assertEquals(list.get(1).getValue(), "m2");
+        assertEquals(list.get(2).getValue(), "m3");
+        assertEquals(NumberUtils.formatDouble(list.get(0).getScore()), "0.1");
+        assertEquals(NumberUtils.formatDouble(list.get(1).getScore()), "0.5");
+        assertEquals(NumberUtils.formatDouble(list.get(2).getScore()), "2.5");
+    }
+
+    @Test
+    public void shouldZAddWithXx() {
+        t().execute((RedisCallback<? extends Object>) con -> con.zAdd(bytes("key"), 0.1D, serialize("m1")));
+
+        Set<RedisZSetCommands.Tuple> values = new HashSet<>(Arrays.asList(
+                new DefaultTuple(serialize("m1"), 1.5),
+                new DefaultTuple(serialize("m2"), 0.5),
+                new DefaultTuple(serialize("m3"), 3.5)
+        ));
+        Long eff = t().execute((RedisCallback<Long>) con -> con.zAdd(bytes("key"), values, RedisZSetCommands.ZAddArgs.empty().xx()));
+
+        //new add 0 ele but update score to 1.5 for m1
+        assertEquals(eff.intValue(), 0);
+        LinkedList<ZSetOperations.TypedTuple<Object>> list = new LinkedList<>(z().rangeWithScores("key", 0, -1));
+        assertEquals(list.get(0).getValue(), "m1");
+        assertEquals(NumberUtils.formatDouble(list.get(0).getScore()), "1.5");
+    }
+
+    @Test
+    public void shouldZAddWithCh2() {
+        t().execute((RedisCallback<? extends Object>) con -> con.zAdd(bytes("key"), 0.1D, serialize("m1")));
+
+        Set<RedisZSetCommands.Tuple> values = new HashSet<>(Arrays.asList(
+                new DefaultTuple(serialize("m1"), 0.1D),
+                new DefaultTuple(serialize("m2"), 0.5D),
+                new DefaultTuple(serialize("m3"), 3.5D)
+        ));
+        Long eff = t().execute((RedisCallback<Long>) con -> con.zAdd(bytes("key"), values, RedisZSetCommands.ZAddArgs.empty().ch()));
+
+        assertEquals(eff.intValue(), 2);
+        LinkedList<ZSetOperations.TypedTuple<Object>> list = new LinkedList<>(z().rangeWithScores("key", 0, -1));
+        assertEquals(list.size(), 3);
+    }
+
+    @Test
+    public void shouldZAddWithXxAndCh() {
+        t().execute((RedisCallback<? extends Object>) con -> con.zAdd(bytes("key"), 0.1D, serialize("m1")));
+
+        Set<RedisZSetCommands.Tuple> values = new HashSet<>(Arrays.asList(
+                new DefaultTuple(serialize("m1"), 1.5),
+                new DefaultTuple(serialize("m2"), 0.5),
+                new DefaultTuple(serialize("m3"), 3.5)
+        ));
+        Long eff = t().execute((RedisCallback<Long>) con -> con.zAdd(bytes("key"), values, RedisZSetCommands.ZAddArgs.empty()
+                .xx().ch()));
+
+        //new add 0 and update 1  , update score to 1.5 for m1
+        assertEquals(eff.intValue(), 1);
+        LinkedList<ZSetOperations.TypedTuple<Object>> list = new LinkedList<>(z().rangeWithScores("key", 0, -1));
+        assertEquals(list.get(0).getValue(), "m1");
+        assertEquals(NumberUtils.formatDouble(list.get(0).getScore()), "1.5");
+    }
+
+    @Test
+    public void shouldZAddWithNxAndCh() {
+        t().execute((RedisCallback<? extends Object>) con -> con.zAdd(bytes("key"), 1.1D, serialize("m1")));
+
+        Set<RedisZSetCommands.Tuple> values = new HashSet<>(Arrays.asList(
+                new DefaultTuple(serialize("m1"), 1.5),
+                new DefaultTuple(serialize("m2"), 0.5),
+                new DefaultTuple(serialize("m3"), 3.5)
+        ));
+        Long eff = t().execute((RedisCallback<Long>) con -> con.zAdd(bytes("key"), values, RedisZSetCommands.ZAddArgs.empty()
+                .nx().ch()));
+
+        //new add 2
+        assertEquals(eff.intValue(), 2);
+        LinkedList<ZSetOperations.TypedTuple<Object>> list = new LinkedList<>(z().rangeWithScores("key", 0, -1));
+        assertEquals(list.size(), 3);
+        assertEquals(list.get(0).getValue(), "m2");
+        assertEquals(list.get(1).getValue(), "m1");
+        assertEquals(list.get(2).getValue(), "m3");
+        assertEquals(NumberUtils.formatDouble(list.get(0).getScore()), "0.5");
+        assertEquals(NumberUtils.formatDouble(list.get(1).getScore()), "1.1");
+        assertEquals(NumberUtils.formatDouble(list.get(2).getScore()), "3.5");
+    }
+
+    @Test
+    public void shouldZAddWithCh() {
+        t().execute((RedisCallback<? extends Object>) con -> con.zAdd(bytes("key"), 1.1D, serialize("m1")));
+
+        Set<RedisZSetCommands.Tuple> values = new HashSet<>(Arrays.asList(
+                new DefaultTuple(serialize("m1"), 0.5),
+                new DefaultTuple(serialize("m2"), 0.5),
+                new DefaultTuple(serialize("m3"), 3.5)
+        ));
+        Long eff = t().execute((RedisCallback<Long>) con -> con.zAdd(bytes("key"), values, RedisZSetCommands.ZAddArgs.empty().ch()));
+
+        //new add 2 update 1
+        assertEquals(eff.intValue(), 3);
+        LinkedList<ZSetOperations.TypedTuple<Object>> list = new LinkedList<>(z().rangeWithScores("key", 0, -1));
+        assertEquals(list.size(), 3);
+        assertEquals(list.get(0).getValue(), "m1");
+        assertEquals(list.get(1).getValue(), "m2");
+        assertEquals(list.get(2).getValue(), "m3");
+        assertEquals(NumberUtils.formatDouble(list.get(0).getScore()), "0.5");
+        assertEquals(NumberUtils.formatDouble(list.get(1).getScore()), "0.5");
+        assertEquals(NumberUtils.formatDouble(list.get(2).getScore()), "3.5");
+    }
+
+    @Test
+    public void shouldZAddWithNoArg() {
+        t().execute((RedisCallback<? extends Object>) con -> con.zAdd(bytes("key"), 1.1D, serialize("m1")));
+
+        Set<RedisZSetCommands.Tuple> values = new HashSet<>(Arrays.asList(
+                new DefaultTuple(serialize("m1"), 0.5),
+                new DefaultTuple(serialize("m2"), 0.5),
+                new DefaultTuple(serialize("m3"), 3.5)
+        ));
+        Long eff = t().execute((RedisCallback<Long>) con -> con.zAdd(bytes("key"), values, RedisZSetCommands.ZAddArgs.empty()));
+
+        //new add 2
+        assertEquals(eff.intValue(), 2);
+        LinkedList<ZSetOperations.TypedTuple<Object>> list = new LinkedList<>(z().rangeWithScores("key", 0, -1));
+        assertEquals(list.size(), 3);
+        assertEquals(list.get(0).getValue(), "m1");
+        assertEquals(list.get(1).getValue(), "m2");
+        assertEquals(list.get(2).getValue(), "m3");
+        assertEquals(NumberUtils.formatDouble(list.get(0).getScore()), "0.5");
+        assertEquals(NumberUtils.formatDouble(list.get(1).getScore()), "0.5");
+        assertEquals(NumberUtils.formatDouble(list.get(2).getScore()), "3.5");
+    }
+
+    @Test
+    public void shouldZAddWithGt() {
+        t().execute((RedisCallback<? extends Object>) con -> con.zAdd(bytes("key"), 1.1D, serialize("m1")));
+
+        Set<RedisZSetCommands.Tuple> values = new HashSet<>(Arrays.asList(
+                new DefaultTuple(serialize("m1"), 0.7),
+                new DefaultTuple(serialize("m2"), 0.5),
+                new DefaultTuple(serialize("m3"), 3.5)
+        ));
+        Long eff = t().execute((RedisCallback<Long>) con -> con.zAdd(bytes("key"), values, RedisZSetCommands.ZAddArgs.empty().gt()));
+
+        //new add 2
+        assertEquals(eff.intValue(), 2);
+        LinkedList<ZSetOperations.TypedTuple<Object>> list = new LinkedList<>(z().rangeWithScores("key", 0, -1));
+        assertEquals(list.size(), 3);
+        assertEquals(list.get(0).getValue(), "m2");
+        assertEquals(list.get(1).getValue(), "m1");
+        assertEquals(list.get(2).getValue(), "m3");
+        assertEquals(NumberUtils.formatDouble(list.get(0).getScore()), "0.5");
+        assertEquals(NumberUtils.formatDouble(list.get(1).getScore()), "1.1");
+        assertEquals(NumberUtils.formatDouble(list.get(2).getScore()), "3.5");
+    }
+
+    @Test
+    public void shouldZAddWithGtCh() {
+        t().execute((RedisCallback<? extends Object>) con -> con.zAdd(bytes("key"), 1.1D, serialize("m1")));
+
+        Set<RedisZSetCommands.Tuple> values = new HashSet<>(Arrays.asList(
+                new DefaultTuple(serialize("m1"), 1.7),
+                new DefaultTuple(serialize("m2"), 0.5),
+                new DefaultTuple(serialize("m3"), 3.5)
+        ));
+        Long eff = t().execute((RedisCallback<Long>) con -> con.zAdd(bytes("key"), values, RedisZSetCommands.ZAddArgs.empty().ch().gt()));
+
+        //new add 2 + update 1
+        assertEquals(eff.intValue(), 3);
+        LinkedList<ZSetOperations.TypedTuple<Object>> list = new LinkedList<>(z().rangeWithScores("key", 0, -1));
+        assertEquals(list.size(), 3);
+        assertEquals(list.get(0).getValue(), "m2");
+        assertEquals(list.get(1).getValue(), "m1");
+        assertEquals(list.get(2).getValue(), "m3");
+        assertEquals(NumberUtils.formatDouble(list.get(0).getScore()), "0.5");
+        assertEquals(NumberUtils.formatDouble(list.get(1).getScore()), "1.7");
+        assertEquals(NumberUtils.formatDouble(list.get(2).getScore()), "3.5");
+    }
+
+
+    @Test
+    public void shouldZAddWithLtCh() {
+        t().execute((RedisCallback<? extends Object>) con -> con.zAdd(bytes("key"), 1.1D, serialize("m1")));
+
+        Set<RedisZSetCommands.Tuple> values = new HashSet<>(Arrays.asList(
+                new DefaultTuple(serialize("m1"), 1.7),
+                new DefaultTuple(serialize("m2"), 0.5),
+                new DefaultTuple(serialize("m3"), 3.5)
+        ));
+        Long eff = t().execute((RedisCallback<Long>) con -> con.zAdd(bytes("key"), values, RedisZSetCommands.ZAddArgs.empty().ch().lt()));
+
+        //update 2
+        assertEquals(eff.intValue(), 2);
+        LinkedList<ZSetOperations.TypedTuple<Object>> list = new LinkedList<>(z().rangeWithScores("key", 0, -1));
+        assertEquals(list.size(), 3);
+        assertEquals(list.get(0).getValue(), "m2");
+        assertEquals(list.get(1).getValue(), "m1");
+        assertEquals(list.get(2).getValue(), "m3");
+        assertEquals(NumberUtils.formatDouble(list.get(0).getScore()), "0.5");
+        assertEquals(NumberUtils.formatDouble(list.get(1).getScore()), "1.1");
+        assertEquals(NumberUtils.formatDouble(list.get(2).getScore()), "3.5");
+    }
+
+    @Test
+    public void shouldZAddWithLtCh2() {
+        t().execute((RedisCallback<? extends Object>) con -> con.zAdd(bytes("key"), 1.1D, serialize("m1")));
+
+        Set<RedisZSetCommands.Tuple> values = new HashSet<>(Arrays.asList(
+                new DefaultTuple(serialize("m1"), 0.7),
+                new DefaultTuple(serialize("m2"), 0.5),
+                new DefaultTuple(serialize("m3"), 3.5)
+        ));
+        Long eff = t().execute((RedisCallback<Long>) con -> con.zAdd(bytes("key"), values, RedisZSetCommands.ZAddArgs.empty().ch().lt()));
+
+        //update 2
+        assertEquals(eff.intValue(), 3);
+        LinkedList<ZSetOperations.TypedTuple<Object>> list = new LinkedList<>(z().rangeWithScores("key", 0, -1));
+        assertEquals(list.size(), 3);
+        assertEquals(list.get(0).getValue(), "m2");
+        assertEquals(list.get(1).getValue(), "m1");
+        assertEquals(list.get(2).getValue(), "m3");
+        assertEquals(NumberUtils.formatDouble(list.get(0).getScore()), "0.5");
+        assertEquals(NumberUtils.formatDouble(list.get(1).getScore()), "0.7");
+        assertEquals(NumberUtils.formatDouble(list.get(2).getScore()), "3.5");
+    }
+
+
 }

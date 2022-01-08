@@ -1,4 +1,3 @@
-
 ## Debug  
 -Dio.netty.leakDetectionLevel=PARANOID
 
@@ -35,7 +34,7 @@
 |BZMPOP|N|7.x|
 |BZPOPMAX|Y||
 |BZPOPMIN|Y||
-|ZADD|||
+|ZADD|Y||
 |ZCARD|Y||
 |ZCOUNT|Y||
 |ZDIFF|Y||
@@ -43,7 +42,7 @@
 |ZINCRBY|Y||
 |ZINTER|Y||
 |ZINTERCARD|||
-|ZINTERSTORE|||
+|ZINTERSTORE|Y||
 |ZLEXCOUNT|||
 |ZMPOP|N|7.x|
 |ZMSCORE|Y||
@@ -63,17 +62,17 @@
 |ZREVRANGEBYLEX|Y||
 |ZREVRANGEBYSCORE|Y||
 |ZREVRANK|Y||
-|ZSCAN|||
+|ZSCAN| |later|
 |ZSCORE|Y||
 |ZUNION|Y||
-|ZUNIONSTORE|||
+|ZUNIONSTORE|Y||
 
 ## TODO
 -[ ] Lua types.  
 -[ ] Script error handle.  
 -[ ] redis 7.x support.  
 -[ ] cluster support.  
--[ ] scans.     
+-[ ] scan commands.(all / sortedset / hash)     
 -[ ] Upgrade redisson 3.16.7.   
 -[X] Fix RedissonConnection lpos 
 -[ ] Block command in Transaction and scripting
