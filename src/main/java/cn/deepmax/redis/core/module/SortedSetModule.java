@@ -8,6 +8,7 @@ import cn.deepmax.redis.api.RedisServerException;
 import cn.deepmax.redis.core.Key;
 import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.core.support.BaseModule;
+import cn.deepmax.redis.core.support.SizedOperation;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.utils.NumberUtils;
@@ -258,7 +259,7 @@ public class SortedSetModule extends BaseModule {
         }
     }
 
-    public static class ZRem extends ArgsCommand.ThreeWith<SortedSet> {
+    public static class ZRem extends ArgsCommand.ThreeWith<SortedSet> implements SizedOperation {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
@@ -271,7 +272,7 @@ public class SortedSetModule extends BaseModule {
             for (Key member : members) {
                 c += set.remove(member);
             }
-            deleteSetIfNeed(key, engine, client);
+            deleteEleIfNeed(key, engine, client);
             return new IntegerRedisMessage(c);
         }
     }
@@ -594,7 +595,7 @@ public class SortedSetModule extends BaseModule {
         }
     }
 
-    public static class ZRemRangeByRank extends ArgsCommand.FourExWith<SortedSet> {
+    public static class ZRemRangeByRank extends ArgsCommand.FourExWith<SortedSet> implements SizedOperation {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
@@ -605,12 +606,12 @@ public class SortedSetModule extends BaseModule {
                 return Constants.INT_ZERO;
             }
             int r = set.removeByRank(min.intValue(), max.intValue());
-            deleteSetIfNeed(key, engine, client);
+            deleteEleIfNeed(key, engine, client);
             return new IntegerRedisMessage(r);
         }
     }
 
-    public static class ZRemRangeByScore extends ArgsCommand.FourExWith<SortedSet> {
+    public static class ZRemRangeByScore extends ArgsCommand.FourExWith<SortedSet> implements SizedOperation{
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
@@ -622,12 +623,12 @@ public class SortedSetModule extends BaseModule {
             }
             Range<Double> range = NumberUtils.parseScoreRange(min, max);
             int r = set.removeByScore(range);
-            deleteSetIfNeed(key, engine, client);
+            deleteEleIfNeed(key, engine, client);
             return new IntegerRedisMessage(r);
         }
     }
 
-    public static class ZRemRangeByLex extends ArgsCommand.FourExWith<SortedSet> {
+    public static class ZRemRangeByLex extends ArgsCommand.FourExWith<SortedSet> implements SizedOperation{
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
@@ -639,13 +640,13 @@ public class SortedSetModule extends BaseModule {
             }
             Range<Key> range = NumberUtils.parseLexRange(min, max);
             int r = set.removeByLex(range);
-            deleteSetIfNeed(key, engine, client);
+            deleteEleIfNeed(key, engine, client);
             return new IntegerRedisMessage(r);
         }
     }
 
 
-    public static class ZPop extends ArgsCommand<SortedSet> {
+    public static class ZPop extends ArgsCommand<SortedSet> implements SizedOperation {
         final boolean max;
         final String name;
 
@@ -672,12 +673,12 @@ public class SortedSetModule extends BaseModule {
                 return ListRedisMessage.empty();
             }
             List<ZSet.Pair<Double, Key>> list = set.pop(count, max);
-            deleteSetIfNeed(key, engine, client);
+            deleteEleIfNeed(key, engine, client);
             return transPair(list, true);
         }
     }
 
-    public static class BZPop extends ArgsCommand.ThreeWith<SortedSet> {
+    public static class BZPop extends ArgsCommand.ThreeWith<SortedSet> implements SizedOperation{
         final boolean fromMax;
         final String name;
 
@@ -717,7 +718,7 @@ public class SortedSetModule extends BaseModule {
                 if (poped.isEmpty()) {
                     continue;
                 }
-                deleteSetIfNeed(key.getContent(), engine, client);
+                deleteEleIfNeed(key.getContent(), engine, client);
                 ListRedisMessage msg = ListRedisMessage.newBuilder()
                         .append(FullBulkValueRedisMessage.ofString(key.getContent()))
                         .append(FullBulkValueRedisMessage.ofString(poped.get(0).ele.getContent()))
@@ -810,22 +811,6 @@ public class SortedSetModule extends BaseModule {
             set.add(newV, memberKey);
             engine.fireChangeEvent(client, key, DbManager.EventType.UPDATE);
             return FullBulkValueRedisMessage.ofDouble(newV);
-        }
-    }
-
-    /**
-     * remove set which size = 0 or fire update event
-     *
-     * @param key
-     * @param engine
-     * @param client
-     */
-    static void deleteSetIfNeed(byte[] key, RedisEngine engine, Client client) {
-        SortedSet afterSet = (SortedSet) engine.getDb(client).get(client, key);
-        if (afterSet.size() == 0) {
-            engine.getDb(client).del(client, key);
-        } else {
-            engine.fireChangeEvent(client, key, DbManager.EventType.UPDATE);
         }
     }
 

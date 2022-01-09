@@ -5,8 +5,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public class ScanMap<K, V> {
-    private final Map<K, Node<K, V>> container = new HashMap<>();
-    private final Map<Long, Node<K, V>> numberContainer = new HashMap<>();
+    protected final Map<K, Node<K, V>> container = new HashMap<>();
+    protected final Map<Long, Node<K, V>> numberContainer = new HashMap<>();
     Node<K, V> tail;
     Node<K, V> head;
     private long preIndex = 0L;
@@ -28,7 +28,7 @@ public class ScanMap<K, V> {
         return numberContainer.get(idx);
     }
 
-    public int size() {
+    public long size() {
         return container.size();
     }
 

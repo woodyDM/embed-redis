@@ -113,6 +113,10 @@ abstract class BaseTemplateTest implements ByteHelper {
         return redisTemplate.opsForValue();
     }
 
+    protected HashOperations<String,Object,Object> h(){
+        return redisTemplate.opsForHash();
+    }
+
     protected RedisTemplate<String, Object> t() {
         return redisTemplate;
     }

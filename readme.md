@@ -67,6 +67,26 @@
 |ZUNION|Y||
 |ZUNIONSTORE|Y||
 
+### Hash  
+|name|supported|description|
+|-----|-----|-----|
+|HDEL| Y| |
+|HEXISTS|Y | |
+|HGET| Y| |
+|HGETALL|Y | |
+|HINCRBY| Y| |
+|HINCRBYFLOAT|Y | |
+|HKEYS| Y| |
+|HLEN|Y | |
+|HMGET|Y | |
+|HMSET|Y | |
+|HRANDFIELD| Y| |
+|HSCAN| | later|
+|HSET|Y | |
+|HSETNX|Y | |
+|HSTRLEN|Y | |
+|HVALS|Y | |
+
 ## TODO
 -[ ] Lua types.  
 -[ ] Script error handle.  
@@ -76,6 +96,7 @@
 -[ ] Upgrade redisson 3.16.7.   
 -[X] Fix RedissonConnection lpos 
 -[ ] Block command in Transaction and scripting
+-[ ] Events and `SizedOperation`
 
   
 
