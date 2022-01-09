@@ -99,17 +99,21 @@ public abstract class ArgsCommand<T extends RedisObject> implements RedisCommand
         if (obj == null) {
             return null;
         }
+        Class<?> clazz = getGenericClass();
+        if (clazz.isInstance(obj)) {
+            return (T) obj;
+        } else {
+            throw new RedisServerException(Constants.ERR_TYPE);
+        }
+    }
+
+    private Class<?> getGenericClass() {
         Class<?> cur = this.getClass();
         while (cur != null) {
             Type t = cur.getGenericSuperclass();
             if (t instanceof ParameterizedType) {
                 ParameterizedType p = (ParameterizedType) t;
-                Class<?> clazz = (Class<?>) p.getActualTypeArguments()[0];
-                if (clazz.isInstance(obj)) {
-                    return (T) obj;
-                } else {
-                    throw new RedisServerException(Constants.ERR_TYPE);
-                }
+                return (Class<?>) p.getActualTypeArguments()[0];
             } else {
                 cur = cur.getSuperclass();
             }

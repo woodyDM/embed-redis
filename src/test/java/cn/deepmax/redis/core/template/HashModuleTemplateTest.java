@@ -23,7 +23,6 @@ public class HashModuleTemplateTest extends BasePureTemplateTest {
 
         assertNull(h().get("not-exist", "any"));
         assertNull(h().get("key", "hashKey-not-exist"));
-
     }
 
     @Test

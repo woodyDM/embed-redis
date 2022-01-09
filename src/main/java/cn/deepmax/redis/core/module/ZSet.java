@@ -1,5 +1,6 @@
 package cn.deepmax.redis.core.module;
 
+import cn.deepmax.redis.core.RandomElements;
 import cn.deepmax.redis.core.Sized;
 import cn.deepmax.redis.utils.Range;
 import cn.deepmax.redis.utils.Tuple;
@@ -11,7 +12,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * @param <S>
  * @param <T>
  */
-public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements Sized {
+public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements RandomElements {
 
     static final int ZSKIPLIST_MAXLEVEL = 32;
     static final double ZSKIPLIST_P = 0.25D;
@@ -296,23 +297,7 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
     }
 
     public List<Pair<S, T>> randomMember(long count) {
-        List<Pair<S, T>> r = toPairs();
-        long size = size();
-        if (count > 0) {
-            Collections.shuffle(r);
-            if (size <= count) {
-                return r;
-            } else {
-                return r.subList(0, (int) count);
-            }
-        } else {
-            List<Pair<S, T>> result = new LinkedList<>();
-            for (int i = 0; i < -count; i++) {
-                int idx = random.nextInt((int) size);
-                result.add(r.get(idx));
-            }
-            return result;
-        }
+        return randomCount(count, this::toPairs);
     }
 
     public int lexCount(Range<T> lexRange) {

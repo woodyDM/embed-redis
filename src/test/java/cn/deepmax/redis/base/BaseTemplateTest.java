@@ -129,6 +129,10 @@ abstract class BaseTemplateTest implements ByteHelper {
         return redisTemplate.opsForZSet();
     }
 
+    protected SetOperations<String, Object> s() {
+        return redisTemplate.opsForSet();
+    }
+
     static class Client {
         RedisTemplate<String, Object> t;
         RedisConnectionFactory factory;

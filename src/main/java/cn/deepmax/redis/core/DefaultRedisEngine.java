@@ -44,6 +44,7 @@ public class DefaultRedisEngine implements RedisEngine {
         loadModule(new ListModule());
         loadModule(new SortedSetModule());
         loadModule(new HashModule());
+        loadModule(new SetModule());
     }
 
     @Override

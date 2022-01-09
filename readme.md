@@ -87,14 +87,33 @@
 |HSTRLEN|Y | |
 |HVALS|Y | |
 
+### Set 
+|name|supported|description|
+|-----|-----|-----|
+|SADD| Y| |
+|SCARD|Y | |
+|SDIFF| | |
+|SDIFFSTORE| | |
+|SINTER| | |
+|SINTERCARD| | |
+|SINTERSTORE| | |
+|SISMEMBER|Y | |
+|SMEMBERS| | |
+|SMISMEMBER| Y| |
+|SMOVE| | |
+|SPOP| | |
+|SRANDMEMBER| Y| |
+|SREM| | |
+|SSCAN| | |
+|SUNION| | |
+|SUNIONSTORE| | |
+
 ## TODO
 -[ ] Lua types.  
 -[ ] Script error handle.  
 -[ ] redis 7.x support.  
 -[ ] cluster support.  
--[ ] scan commands.(all / sortedset / hash)     
--[ ] Upgrade redisson 3.16.7.   
--[X] Fix RedissonConnection lpos 
+-[ ] scan commands.(all / sortedset / hash)
 -[ ] Block command in Transaction and scripting
 -[ ] Events and `SizedOperation`
 

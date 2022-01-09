@@ -3,18 +3,17 @@ package cn.deepmax.redis.core.module;
 import cn.deepmax.redis.api.RedisObject;
 import cn.deepmax.redis.api.TimeProvider;
 import cn.deepmax.redis.core.Key;
-import cn.deepmax.redis.core.Sized;
+import cn.deepmax.redis.core.RandomElements;
 import cn.deepmax.redis.utils.NumberUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Function;
 
-public class RHash extends ScanMap<Key, Key> implements RedisObject, Sized {
+public class RHash extends ScanMap<Key, Key> implements RedisObject, RandomElements {
 
     private LocalDateTime expire;
     private final TimeProvider provider;
@@ -111,22 +110,7 @@ public class RHash extends ScanMap<Key, Key> implements RedisObject, Sized {
     }
 
     public List<Pair> randField(long count) {
-        List<Pair> all = getAll();
-        if (count > 0) {
-            Collections.shuffle(all);
-            if (count >= size()) {
-                return all;
-            } else {
-                return all.subList(0, (int) count);
-            }
-        } else {
-            List<Pair> r = new ArrayList<>();
-            int len = (int) size();
-            for (int i = 0; i < -count; i++) {
-                r.add(all.get(random.nextInt(len)));
-            }
-            return r;
-        }
+        return randomCount(count, this::getAll);
     }
 
     public static class Pair {
