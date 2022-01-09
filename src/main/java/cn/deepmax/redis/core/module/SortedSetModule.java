@@ -32,6 +32,7 @@ public class SortedSetModule extends BaseModule {
         register(new ZAdd());
         register(new ZCard());
         register(new ZCount());
+        register(new ZLexCount());
         register(new ZScore());
         register(new ZMScore());
         register(new ZDiff());
@@ -58,6 +59,7 @@ public class SortedSetModule extends BaseModule {
         register(new ZRemRangeByScore());
         register(new ZRemRangeByLex());
         register(new ZRem());
+        register(new ZRandMember());
     }
 
     public static class ZCard extends ArgsCommand.TwoExWith<SortedSet> {
@@ -84,6 +86,22 @@ public class SortedSetModule extends BaseModule {
                 return Constants.INT_ZERO;
             }
             return new IntegerRedisMessage(set.zcount(range));
+        }
+    }
+
+    public static class ZLexCount extends ArgsCommand.FourExWith<SortedSet> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            byte[] min = msg.getAt(2).bytes();
+            byte[] max = msg.getAt(3).bytes();
+            Range<Key> lexRange = NumberUtils.parseLexRange(min, max);
+            SortedSet set = get(key);
+            if (set == null) {
+                return Constants.INT_ZERO;
+            }
+            int r = set.lexCount(lexRange);
+            return new IntegerRedisMessage(r);
         }
     }
 
@@ -200,6 +218,43 @@ public class SortedSetModule extends BaseModule {
                 return Optional.of("INCR option supports a single increment-element pair");
             }
             return Optional.empty();
+        }
+    }
+
+    public static class ZRandMember extends ArgsCommand<SortedSet> {
+        public ZRandMember() {
+            super(2, 3, 4);
+        }
+
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            long count = 1;
+            boolean withCount = false;
+            boolean withScores = false;
+            if (msg.children().size() >= 3) {
+                count = msg.getAt(2).val();
+                withCount = true;
+            }
+            if (msg.children().size() == 4) {
+                if (!"withscores".equalsIgnoreCase(msg.getAt(3).str())) {
+                    return Constants.ERR_SYNTAX;
+                }
+                withScores = true;
+            }
+            SortedSet set = get(key);
+            if (set == null) {
+                return withCount ? ListRedisMessage.empty() : FullBulkValueRedisMessage.NULL_INSTANCE;
+            }
+            if (count == 0) {
+                return Constants.ERR_SYNTAX;
+            }
+            List<ZSet.Pair<Double, Key>> list = set.randomMember(count);
+            if (withCount) {
+                return transPair(list, withScores);
+            }else{
+                return FullBulkValueRedisMessage.ofString(list.get(0).ele.getContent());
+            }
         }
     }
 

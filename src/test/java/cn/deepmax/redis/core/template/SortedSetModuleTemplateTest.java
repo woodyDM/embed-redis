@@ -1607,5 +1607,127 @@ public class SortedSetModuleTemplateTest extends BasePureTemplateTest implements
         assertEquals(NumberUtils.formatDouble(list.get(2).getScore()), "3.5");
     }
 
+    @Test
+    public void shouldZRandMemberWithEmpty() {
+        if (isRedisson()) {
+            return;//StackOverflowError
+        }
+        Object o = z().randomMember("key-not-exist");
+        assertNull(o);
+        List<Object> objects = z().randomMembers("key-not-exist", 1);
+        assertEquals(objects.size(),0);
+    }
 
+    @Test
+    public void shouldZRandMemberOne() {
+        if (isRedisson()) {
+            return;//StackOverflowError
+        }
+        z().add("key", "m1", 1.5D);
+        Object o = z().randomMember("key");
+        assertEquals(o,"m1");
+
+        List<Object> objects = z().randomMembers("key", 2);
+        assertEquals(objects.size(),1);
+        assertEquals(objects.get(0),"m1");
+
+        List<ZSetOperations.TypedTuple<Object>> list = z().randomMembersWithScore("key", 2);
+        assertEquals(list.size(),1);
+        assertEquals(list.get(0).getValue(),"m1");
+        assertEquals(NumberUtils.formatDouble(list.get(0).getScore()),"1.5");
+    }
+
+    @Test
+    public void shouldZRandMemberALot() {
+        if (isRedisson()) {
+            return;//StackOverflowError
+        }
+        z().add("key", "m1", 1.5D);
+        z().add("key", "m2", 0.5D);
+        z().add("key", "m3", 3.5D);
+        Object o = z().randomMember("key");
+        assertTrue(Arrays.asList("m1","m2","m3").contains(o));
+
+        List<Object> objects = z().randomMembers("key", 2);
+        assertEquals(objects.size(),2);
+        assertTrue(Arrays.asList("m1","m2","m3").contains(objects.get(0)));
+        assertTrue(Arrays.asList("m1","m2","m3").contains(objects.get(1)));
+        assertNotEquals(objects.get(0),objects.get(1));
+
+        List<ZSetOperations.TypedTuple<Object>> list = z().randomMembersWithScore("key", 2);
+        assertEquals(list.size(),2);
+        assertTrue(Arrays.asList("m1","m2","m3").contains(list.get(0).getValue()));
+        assertTrue(Arrays.asList("m1","m2","m3").contains(list.get(1).getValue()));
+    }
+
+    @Test
+    public void shouldZRandMemberMinus() {
+        if (isRedisson()) {
+            return;//StackOverflowError
+        }
+        z().add("key", "m1", 1.5D);
+        z().add("key", "m2", 0.5D);
+        z().add("key", "m3", 3.5D);
+
+        List<byte[]> list1 = t().execute((RedisCallback<List<byte[]>>) con -> con.zRandMember(bytes("key"), -20));
+        assertEquals(list1.size(),20);
+
+        List<RedisZSetCommands.Tuple> list2 = t().execute((RedisCallback<List<RedisZSetCommands.Tuple>>) con -> con.zRandMemberWithScore(bytes("key"), -20));
+        if (isJedis()) {
+            assertEquals(list2.size(),3);
+        }else{
+            assertEquals(list2.size(),20);
+        }
+    }
+
+    @Test
+    public void shouldLexCount() {
+        if (isRedisson()) {
+            return; //StackOverflowError
+        }
+        t().execute((RedisCallback<? extends Object>) con -> con.zAdd(bytes("key"), 1.2D, bytes("a")));
+        t().execute((RedisCallback<? extends Object>) con -> con.zAdd(bytes("key"), 1.2D, bytes("b")));
+        t().execute((RedisCallback<? extends Object>) con -> con.zAdd(bytes("key"), 1.2D, bytes("c")));
+        t().execute((RedisCallback<? extends Object>) con -> con.zAdd(bytes("key"), 1.2D, bytes("d")));
+        t().execute((RedisCallback<? extends Object>) con -> con.zAdd(bytes("key"), 1.2D, bytes("e")));
+
+        Long v = z().lexCount("key", RedisZSetCommands.Range.range());
+        assertEquals(v.intValue(),5);
+
+        v = z().lexCount("key", RedisZSetCommands.Range.range().gt("b"));
+        assertEquals(v.intValue(),3);
+
+        v = z().lexCount("key", RedisZSetCommands.Range.range().gte("b").lt("e"));
+        assertEquals(v.intValue(),3);
+
+        v = z().lexCount("key", RedisZSetCommands.Range.range().gte("b").lt("g"));
+        assertEquals(v.intValue(),4);
+
+        v = z().lexCount("key", RedisZSetCommands.Range.range().lte("b"));
+        assertEquals(v.intValue(),2);
+
+    }
+
+    @Test
+    public void shouldLexCountEmpty() {
+        if (isRedisson()) {
+            return; //StackOverflowError
+        }
+
+        Long v = z().lexCount("key", RedisZSetCommands.Range.range());
+        assertEquals(v.intValue(),0);
+
+        v = z().lexCount("key", RedisZSetCommands.Range.range().gt("b"));
+        assertEquals(v.intValue(),0);
+
+        v = z().lexCount("key", RedisZSetCommands.Range.range().gte("b").lt("e"));
+        assertEquals(v.intValue(),0);
+
+        v = z().lexCount("key", RedisZSetCommands.Range.range().gte("b").lt("g"));
+        assertEquals(v.intValue(),0);
+
+        v = z().lexCount("key", RedisZSetCommands.Range.range().lte("b"));
+        assertEquals(v.intValue(),0);
+
+    }
 }

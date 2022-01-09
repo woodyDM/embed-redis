@@ -17,12 +17,13 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
     static final double ZSKIPLIST_P = 0.25D;
     protected final ZSkipList<S, T> zsl;
     protected final ScanMap<T, S> dict;
+    protected final Random random = new Random();
 
     public ZSet() {
         this.zsl = ZSkipList.newInstance();
         this.dict = new ScanMap<>();
     }
-    
+
     /**
      * diff
      *
@@ -80,7 +81,7 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
         if (size() == 0) {
             return Collections.emptyList();
         }
-        List<Pair<S, T>> l = new LinkedList<>();
+        List<Pair<S, T>> l = new ArrayList<>((int) size());
         ZSkipListNode<S, T> x = zsl.header.next();
         while (x != null) {
             l.add(new Pair<>(x.score, x.ele));
@@ -294,6 +295,39 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
         return result;
     }
 
+    public List<Pair<S, T>> randomMember(long count) {
+        List<Pair<S, T>> r = toPairs();
+        long size = size();
+        if (count > 0) {
+            Collections.shuffle(r);
+            if (size <= count) {
+                return r;
+            } else {
+                return r.subList(0, (int) count);
+            }
+        } else {
+            List<Pair<S, T>> result = new LinkedList<>();
+            for (int i = 0; i < -count; i++) {
+                int idx = random.nextInt((int) size);
+                result.add(r.get(idx));
+            }
+            return result;
+        }
+    }
+
+    public int lexCount(Range<T> lexRange) {
+        if (!zsl.lexInRange(lexRange)) {
+            return 0;
+        }
+        int c = 0;
+        ZSkipListNode<S, T> x = zsl.zslFirstLexInRange(lexRange);
+        while (x != null && x.eleLessOrEqualThanMaxOf(lexRange)) {
+            c++;
+            x = x.next();
+        }
+        return c;
+    }
+
     @SuppressWarnings({"unchecked", "rawtypes"})
     static class ZSkipList<S extends Comparable<S>, T extends Comparable<T>> implements Sized {
         ZSkipListNode<S, T> header;
@@ -472,10 +506,12 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements S
                     || (r.getStart().compareTo(r.getEnd()) == 0) && (r.isEndOpen() || r.isStartOpen())) {
                 return false;
             }
+            //tai < r.min   return false
             if (tail == null || !tail.eleGreaterOrEqualThanMinOf(r)) {
                 return false;
             }
             ZSkipListNode<S, T> first = header.level[0].forward;
+            //first > r.max
             if (first == null || !first.eleLessOrEqualThanMaxOf(r)) {
                 return false;
             }
