@@ -92,28 +92,28 @@
 |-----|-----|-----|
 |SADD| Y| |
 |SCARD|Y | |
-|SDIFF| | |
-|SDIFFSTORE| | |
-|SINTER| | |
-|SINTERCARD| | |
-|SINTERSTORE| | |
+|SDIFF|Y | |
+|SDIFFSTORE| Y| |
+|SINTER|Y | |
+|SINTERCARD| | 7.x|
+|SINTERSTORE| Y| |
 |SISMEMBER|Y | |
-|SMEMBERS| | |
+|SMEMBERS|Y | |
 |SMISMEMBER| Y| |
-|SMOVE| | |
-|SPOP| | |
+|SMOVE|Y | |
+|SPOP|Y | |
 |SRANDMEMBER| Y| |
-|SREM| | |
-|SSCAN| | |
-|SUNION| | |
-|SUNIONSTORE| | |
+|SREM|Y | |
+|SSCAN| |later |
+|SUNION|Y | |
+|SUNIONSTORE| Y| |
 
 ## TODO
 -[ ] Lua types.  
 -[ ] Script error handle.  
 -[ ] redis 7.x support.  
 -[ ] cluster support.  
--[ ] scan commands.(all / sortedset / hash)
+-[ ] scan commands.( all / sortedset / hash / set)
 -[ ] Block command in Transaction and scripting
 -[ ] Events and `SizedOperation`
 

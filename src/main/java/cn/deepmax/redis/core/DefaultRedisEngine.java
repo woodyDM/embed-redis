@@ -38,7 +38,6 @@ public class DefaultRedisEngine implements RedisEngine {
         loadModule(new ConnectionModule());
         loadModule(new KeyModule());
         loadModule(new ScriptingModule());
-        loadModule(new ConnectionModule());
         loadModule(new PubsubModule());
         loadModule(new TransactionModule());
         loadModule(new ListModule());

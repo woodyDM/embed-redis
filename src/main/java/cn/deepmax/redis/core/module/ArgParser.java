@@ -99,4 +99,27 @@ public class ArgParser {
     static Optional<Long> parseLongArg(ListRedisMessage msg, String name) {
         return parseArg(msg, 3, name).map(NumberUtils::parse);
     }
+
+    /**
+     * 解析count
+     * @param msg
+     * @param lastPos
+     * @return
+     */
+    public static Optional<CountArg> parseCount(ListRedisMessage msg, int lastPos) {
+        CountArg arg = new CountArg();
+        if (msg.children().size() == lastPos+1) {
+            arg.count = msg.getAt(lastPos).val();
+            arg.withCount = true;
+        }
+        if (arg.count == 0) {
+            return Optional.empty();
+        }
+        return Optional.of(arg);
+    }
+    
+    public static class CountArg {
+        public boolean withCount = false;
+        public long count = 1;
+    }
 }

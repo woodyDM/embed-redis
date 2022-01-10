@@ -27,11 +27,11 @@ public class DefaultCommandManager implements CommandManager {
         List<RedisCommand> commands = module.commands();
         if (commands != null) {
             for (RedisCommand command : commands) {
-                String commandName = command.name();
+                String commandName = command.name().toLowerCase();
                 Module old = modules.put(commandName, module);
                 commandMap.put(commandName, command);
                 if (old != null) {
-                    log.warn("Same command [{}] found at module {} and {}, the command in {} will take effect. ", commandName, module.moduleName(),
+                    log.warn("Same command [{}] found at module [{}] and [{}], the command in [{}] will take effect. ", commandName, module.moduleName(),
                             old.moduleName(), module.moduleName());
                 }
             }
