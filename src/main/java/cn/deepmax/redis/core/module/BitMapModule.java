@@ -151,7 +151,6 @@ public class BitMapModule extends BaseModule {
     public static class BitField extends ArgsCommand.ThreeWith<RString> {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
-
             return new ErrorRedisMessage("not not support");
         }
     }

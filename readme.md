@@ -2,6 +2,110 @@
 -Dio.netty.leakDetectionLevel=PARANOID
 
 ## Commands
+### Bitmap 
+|name|supported|description|
+|-----|-----|-----|
+|BITCOUNT| Y| |
+|BITFIELD| |later |
+|BITFIELD_RO| | later|
+|BITOP|Y | |
+|BITPOS|Y | |
+|GETBIT| Y| |
+|SETBIT|Y | |
+
+### Cluster (later)
+|name|supported|description|
+|-----|-----|-----|
+|ASKING| | |
+|CLUSTER ADDSLOTS| | |
+|CLUSTER ADDSLOTSRANGE| | |
+|CLUSTER BUMPEPOCH| | |
+|CLUSTER COUNT-FAILURE-REPORTS| | |
+|CLUSTER COUNTKEYSINSLOT| | |
+|CLUSTER DELSLOTS| | |
+|CLUSTER DELSLOTSRANGE| | |
+|CLUSTER FAILOVER| | |
+|CLUSTER FLUSHSLOTS| | |
+|CLUSTER FORGET| | |
+|CLUSTER GETKEYSINSLOT| | |
+|CLUSTER INFO| | |
+|CLUSTER KEYSLOT| | |
+|CLUSTER LINKS| | |
+|CLUSTER MEET| | |
+|CLUSTER MYID| | |
+|CLUSTER NODES| | |
+|CLUSTER REPLICAS| | |
+|CLUSTER REPLICATE| | |
+|CLUSTER RESET| | |
+|CLUSTER SAVECONFIG| | |
+|CLUSTER SET-CONFIG-EPOCH| | |
+|CLUSTER SETSLOT| | |
+|CLUSTER SLAVES| | |
+|CLUSTER SLOTS| | |
+|READONLY| | |
+|READWRITE| | |
+
+### Connection (later)
+|name|supported|description|
+|-----|-----|-----|
+|AUTH| | |
+|CLIENT CACHING| | |
+|CLIENT GETNAME| | |
+|CLIENT GETREDIR| | |
+|CLIENT ID| | |
+|CLIENT INFO| | |
+|CLIENT KILL| | |
+|CLIENT LIST| | |
+|CLIENT NO-EVICT| | |
+|CLIENT PAUSE| | |
+|CLIENT REPLY| | |
+|CLIENT SETNAME| | |
+|CLIENT TRACKING| | |
+|CLIENT TRACKINGINFO| | |
+|CLIENT UNBLOCK| | |
+|CLIENT UNPAUSE| | |
+|ECHO| | |
+|HELLO| | |
+|PING| | |
+|QUIT| | |
+|RESET| | |
+|SELECT| | |
+
+### Keys
+|name|supported|description|
+|-----|-----|-----|  
+|COPY| | |
+|DEL| | |
+|DUMP| | |
+|EXISTS| | |
+|EXPIRE| | |
+|EXPIREAT| | |
+|EXPIRETIME| | |
+|KEYS| | |
+|MIGRATE| | |
+|MOVE| | |
+|OBJECT ENCODING| | |
+|OBJECT FREQ| | |
+|OBJECT IDLETIME| | |
+|OBJECT REFCOUNT| | |
+|PERSIST| | |
+|PEXPIRE| | |
+|PEXPIREAT| | |
+|PEXPIRETIME| | |
+|PTTL| | |
+|RANDOMKEY| | |
+|RENAME| | |
+|RENAMENX| | |
+|RESTORE| | |
+|SCAN| | |
+|SORT| | |
+|SORT_RO| | |
+|TOUCH| | |
+|TTL| | |
+|TYPE| | |
+|UNLINK| | |
+|WAIT| | |
+
 ### List
 |name|supported|description|
 |-----|-----|-----|
@@ -27,6 +131,68 @@
 |BLMOVE|N|redis 7.x|
 |BRPOPLPUSH|Y||
 |BLMPOP|N|redis 7.x|
+
+### Pub/sub  
+|name|supported|description|
+|-----|-----|-----|
+|PSUBSCRIBE| | |
+|PUBLISH| | |
+|PUBSUB CHANNELS| | |
+|PUBSUB NUMPAT| | |
+|PUBSUB NUMSUB| | |
+|PUNSUBSCRIBE| | |
+|SUBSCRIBE| | |
+|UNSUBSCRIBE| | |
+ 
+### Scripting 
+|name|supported|description|
+|-----|-----|-----|
+|EVAL| | |
+|EVALSHA| | |
+|EVALSHA_RO| | |
+|EVAL_RO| | |
+|FCALL| | |
+|FCALL_RO| | |
+|FUNCTION CREATE| | |
+|FUNCTION DELETE| | |
+|FUNCTION DUMP| | |
+|FUNCTION FLUSH| | |
+|FUNCTION INFO| | |
+|FUNCTION KILL| | |
+|FUNCTION LIST| | |
+|FUNCTION RESTORE| | |
+|FUNCTION STATS| | |
+|SCRIPT DEBUG| | |
+|SCRIPT EXISTS| | |
+|SCRIPT FLUSH| | |
+|SCRIPT KILL| | |
+|SCRIPT LOAD| | |
+ 
+### Strings 
+|name|supported|description|
+|-----|-----|-----|
+|APPEND| Y| |
+|DECR| Y| |
+|DECRBY| Y| |
+|GET|Y | |
+|GETDEL| | |
+|GETEX| | |
+|GETRANGE| Y| |
+|GETSET| Y| |
+|INCR|Y | |
+|INCRBY|Y | |
+|INCRBYFLOAT|Y | |
+|LCS| N| 7.x|
+|MGET|Y | |
+|MSET| Y| |
+|MSETNX| Y| |
+|PSETEX|Y | |
+|SET|Y | |
+|SETEX|Y | |
+|SETNX|Y | |
+|SETRANGE|Y | |
+|STRLEN|Y | |
+|SUBSTR| | later|
 
 ### Sorted Set
 |name|supported|description|
@@ -95,7 +261,7 @@
 |SDIFF|Y | |
 |SDIFFSTORE| Y| |
 |SINTER|Y | |
-|SINTERCARD| | 7.x|
+|SINTERCARD| N| 7.x|
 |SINTERSTORE| Y| |
 |SISMEMBER|Y | |
 |SMEMBERS|Y | |
@@ -108,14 +274,25 @@
 |SUNION|Y | |
 |SUNIONSTORE| Y| |
 
-## TODO
--[ ] Lua types.  
--[ ] Script error handle.  
--[ ] redis 7.x support.  
--[ ] cluster support.  
--[ ] scan commands.( all / sortedset / hash / set)
--[ ] Block command in Transaction and scripting
--[ ] Events and `SizedOperation`
+### Transaction
+|name|supported|description|
+|-----|-----|-----| 
+|DISCARD| Y| |
+|EXEC|Y | |
+|MULTI| Y| |
+|UNWATCH| Y| |
+|WATCH| Y| |
+
+## TODO - list 
+- [ ] Geo support.    
+- [ ] HyperLogLog support.  
+- [ ] Lua types.  
+- [ ] Script error handle.    
+- [ ] redis 7.x support.  
+- [ ] cluster support.  
+- [ ] scan commands.( all / sortedset / hash / set)     
+- [ ] Block command in Transaction and scripting    
+- [ ] Events and `SizedOperation`   
 
   
 
