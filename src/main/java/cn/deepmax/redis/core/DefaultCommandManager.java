@@ -35,7 +35,8 @@ public class DefaultCommandManager implements CommandManager {
                             old.moduleName(), module.moduleName());
                 }
             }
-            String commandNames = commands.stream().map(RedisCommand::name).collect(Collectors.joining(","));
+            String commandNames = commands.stream()
+                    .map(RedisCommand::name).collect(Collectors.joining(","));
             log.info("Load module [{}] with {} commands:[{}].", module.moduleName(), commands.size(), commandNames);
         }
     }

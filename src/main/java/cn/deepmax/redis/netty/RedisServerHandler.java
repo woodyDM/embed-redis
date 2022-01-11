@@ -30,7 +30,7 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
         RedisMessage response;
         try {
             LuaChannelContext.set(ctx);
-            response = engine.execute(type, new NettyClient(ctx.channel()));
+            response = engine.execute(type, new NettyClient(engine,ctx.channel()));
         } finally {
             ReferenceCountUtil.release(type);
             LuaChannelContext.remove();
@@ -64,7 +64,7 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         log.info("Channel exit {}", ctx.channel().remoteAddress());
-        NettyClient client = new NettyClient(ctx.channel());
+        NettyClient client = new NettyClient(engine,ctx.channel());
         engine.pubsub().quit(client);
         engine.transactionManager().unwatch(client);
     }

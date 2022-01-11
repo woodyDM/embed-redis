@@ -400,6 +400,39 @@ public class SetModuleTemplateTest extends BasePureTemplateTest {
     }
 
     @Test
+    public void shouldSUnionStoreToSet() {
+         
+        s().add("dest", "origin");
+        
+        s().add("kk", "v1");
+        s().add("kk", "v2");
+        s().add("kk", "v3");
+        s().add("kk", "v4");
+        s().add("kk", "你的");
+
+        s().add("k2", "v1");
+        s().add("k2", "v2");
+        s().add("k2", "你的2");
+
+        s().add("k3", "v2");
+        s().add("k3", "v4");
+        s().add("k3", "你");
+
+        Long eff = s().unionAndStore(Arrays.asList("k2", "k3", "kk"), "dest");
+        Set<Object> v = s().members("dest");
+
+        assertEquals(eff.intValue(), 7);
+        assertEquals(v.size(), 7);
+        assertTrue(v.contains("v1"));
+        assertTrue(v.contains("v2"));
+        assertTrue(v.contains("v3"));
+        assertTrue(v.contains("v4"));
+        assertTrue(v.contains("你"));
+        assertTrue(v.contains("你的"));
+        assertTrue(v.contains("你的2"));
+    }
+    
+    @Test
     public void shouldSUnionStore() {
         v().set("dest", "any");
         s().add("kk", "v1");
@@ -436,6 +469,7 @@ public class SetModuleTemplateTest extends BasePureTemplateTest {
         Long eff = s().unionAndStore(Arrays.asList("k1", "k2"), "dest");
 
         assertEquals(eff.intValue(), 0);
+         
         assertNull(v().get("dest"));
         assertTrue(s().members("dest").isEmpty());
     }

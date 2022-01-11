@@ -25,7 +25,8 @@ public class BaseMemEngineTest implements EngineTest, TimedTest {
     public void setUp() {
         DefaultRedisEngine e = DefaultRedisEngine.defaultEngine();
         e.setTimeProvider(TIME_PROVIDER);
-        e.setConfiguration(new RedisConfiguration(PORT, AUTH));
+        RedisConfiguration.Standalone standalone = new RedisConfiguration.Standalone(PORT, AUTH);
+        e.setConfiguration(new RedisConfiguration("localhost",standalone, null));
         TIME_PROVIDER.reset();
         RedisEngineHolder.set(e);
     }

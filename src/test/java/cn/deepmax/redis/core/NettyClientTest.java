@@ -1,5 +1,6 @@
 package cn.deepmax.redis.core;
 
+import cn.deepmax.redis.base.EngineTest;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.Test;
 
@@ -14,7 +15,7 @@ public class NettyClientTest {
 
     @Test
     public void shouldQueue() {
-        NettyClient client = new NettyClient(new EmbeddedChannel());
+        EngineTest.MockClient client = new EngineTest.MockClient(DefaultRedisEngine.defaultEngine(), new EmbeddedChannel());
         
         assertFalse(client.queued());
         

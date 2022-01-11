@@ -1,13 +1,19 @@
 package cn.deepmax.redis.core;
 
 import cn.deepmax.redis.api.Client;
+import cn.deepmax.redis.api.RedisConfiguration;
+import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.utils.MessagePrinter;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.redis.RedisMessage;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author wudi
@@ -15,11 +21,42 @@ import java.util.Objects;
  */
 public class NettyClient implements Client {
     private final Channel channel;
-
+    private final RedisEngine engine;
     private static final AttributeKey<Integer> ATT_FLAG = AttributeKey.newInstance("STATUS_FLAG");
+    private static final AttributeKey<Long> ATT_ID = AttributeKey.newInstance("ID_FLAG");
+    private static final AtomicLong id = new AtomicLong(1);
 
-    public NettyClient(Channel channel) {
+    public NettyClient(RedisEngine engine, Channel channel) {
+        this.engine = engine;
         this.channel = channel;
+        long thisId = id.getAndIncrement();
+        channel.attr(ATT_ID).setIfAbsent(thisId);
+    }
+
+    @Override
+    public RedisEngine engine() {
+        return engine;
+    }
+
+    /**
+     * the client request node
+     *
+     * @return empty if standalone
+     */
+    @Override
+    public Optional<RedisConfiguration.Node> node() {
+        RedisConfiguration.Cluster cluster = engine.configuration().getCluster();
+        if (cluster == null) {
+            return Optional.empty();
+        }
+        SocketAddress add = this.channel.localAddress();
+        if (add instanceof InetSocketAddress) {
+            InetSocketAddress iadd = (InetSocketAddress) add;
+            int port = iadd.getPort();
+            return cluster.getAllNodes().stream().filter(n -> n.port == port).findFirst();
+        } else {
+            throw new IllegalStateException("can't decide node of local address" + add);
+        }
     }
 
     @Override
@@ -34,7 +71,7 @@ public class NettyClient implements Client {
 
     @Override
     public Object id() {
-        return channel;
+        return channel.attr(ATT_ID).get();
     }
 
     @Override

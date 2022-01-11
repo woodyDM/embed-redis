@@ -12,12 +12,8 @@ public class EmbedRedisRunner {
 
     public static RedisServer server;
     public static DefaultRedisEngine engine;
-
-    public static boolean isRunning() {
-        return server != null;
-    }
-
-    public synchronized static DefaultRedisEngine start(int port, String auth) {
+    
+    public synchronized static DefaultRedisEngine start(RedisConfiguration config) {
         if (server != null) {
             log.warn("EmbedRedisRunner called start more than once!");
             return engine;
@@ -25,13 +21,12 @@ public class EmbedRedisRunner {
         engine = DefaultRedisEngine.defaultEngine();
         engine.setTimeProvider(TIME_PROVIDER);
         TIME_PROVIDER.reset();
-        server = new RedisServer(engine, new RedisConfiguration(port, auth));
+        server = new RedisServer(engine, config);
         server.start();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             server.stop();
         }));
         return engine;
     }
-
 
 }

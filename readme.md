@@ -293,6 +293,7 @@
 - [ ] scan commands.( all / sortedset / hash / set)     
 - [ ] Block command in Transaction and scripting    
 - [ ] Events and `SizedOperation`   
+- [ ] Use different AuthManager for cluster and standalone mode.  
 
   
 

@@ -2,11 +2,13 @@ package cn.deepmax.redis.base;
 
 import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.DbManager;
+import cn.deepmax.redis.api.RedisConfiguration;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.core.Key;
 import cn.deepmax.redis.core.NettyClient;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
+import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.redis.FullBulkStringRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
@@ -14,10 +16,7 @@ import io.netty.handler.codec.redis.RedisMessage;
 import io.netty.handler.codec.redis.SimpleStringRedisMessage;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -44,11 +43,22 @@ public interface EngineTest extends ByteHelper {
     }
 
     default Client noAuthClient() {
-        return new NettyClient(new EmbeddedChannel());
+        return new MockClient(engine(), new EmbeddedChannel());
     }
 
+    class MockClient extends NettyClient{
+        public MockClient(RedisEngine engine, Channel channel) {
+            super(engine, channel);
+        }
+
+        @Override
+        public Optional<RedisConfiguration.Node> node() {
+            return Optional.empty();
+        }
+    }
+    
     default Client embeddedClient() {
-        NettyClient client = new NettyClient(new EmbeddedChannel());
+        NettyClient client = new MockClient(engine(), new EmbeddedChannel());
         RedisMessage msg = engine().execute(ListRedisMessage.newBuilder()
                 .append(FullBulkValueRedisMessage.ofString("auth"))
                 .append(FullBulkValueRedisMessage.ofString(auth()))

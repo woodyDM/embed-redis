@@ -10,7 +10,6 @@ import cn.deepmax.redis.resp3.RedisBulkValueAggregator;
 import cn.deepmax.redis.resp3.RedisResp3Decoder;
 import cn.deepmax.redis.resp3.RedisResp3Encoder;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
@@ -20,29 +19,41 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Hello world!
  */
 @Slf4j
 public class RedisServer {
-
     private final RedisConfiguration configuration;
     private EventLoopGroup boss = null;
     private EventLoopGroup workerGroup = null;
-    private Channel serverChannel = null;
+    private List<ChannelFuture> binds = new ArrayList<>();
     private final RedisEngine engine;
 
-    public RedisServer(@NonNull RedisEngine engine, @NonNull RedisConfiguration configuration) {
+    public RedisServer(@NonNull RedisEngine engine, RedisConfiguration configuration) {
         this.engine = engine;
         this.configuration = configuration;
+        this.configuration.check();
     }
 
     public static void main(String[] args) {
-        new RedisServer(DefaultRedisEngine.defaultEngine(), new RedisConfiguration(6380, null)).start();
+        RedisConfiguration.Standalone standalone = new RedisConfiguration.Standalone(6380, null);
+        RedisConfiguration.Cluster cluster = new RedisConfiguration.Cluster(null, Arrays.asList(
+                new RedisConfiguration.Node("m1", 6391)
+                        .appendSlave(new RedisConfiguration.Node("s1", 6394)),
+                new RedisConfiguration.Node("m2", 6392)
+                        .appendSlave(new RedisConfiguration.Node("s2", 6395)),
+                new RedisConfiguration.Node("m3", 6393)
+                        .appendSlave(new RedisConfiguration.Node("s3", 6396))
+        ));
+        new RedisServer(DefaultRedisEngine.defaultEngine(), new RedisConfiguration("localhost",standalone, cluster)).start();
     }
 
     public void start() {
-        int port = configuration.getPort();
         ServerBootstrap boot = new ServerBootstrap();
         engine.setConfiguration(configuration);
         RedisEngineHolder.set(engine);
@@ -63,15 +74,36 @@ public class RedisServer {
 
                     }
                 });
-        ChannelFuture channelFuture = boot.bind(port);
-        channelFuture.syncUninterruptibly();
-        serverChannel = channelFuture.channel();
-        log.info("Redis start at port [{}] !", port);
+        //to bind ports
+        StringBuilder logText = new StringBuilder();
+        logText.append("Redis started ");
+        if (configuration.getStandalone() != null) {
+            binds.add(boot.bind(configuration.getStandalone().getPort()));
+            logText.append("with standalone port ").append(configuration.getStandalone().getPort()).append(" ");
+        }
+        if (configuration.getCluster() != null) {
+            logText.append(", with cluster port: ");
+            List<RedisConfiguration.Node> nodes = configuration.getCluster().getAllNodes();
+            for (int i = 0; i < nodes.size(); i++) {
+                binds.add(boot.bind(nodes.get(i).port));
+                logText.append(nodes.get(i).port);
+                if (i < nodes.size() - 1) {
+                    logText.append(",");
+                }
+            }
+        }
+        binds.forEach(i -> i.syncUninterruptibly());
+        log.info("{} !", logText.toString());
     }
     
     public void stop() {
-        if (serverChannel != null)
-            serverChannel.close();
+        for (ChannelFuture ch : binds) {
+            try {
+                ch.channel().close();
+            } catch (Exception e) {
+                log.error("Close error ", e);
+            }
+        }
         if (boss != null) {
             boss.shutdownGracefully();
         }

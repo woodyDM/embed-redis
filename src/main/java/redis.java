@@ -92,7 +92,7 @@ public class redis extends TwoArgFunction {
                 ChannelHandlerContext ctx = LuaChannelContext.get();
                 Objects.requireNonNull(ctx);
                 RedisEngine engine = engine();
-                resp = engine.execute(msg, new NettyClient(ctx.channel()));
+                resp = engine.execute(msg, new NettyClient(engine,ctx.channel()));
                 //todo blog error
                 if (resp instanceof ErrorRedisMessage) {
                     resp = onError(resp);

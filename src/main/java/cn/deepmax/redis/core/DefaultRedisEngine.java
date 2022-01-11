@@ -44,6 +44,7 @@ public class DefaultRedisEngine implements RedisEngine {
         loadModule(new SortedSetModule());
         loadModule(new HashModule());
         loadModule(new SetModule());
+        loadModule(new ClusterModule());
     }
 
     @Override
@@ -62,7 +63,7 @@ public class DefaultRedisEngine implements RedisEngine {
     @Override
     public void setConfiguration(RedisConfiguration configuration) {
         this.configuration = configuration;
-        this.authManager.setAuth(configuration.getAuth());
+        this.authManager.setAuth(configuration.getStandalone().getAuth());
     }
 
     @Override

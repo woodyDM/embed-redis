@@ -361,11 +361,9 @@ public class HashModuleTemplateTest extends BasePureTemplateTest {
         h().putAll("key", m);
 
         List<Map.Entry<byte[], byte[]>> list = t().execute((RedisCallback<List<Map.Entry<byte[], byte[]>>>)
-                con -> con.hRandFieldWithValues(bytes("key"), -10));
-        if (isJedis()) {
-            assertEquals(list.size(), 3);
-        } else {
-            assertEquals(list.size(), 10);
+                con -> con.hRandFieldWithValues(bytes("key"), -33));
+        if (!isJedis()) {
+            assertEquals(list.size(), 33);
         }
         list.forEach(e -> {
             if (Arrays.equals(serialize("m11"), e.getKey())) assertArrayEquals(bytes("v1"), e.getValue());

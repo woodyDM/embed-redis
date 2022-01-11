@@ -23,6 +23,7 @@ public class Constants {
     public static final ErrorRedisMessage ERR_IMPL_MISMATCH = of("ERR Embed-redis internal type mismatch!");
     public static final ErrorRedisMessage ERR_NOT_SUPPORT = of("ERR redis 7.X command ,not support");
     public static final ErrorRedisMessage ERR_SYNTAX_NUMBER = of("ERR value is not an integer or out of range");
+    public static final ErrorRedisMessage ERR_NO_CLUSTER  = of("ERR not cluster mode");
     public static final IntegerRedisMessage INT_ZERO = new IntegerRedisMessage(0);
     public static final IntegerRedisMessage INT_ONE_NEG = new IntegerRedisMessage(-1);
     public static final IntegerRedisMessage INT_ONE = new IntegerRedisMessage(1);
