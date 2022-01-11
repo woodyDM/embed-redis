@@ -27,15 +27,15 @@ public class HashModule extends BaseModule {
 
     public HashModule() {
         super("hash");
-        register(new HSet("hset", IntegerRedisMessage::new));
-        register(new HSet("hmset", i -> OK));
+        register("hset", new HSet(IntegerRedisMessage::new));
+        register("hmset", new HSet(i -> OK));
         register(new HSetNx());
         register(new HStrLen());
         register(new HGet());
         register(new HMGet());
         register(new HGetAll());
-        register(new HIter("hkeys", RHash::keys));
-        register(new HIter("hvals", RHash::values));
+        register("hkeys", new HIter(RHash::keys));
+        register("hvals", new HIter(RHash::values));
         register(new HDel());
         register(new HLen());
         register(new HExists());
@@ -45,17 +45,10 @@ public class HashModule extends BaseModule {
     }
 
     public static class HSet extends ArgsCommand.FourWith<RHash> {
-        String name;
         Function<Integer, RedisMessage> mapper;
 
-        public HSet(String name, Function<Integer, RedisMessage> mapper) {
-            this.name = name;
+        public HSet(Function<Integer, RedisMessage> mapper) {
             this.mapper = mapper;
-        }
-
-        @Override
-        public String name() {
-            return name;
         }
 
         @Override
@@ -191,18 +184,14 @@ public class HashModule extends BaseModule {
     }
 
     public static class HIter extends ArgsCommand.TwoExWith<RHash> {
-        private String name;
+
         private Function<RHash, List<Key>> action;
 
-        public HIter(String name, Function<RHash, List<Key>> action) {
-            this.name = name;
+        public HIter(Function<RHash, List<Key>> action) {
+
             this.action = action;
         }
 
-        @Override
-        public String name() {
-            return name;
-        }
 
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {

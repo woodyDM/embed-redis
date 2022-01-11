@@ -3,19 +3,19 @@ package cn.deepmax.redis.core.support;
 import cn.deepmax.redis.core.Module;
 import cn.deepmax.redis.core.RedisCommand;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class BaseModule implements Module {
     protected final String name;
-    private final List<RedisCommand> commands = new ArrayList<>();
+    private final Map<String, RedisCommand> commands = new HashMap<>();
 
     public BaseModule(String name) {
         this.name = name;
     }
 
     @Override
-    public List<RedisCommand> commands() {
+    public Map<String, RedisCommand> commands() {
         return commands;
     }
 
@@ -25,7 +25,11 @@ public abstract class BaseModule implements Module {
     }
 
     protected void register(RedisCommand command) {
-        commands.add(command);
+        commands.put(command.name(), command);
+    }
+
+    protected void register(String name, RedisCommand command) {
+        commands.put(name, command);
     }
 
 }

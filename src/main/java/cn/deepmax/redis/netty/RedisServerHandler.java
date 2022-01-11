@@ -12,6 +12,8 @@ import io.netty.handler.codec.redis.RedisMessage;
 import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.IOException;
+
 /**
  *
  */
@@ -56,15 +58,24 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        System.err.print("exceptionCaught: ");
-        cause.printStackTrace(System.err);
+        if (cause instanceof IOException && cause.getMessage().contains("Connection reset by peer")) {
+            log.info("IO error :[{}], may be remote reset!", cause.getMessage());
+        } else {
+            System.err.print("exceptionCaught: ");
+            cause.printStackTrace(System.err);
+        }
+        release(ctx);
         ctx.close();
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         log.info("Channel exit {}", ctx.channel().remoteAddress());
-        NettyClient client = new NettyClient(engine,ctx.channel());
+        release(ctx);
+    }
+
+    private void release(ChannelHandlerContext ctx) {
+        NettyClient client = new NettyClient(engine, ctx.channel());
         engine.pubsub().quit(client);
         engine.transactionManager().unwatch(client);
     }

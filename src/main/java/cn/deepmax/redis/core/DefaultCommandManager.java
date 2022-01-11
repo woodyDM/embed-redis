@@ -8,7 +8,6 @@ import io.netty.handler.codec.redis.RedisMessage;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -24,10 +23,11 @@ public class DefaultCommandManager implements CommandManager {
     private final Map<String, RedisCommand> commandMap = new ConcurrentHashMap<>();
 
     public void load(Module module) {
-        List<RedisCommand> commands = module.commands();
+        Map<String, RedisCommand> commands = module.commands();
         if (commands != null) {
-            for (RedisCommand command : commands) {
-                String commandName = command.name().toLowerCase();
+            for (Map.Entry<String, RedisCommand> entry : commands.entrySet()) {
+                RedisCommand command = entry.getValue();
+                String commandName = entry.getKey().toLowerCase();
                 Module old = modules.put(commandName, module);
                 commandMap.put(commandName, command);
                 if (old != null) {
@@ -35,8 +35,8 @@ public class DefaultCommandManager implements CommandManager {
                             old.moduleName(), module.moduleName());
                 }
             }
-            String commandNames = commands.stream()
-                    .map(RedisCommand::name).collect(Collectors.joining(","));
+            String commandNames = commands.keySet().stream()
+                    .map(String::toLowerCase).collect(Collectors.joining(","));
             log.info("Load module [{}] with {} commands:[{}].", module.moduleName(), commands.size(), commandNames);
         }
     }

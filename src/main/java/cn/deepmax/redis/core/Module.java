@@ -1,10 +1,10 @@
 package cn.deepmax.redis.core;
 
-import java.util.List;
+import java.util.Map;
 
 public interface Module {
 
-    List<RedisCommand> commands();
+    Map<String, RedisCommand> commands();
 
     String moduleName();
 

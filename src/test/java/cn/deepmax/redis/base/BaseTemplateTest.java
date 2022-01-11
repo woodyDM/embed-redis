@@ -6,6 +6,7 @@ import cn.deepmax.redis.support.EmbedRedisRunner;
 import io.lettuce.core.ClientOptions;
 import io.lettuce.core.protocol.ProtocolVersion;
 import io.lettuce.core.resource.ClientResources;
+import org.redisson.config.ClusterServersConfig;
 import org.redisson.config.Config;
 import org.redisson.config.SingleServerConfig;
 import org.redisson.spring.data.connection.RedissonConnectionFactory;
@@ -27,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.stream.Collectors;
 
 /**
  * redis template test support
@@ -80,36 +82,37 @@ abstract class BaseTemplateTest implements ByteHelper {
     }
 
     protected static boolean needCluster() {
-        return false;//todo
+        return MODE != TestMode.LOCAL_REDIS_STANDALONE;
     }
 
     public BaseTemplateTest(RedisTemplate<String, Object> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
-    protected static Client[] init() {
-        Client[] clients = needCluster() ? new Client[6] : new Client[3];
+    protected static Client[] initStandalone() {
+        Client[] clients = new Client[3];
         log.info("Init with  needCluster  {}", needCluster());
         RedisConfiguration.Standalone standalone = config.getStandalone();
         clients[0] = createRedissonStandalone(HOST, standalone.getPort(), standalone.getAuth());
         clients[1] = createLettuceStandalone(HOST, standalone.getPort(), standalone.getAuth());
         clients[2] = createJedisStandalone(HOST, standalone.getPort(), standalone.getAuth());
+        return clients;
+    }
+
+    protected static Client[] initCluster() {
+        Client[] clients = new Client[3];
+        log.info("Init with  needCluster  {}", needCluster());
         if (needCluster()) {
             RedisConfiguration.Cluster cluster = config.getCluster();
-            clients[3] = createRedissonCluster(HOST, cluster);
-            clients[4] = createLettuceCluster(HOST, cluster);
-            clients[5] = createJedisCluster(HOST, cluster);
+            clients[0] = createRedissonCluster(HOST, cluster);
+            clients[1] = createLettuceCluster(HOST, cluster);
+            clients[2] = createJedisCluster(HOST, cluster);
         }
         return clients;
     }
 
     private static Client createJedisCluster(String host, RedisConfiguration.Cluster cluster) {
-        List<RedisNode> nodes = toConfigNodes(host, cluster);
-
-        RedisClusterConfiguration config = new RedisClusterConfiguration();
-        config.setPassword(cluster.getAuth());
-        config.setMaxRedirects(5);
-        config.setClusterNodes(nodes);
+        RedisClusterConfiguration config = createClusterConfig(host, cluster);
 
         JedisClientConfiguration jedisClientConfiguration = JedisClientConfiguration.defaultConfiguration();
         jedisClientConfiguration.getPoolConfig().ifPresent(c -> {
@@ -140,11 +143,46 @@ abstract class BaseTemplateTest implements ByteHelper {
     }
 
     private static Client createLettuceCluster(String host, RedisConfiguration.Cluster cluster) {
-        return null;
+        RedisClusterConfiguration config = createClusterConfig(host, cluster);
+
+        LettuceClientConfiguration lettuceClientConfiguration = LettuceClientConfiguration.builder()
+                .clientResources(ClientResources.builder()
+                        .build())
+                .clientOptions(ClientOptions.builder()
+                        .protocolVersion(ProtocolVersion.RESP2)
+                        .build()).build();
+
+        LettuceConnectionFactory factory = new LettuceConnectionFactory(config, lettuceClientConfiguration);
+
+        return new Client(template(factory), factory);
+    }
+
+    private static RedisClusterConfiguration createClusterConfig(String host, RedisConfiguration.Cluster cluster) {
+        List<RedisNode> nodes = toConfigNodes(host, cluster);
+
+        RedisClusterConfiguration config = new RedisClusterConfiguration();
+        config.setPassword(cluster.getAuth());
+        config.setMaxRedirects(5);
+        config.setClusterNodes(nodes);
+        return config;
     }
 
     private static Client createRedissonCluster(String host, RedisConfiguration.Cluster cluster) {
-        return null;
+        List<String> adds = cluster.getAllNodes().stream()
+                .map(n -> "redis://" + host + ":" + n.port)
+                .collect(Collectors.toList());
+
+        Config config = new Config();
+        ClusterServersConfig c = config.useClusterServers();
+        c.setPassword(cluster.getAuth());
+//        c.setMasterConnectionPoolSize(POOL_SIZE);
+//        c.setSlaveConnectionPoolSize(POOL_SIZE);
+//        c.setMasterConnectionMinimumIdleSize(POOL_SIZE - 1);
+//        c.setSlaveConnectionMinimumIdleSize(POOL_SIZE - 1);
+        c.setNodeAddresses(adds);
+
+        RedissonConnectionFactory factory = new RedissonConnectionFactory(config);
+        return new Client(template(factory), factory);
     }
 
     protected static Client createJedisStandalone(String host, int port, String auth) {

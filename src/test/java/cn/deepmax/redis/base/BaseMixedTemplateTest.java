@@ -39,7 +39,7 @@ public abstract class BaseMixedTemplateTest extends BaseTemplateTest implements 
     }
 
     private static void initTs() {
-        ts = init();
+        ts = initStandalone();
     }
 
     @Before

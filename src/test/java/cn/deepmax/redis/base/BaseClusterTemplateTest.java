@@ -15,11 +15,11 @@ import java.util.stream.Collectors;
  * test only use template
  */
 @RunWith(Parameterized.class)
-public abstract class BasePureTemplateTest extends BaseTemplateTest {
+public abstract class BaseClusterTemplateTest extends BaseTemplateTest {
 
     public static Client[] ts;
 
-    public BasePureTemplateTest(RedisTemplate<String, Object> redisTemplate) {
+    public BaseClusterTemplateTest(RedisTemplate<String, Object> redisTemplate) {
         super(redisTemplate);
     }
 
@@ -38,7 +38,7 @@ public abstract class BasePureTemplateTest extends BaseTemplateTest {
     }
 
     private static void initTs() {
-        ts = initStandalone();
+        ts = initCluster();
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -50,5 +50,5 @@ public abstract class BasePureTemplateTest extends BaseTemplateTest {
             return null;
         });
     }
-    
+
 }

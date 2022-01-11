@@ -24,18 +24,11 @@ public class ClusterModule extends BaseModule {
     public ClusterModule() {
         super("cluster");
         register(new CompositeCommand("Cluster")
-                .with(new ClusterInfo())
                 .with(new ClusterNodes())
                 .with(new ClusterSlots()));
+        register("readonly", Constants.COMMAND_OK);
     }
-
-    public static class ClusterInfo extends ArgsCommand.TwoEx {
-        @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
-            return Constants.QUEUED;
-        }
-    }
-
+    
     public static class ClusterSlots extends ArgsCommand.TwoEx {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
