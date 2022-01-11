@@ -41,7 +41,7 @@ public class DefaultRedisExecutor implements RedisExecutor {
     @Override
     public RedisMessage execute(RedisMessage type, RedisEngine engine, Client client) {
         Objects.requireNonNull(client);
-        MessagePrinter.requestStart();
+        MessagePrinter.requestStart(client);
         MessagePrinter.printMessage(type, client.queued());
         return doExec(type, engine, client);
     }
@@ -69,7 +69,7 @@ public class DefaultRedisExecutor implements RedisExecutor {
             response = new ErrorRedisMessage("ERR internal redis server error!");
             log.error("Embed server error, may be bug! ", e);
         }
-        MessagePrinter.responseStart();
+        MessagePrinter.responseStart(client);
         MessagePrinter.printMessage(response, client.queued());
         return response;
     }

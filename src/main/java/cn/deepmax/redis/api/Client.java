@@ -63,6 +63,15 @@ public interface Client {
      */
     Protocol resp();
 
+    default boolean isV2() {
+        return resp() == Protocol.RESP2;
+    }
+
+    /**
+     * @param p
+     */
+    void setProtocol(Protocol p);
+
     /**
      * UniqueId
      *
@@ -87,6 +96,5 @@ public interface Client {
     enum Protocol {
         RESP2, RESP3
     }
-
-
+    
 }

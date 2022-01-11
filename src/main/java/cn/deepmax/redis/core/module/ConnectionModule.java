@@ -1,16 +1,22 @@
 package cn.deepmax.redis.core.module;
 
+import cn.deepmax.redis.Constants;
+import cn.deepmax.redis.Network;
 import cn.deepmax.redis.api.AuthManager;
 import cn.deepmax.redis.api.Client;
+import cn.deepmax.redis.api.RedisConfiguration;
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.core.support.BaseModule;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.type.CallbackRedisMessage;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
+import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 import io.netty.handler.codec.redis.SimpleStringRedisMessage;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.Optional;
 
 /**
  * @author wudi
@@ -45,22 +51,75 @@ public class ConnectionModule extends BaseModule {
 
     }
 
+    /**
+     * 1# "server" => "redis"
+     * 2# "version" => "6.0.0"
+     * 3# "proto" => (integer) 3
+     * 4# "id" => (integer) 10
+     * 5# "mode" => "standalone"
+     * 6# "role" => "master"
+     * 7# "modules" => (empty array)
+     */
+    private static class Hello extends ArgsCommand<ArgsCommand.RVoid> {
 
-    private static class Hello extends ArgsCommand.One {
+        public Hello() {
+            super(1, 2, 5, 4, 7);
+        }
+
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
-            //            if (type.size() == 1) {
-//                RedisArray array = new RedisArray();
-//                array.add(RedisBulkString.of("server"));
-//                array.add(RedisBulkString.of("redis"));
-//                array.add(RedisBulkString.of("proto"));
-//                array.add(new RedisInteger(2));
-//                return array;
-//            } else {
-//                RedisType v = type.get(1);
-//                return new RedisError("NOPROTO unsupported protocol version");
-//            }
-            return OK;
+            String version = "2";
+            int size = msg.children().size();
+            if (size > 1) {
+                version = msg.getAt(1).str();
+                if ("2".equalsIgnoreCase(version) || "3".equalsIgnoreCase(version)) {
+                    //ok
+                } else {
+                    return Constants.ERR_SYNTAX;
+                }
+            }
+            String auth = null;
+            if (size > 2) {
+                String a = msg.getAt(2).str();
+                if ("auth".equalsIgnoreCase(a)) {
+                    if (size > 4) {
+                        auth = msg.getAt(4).str();
+                    } else {
+                        return Constants.ERR_SYNTAX;
+                    }
+                }
+            }
+            //setname ignore
+            AuthManager authManager = engine.authManager();
+            if (auth != null) {
+                boolean ok = authManager.tryAuth(auth, client);
+                if (!ok) {
+                    return new ErrorRedisMessage("WRONGPASS invalid username-password pair");
+                }
+            } else {
+                if (authManager.needAuth() && !authManager.alreadyAuth(client)) {
+                    return new ErrorRedisMessage("NOAUTH HELLO must be called with the client already authenticated, otherwise the HELLO AUTH <user> <pass> option can be used to authenticate the client and select the RESP protocol version at the same time");
+                }
+            }
+            client.setProtocol("2".equalsIgnoreCase(version) ? Client.Protocol.RESP2 : Client.Protocol.RESP3);
+            Optional<RedisConfiguration.Node> node = client.node();
+            ListRedisMessage result = ListRedisMessage.newBuilder()
+                    .append("server")
+                    .append("redis")
+                    .append("version")
+                    .append("6.2.0")
+                    .append("proto")
+                    .append(new IntegerRedisMessage(Integer.parseInt(version)))
+                    .append("id")
+                    .append(new IntegerRedisMessage(Long.parseLong(client.id().toString())))
+                    .append("mode")
+                    .append(node.isPresent() ? "cluster" : "standalone")
+                    .append("role")
+                    .append(node.filter(n -> !n.isMaster()).isPresent() ? "slave" : "master")
+                    .append("modules")
+                    .append(ListRedisMessage.empty())
+                    .build();
+            return Network.map(client, result);
         }
     }
 

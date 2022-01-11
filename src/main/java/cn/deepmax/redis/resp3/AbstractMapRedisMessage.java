@@ -49,7 +49,7 @@ public abstract class AbstractMapRedisMessage extends AbstractReferenceCounted i
     }
 
     public int size() {
-        return data.size() * 2;
+        return data.size();
     }
 
     @Override

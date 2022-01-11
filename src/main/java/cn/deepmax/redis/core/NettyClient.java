@@ -6,7 +6,6 @@ import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.utils.MessagePrinter;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.redis.RedisMessage;
-import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 
 import java.net.InetSocketAddress;
@@ -20,17 +19,24 @@ import java.util.concurrent.atomic.AtomicLong;
  * @date 2021/6/25
  */
 public class NettyClient implements Client {
+
     private final Channel channel;
     private final RedisEngine engine;
-    private static final AttributeKey<Integer> ATT_FLAG = AttributeKey.newInstance("STATUS_FLAG");
-    private static final AttributeKey<Long> ATT_ID = AttributeKey.newInstance("ID_FLAG");
-    private static final AtomicLong id = new AtomicLong(1);
+    private static final AttributeKey<Info> ATT_INFO = AttributeKey.newInstance("Client_Info");
+    private static final AtomicLong ID = new AtomicLong(1);
 
     public NettyClient(RedisEngine engine, Channel channel) {
         this.engine = engine;
         this.channel = channel;
-        long thisId = id.getAndIncrement();
-        channel.attr(ATT_ID).setIfAbsent(thisId);
+        if (!channel.hasAttr(ATT_INFO)) {
+            Info info = new Info();
+            info.id = ID.getAndIncrement();
+            channel.attr(ATT_INFO).set(info);
+        }
+    }
+
+    protected Info getInfo() {
+        return channel().attr(ATT_INFO).get();
     }
 
     @Override
@@ -61,7 +67,15 @@ public class NettyClient implements Client {
 
     @Override
     public Protocol resp() {
-        return Client.Protocol.RESP2;
+        return getInfo().protocol;
+    }
+
+    /**
+     * @param p
+     */
+    @Override
+    public void setProtocol(Protocol p) {
+        getInfo().protocol = p;
     }
 
     @Override
@@ -71,12 +85,12 @@ public class NettyClient implements Client {
 
     @Override
     public Object id() {
-        return channel.attr(ATT_ID).get();
+        return getInfo().id;
     }
 
     @Override
     public void pub(RedisMessage msg) {
-        MessagePrinter.responseStart();
+        MessagePrinter.responseStart(this);
         MessagePrinter.printMessage(msg, queued());
         channel.writeAndFlush(msg);
     }
@@ -113,13 +127,11 @@ public class NettyClient implements Client {
     public void setFlag(int f, boolean value) {
         int flag = getFlag();
         int v = value ? (flag | f) : (flag & (~f));
-        channel.attr(ATT_FLAG).set(v);
+        getInfo().flag = v;
     }
 
     private int getFlag() {
-        Attribute<Integer> attr = channel.attr(ATT_FLAG);
-        attr.setIfAbsent(0);
-        return attr.get();
+        return getInfo().flag;
     }
 
     @Override
@@ -129,4 +141,11 @@ public class NettyClient implements Client {
         sb.append('}');
         return sb.toString();
     }
+
+    static class Info {
+        int flag = 0;
+        long id;
+        Protocol protocol = Protocol.RESP2;
+    }
 }
+

@@ -100,6 +100,7 @@ public class RedisServer {
         for (ChannelFuture ch : binds) {
             try {
                 ch.channel().close();
+                log.info("Redis server shutdown for address: {}",ch.channel().localAddress());
             } catch (Exception e) {
                 log.error("Close error ", e);
             }

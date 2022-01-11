@@ -1,6 +1,7 @@
 package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.Constants;
+import cn.deepmax.redis.Network;
 import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.DbManager;
 import cn.deepmax.redis.api.RedisEngine;
@@ -156,7 +157,7 @@ public class SortedSetModule extends BaseModule {
                 if (processed > 0) {
                     return FullBulkValueRedisMessage.ofDouble(score);
                 } else {
-                    return FullBulkValueRedisMessage.NULL_INSTANCE;
+                    return Network.nullValue(client);
                 }
             } else {
                 return new IntegerRedisMessage(value);
@@ -284,11 +285,11 @@ public class SortedSetModule extends BaseModule {
             byte[] member = msg.getAt(2).bytes();
             SortedSet set = get(key);
             if (set == null) {
-                return FullBulkStringRedisMessage.NULL_INSTANCE;
+                return Network.nullValue(client);
             }
             Double d = set.score(new Key(member));
             if (d == null) {
-                return FullBulkStringRedisMessage.NULL_INSTANCE;
+                return Network.nullValue(client);
             }
             return FullBulkValueRedisMessage.ofDouble(d);
         }
@@ -311,7 +312,7 @@ public class SortedSetModule extends BaseModule {
             List<RedisMessage> list = members.stream().map(k -> {
                 Double score = set.score(k);
                 if (score == null) {
-                    return FullBulkValueRedisMessage.NULL_INSTANCE;
+                    return Network.nullValue(client);
                 } else {
                     return FullBulkValueRedisMessage.ofDouble(score);
                 }
@@ -585,11 +586,11 @@ public class SortedSetModule extends BaseModule {
             byte[] member = msg.getAt(2).bytes();
             SortedSet set = get(key);
             if (set == null) {
-                return FullBulkStringRedisMessage.NULL_INSTANCE;
+                return Network.nullValue(client);
             }
             int r = set.revRank(new Key(member));
             if (r == -1) {
-                return FullBulkStringRedisMessage.NULL_INSTANCE;
+                return Network.nullValue(client);
             }
             return new IntegerRedisMessage(r);
         }

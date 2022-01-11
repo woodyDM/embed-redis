@@ -90,12 +90,13 @@ abstract class BaseTemplateTest implements ByteHelper {
     }
 
     protected static Client[] initStandalone() {
-        Client[] clients = new Client[3];
+        Client[] clients = new Client[4];
         log.info("Init with  needCluster  {}", needCluster());
         RedisConfiguration.Standalone standalone = config.getStandalone();
         clients[0] = createRedissonStandalone(HOST, standalone.getPort(), standalone.getAuth());
-        clients[1] = createLettuceStandalone(HOST, standalone.getPort(), standalone.getAuth());
-        clients[2] = createJedisStandalone(HOST, standalone.getPort(), standalone.getAuth());
+        clients[1] = createJedisStandalone(HOST, standalone.getPort(), standalone.getAuth());
+        clients[2] = createLettuceStandalone(HOST, standalone.getPort(), standalone.getAuth(), ProtocolVersion.RESP2);
+        clients[3] = createLettuceStandalone(HOST, standalone.getPort(), standalone.getAuth(), ProtocolVersion.RESP3);
         return clients;
     }
 
@@ -175,10 +176,6 @@ abstract class BaseTemplateTest implements ByteHelper {
         Config config = new Config();
         ClusterServersConfig c = config.useClusterServers();
         c.setPassword(cluster.getAuth());
-//        c.setMasterConnectionPoolSize(POOL_SIZE);
-//        c.setSlaveConnectionPoolSize(POOL_SIZE);
-//        c.setMasterConnectionMinimumIdleSize(POOL_SIZE - 1);
-//        c.setSlaveConnectionMinimumIdleSize(POOL_SIZE - 1);
         c.setNodeAddresses(adds);
 
         RedissonConnectionFactory factory = new RedissonConnectionFactory(config);
@@ -202,7 +199,7 @@ abstract class BaseTemplateTest implements ByteHelper {
         return new Client(template(factory), factory);
     }
 
-    protected static Client createLettuceStandalone(String host, int port, String auth) {
+    protected static Client createLettuceStandalone(String host, int port, String auth, ProtocolVersion version) {
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
         config.setDatabase(0);
         config.setHostName(host);
@@ -213,13 +210,12 @@ abstract class BaseTemplateTest implements ByteHelper {
                 .clientResources(ClientResources.builder()
                         .build())
                 .clientOptions(ClientOptions.builder()
-                        .protocolVersion(ProtocolVersion.RESP2)
+                        .protocolVersion(version)
                         .build()).build();
 
         LettuceConnectionFactory factory = new LettuceConnectionFactory(config, lettuceClientConfiguration);
 
         return new Client(template(factory), factory);
-
     }
 
     protected static Client createRedissonStandalone(String host, int port, String auth) {

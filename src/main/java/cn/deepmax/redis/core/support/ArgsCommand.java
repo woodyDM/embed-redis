@@ -220,7 +220,7 @@ public abstract class ArgsCommand<T extends RedisObject> implements RedisCommand
         }
     }
 
-    static class RVoid extends AbstractRedisObject {
+    public static class RVoid extends AbstractRedisObject {
         public RVoid() {
             super(null);
         }

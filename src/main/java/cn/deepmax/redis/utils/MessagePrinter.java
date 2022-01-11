@@ -1,11 +1,12 @@
 package cn.deepmax.redis.utils;
 
+import cn.deepmax.redis.api.Client;
+import cn.deepmax.redis.resp3.AbstractMapRedisMessage;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.NullRedisMessage;
 import cn.deepmax.redis.type.CallbackRedisMessage;
 import cn.deepmax.redis.type.CompositeRedisMessage;
 import cn.deepmax.redis.type.RedisMessages;
-import io.netty.handler.codec.CodecException;
 import io.netty.handler.codec.redis.ArrayRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
@@ -13,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -21,19 +23,27 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Slf4j
 public class MessagePrinter {
-    
+
     private final static AtomicLong requestCounter = new AtomicLong();
     private final static AtomicLong responseCounter = new AtomicLong();
 
-    public static void requestStart() {
+    public static void requestStart(Client client) {
         if (log.isDebugEnabled()) {
-            log.debug("[{}]Request", requestCounter.getAndIncrement());
+            log.debug("[{}][{}]Request", requestCounter.getAndIncrement(), clientInfo(client));
         }
     }
 
-    public static void responseStart() {
+    public static void responseStart(Client client) {
         if (log.isDebugEnabled()) {
-            log.debug("[{}]Response", responseCounter.getAndIncrement());
+            log.debug("[{}][{}]Response", responseCounter.getAndIncrement(), clientInfo(client));
+        }
+    }
+
+    private static String clientInfo(Client client) {
+        if (client.resp() == Client.Protocol.RESP2) {
+            return "V2";
+        } else {
+            return "V3";
         }
     }
 
@@ -80,8 +90,17 @@ public class MessagePrinter {
                 doPrint(children.get(i), depth + 1, i == children.size() - 1, queued);
             }
             return;
+        } else if (msg instanceof AbstractMapRedisMessage) {
+            log.debug("{}-[{}] ", space,
+                    msg.getClass().getSimpleName());
+            Map<RedisMessage, RedisMessage> children = ((AbstractMapRedisMessage) msg).data();
+            children.forEach((k, v) -> {
+                doPrint(k, depth + 1, false, queued);
+                doPrint(v, depth + 1, false, queued);
+            });
+            return;
         } else {
-            throw new CodecException("unknown message type: " + msg);
+            throw new IllegalStateException("can't print msg " + msg.getClass().getName());
         }
         String corner = (isLast ? "└" : "├");
         String q = queued ? "[Q]" : "";

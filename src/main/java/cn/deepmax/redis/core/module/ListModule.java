@@ -1,6 +1,7 @@
 package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.Constants;
+import cn.deepmax.redis.Network;
 import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.DbManager;
 import cn.deepmax.redis.api.RedisEngine;
@@ -77,12 +78,12 @@ public class ListModule extends BaseModule {
             Optional<Long> maxlen = ArgParser.parseLongArg(msg, "maxlen");
             RList list = get(key);
             if (list == null) {
-                return FullBulkValueRedisMessage.NULL_INSTANCE;
+                return Network.nullValue(client);
             }
             List<Integer> pos = list.lpos(ele, rank, count, maxlen);
             if (!count.isPresent()) {
                 if (pos.isEmpty()) {
-                    return FullBulkValueRedisMessage.NULL_INSTANCE;
+                    return Network.nullValue(client);
                 } else {
                     return new IntegerRedisMessage(pos.get(0));
                 }
@@ -151,11 +152,11 @@ public class ListModule extends BaseModule {
             long idx = msg.getAt(2).val();
             RList list = get(key);
             if (list == null) {
-                return FullBulkValueRedisMessage.NULL_INSTANCE;
+                return Network.nullValue(client);
             }
             Key v = list.valueAt((int) idx);
             if (v == null) {
-                return FullBulkValueRedisMessage.NULL_INSTANCE;
+                return Network.nullValue(client);
             } else {
                 return FullBulkValueRedisMessage.ofString(v.getContent());
             }
@@ -366,13 +367,13 @@ public class ListModule extends BaseModule {
                 count = 1L;
                 countFlag = false;
             }
-            return tryPop(key, client, count.intValue(), countFlag);
+            return tryPop(key, client, count.intValue(), countFlag, client);
         }
 
-        private RedisMessage tryPop(byte[] key, Client client, int count, boolean countFlag) {
+        private RedisMessage tryPop(byte[] key, Client client, int count, boolean countFlag, Client client1) {
             RList list = get(key);
             if (list == null) {
-                return FullBulkStringRedisMessage.NULL_INSTANCE;
+                return Network.nullValue(client);
             }
             List<Key> values = pop(list, count);
             if (list.size() == 0) {
@@ -477,7 +478,7 @@ public class ListModule extends BaseModule {
             byte[] source = msg.getAt(1).bytes();
             byte[] dest = msg.getAt(2).bytes();
             return doResponseO(client, engine, RList::rPop, RList::lpush, source, dest)
-                    .orElse(FullBulkValueRedisMessage.NULL_INSTANCE);
+                    .orElse(Network.nullValue(client));
         }
 
         @Override

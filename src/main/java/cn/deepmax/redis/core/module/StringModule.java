@@ -1,6 +1,7 @@
 package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.Constants;
+import cn.deepmax.redis.Network;
 import cn.deepmax.redis.api.*;
 import cn.deepmax.redis.core.Key;
 import cn.deepmax.redis.core.support.ArgsCommand;
@@ -119,7 +120,7 @@ public class StringModule extends BaseModule {
             byte[] key = msg.getAt(1).bytes();
             RedisObject obj = engine.getDb(client).get(client, key);
             if (obj == null) {
-                return FullBulkStringRedisMessage.NULL_INSTANCE;
+                return Network.nullValue(client);
             }
             RString s = get(key);
             return FullBulkValueRedisMessage.ofString(s.getS());
@@ -140,7 +141,7 @@ public class StringModule extends BaseModule {
             if (parseFlag(msg, "nx")) flag |= FLAG_NX;
             if (parseFlag(msg, "xx")) flag |= FLAG_XX;
             if (parseFlag(msg, "KEEPTTL")) flag |= FLAG_KEEPTTL;
-            return genericSet(engine, client, key, value, exp, flag, () -> OK, () -> FullBulkStringRedisMessage.NULL_INSTANCE);
+            return genericSet(engine, client, key, value, exp, flag, () -> OK, () -> Network.nullValue(client));
         }
 
         public Optional<Long> parseExpire(ListRedisMessage msg) {
@@ -178,7 +179,7 @@ public class StringModule extends BaseModule {
             Long seconds = msg.getAt(2).val();
             byte[] value = msg.getAt(3).bytes();
             return genericSet(engine, client, key, value, Optional.of(seconds * 1000L), FLAG_EMPTY, () -> OK, () ->
-                    FullBulkStringRedisMessage.NULL_INSTANCE);
+                    Network.nullValue(client));
         }
     }
 
@@ -189,7 +190,7 @@ public class StringModule extends BaseModule {
             Long seconds = msg.getAt(2).val();
             byte[] value = msg.getAt(3).bytes();
             return genericSet(engine, client, key, value, Optional.of(seconds), FLAG_EMPTY, () -> OK, () ->
-                    FullBulkStringRedisMessage.NULL_INSTANCE);
+                    Network.nullValue(client));
         }
     }
 
@@ -300,7 +301,7 @@ public class StringModule extends BaseModule {
             RString obj = get(key);
             engine.getDb(client).set(client, key, new RString(engine.timeProvider(), value));
             if (obj == null) {
-                return FullBulkStringRedisMessage.NULL_INSTANCE;
+                return Network.nullValue(client);
             } else {
                 return FullBulkValueRedisMessage.ofString(obj.getS());
             }
@@ -317,7 +318,7 @@ public class StringModule extends BaseModule {
                         if (v instanceof RString) {
                             return FullBulkValueRedisMessage.ofString(((RString) v).getS());
                         } else {
-                            return FullBulkStringRedisMessage.NULL_INSTANCE;
+                            return Network.nullValue(client);
                         }
                     }).collect(Collectors.toList());
             return new ListRedisMessage(result);

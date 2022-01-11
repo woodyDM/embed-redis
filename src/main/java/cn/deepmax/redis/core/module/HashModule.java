@@ -1,6 +1,7 @@
 package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.Constants;
+import cn.deepmax.redis.Network;
 import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.DbManager;
 import cn.deepmax.redis.api.RedisEngine;
@@ -155,7 +156,7 @@ public class HashModule extends BaseModule {
             byte[] key = msg.getAt(1).bytes();
             byte[] field = msg.getAt(2).bytes();
             RHash hash = get(key);
-            return hget(hash, new Key(field));
+            return hget(hash, new Key(field), client);
         }
     }
 
@@ -165,7 +166,7 @@ public class HashModule extends BaseModule {
             byte[] key = msg.getAt(1).bytes();
             List<Key> keys = genKeys(msg.children(), 2);
             RHash hash = get(key);
-            List<RedisMessage> l = keys.stream().map(k -> hget(hash, k)).collect(Collectors.toList());
+            List<RedisMessage> l = keys.stream().map(k -> hget(hash, k, client)).collect(Collectors.toList());
             return new ListRedisMessage(l);
         }
     }
@@ -176,10 +177,10 @@ public class HashModule extends BaseModule {
             byte[] key = msg.getAt(1).bytes();
             RHash hash = get(key);
             if (hash == null) {
-                return ListRedisMessage.empty();
+                return Network.map(client, ListRedisMessage.empty());
             }
             List<RHash.Pair> list = hash.getAll();
-            return transPair(list, true);
+            return Network.map(client, transPair(list, true));
         }
     }
 
@@ -287,7 +288,7 @@ public class HashModule extends BaseModule {
         }
     }
 
-    static RedisMessage transPair(List<RHash.Pair> r, boolean withValue) {
+    static ListRedisMessage transPair(List<RHash.Pair> r, boolean withValue) {
         if (r == null || r.isEmpty()) {
             return ListRedisMessage.empty();
         }
@@ -299,13 +300,13 @@ public class HashModule extends BaseModule {
         return new ListRedisMessage(result);
     }
 
-    static RedisMessage hget(RHash hash, Key field) {
+    static RedisMessage hget(RHash hash, Key field, Client client) {
         if (hash == null) {
-            return FullBulkValueRedisMessage.NULL_INSTANCE;
+            return Network.nullValue(client);
         }
         Key v = hash.get(field);
         if (v == null) {
-            return FullBulkValueRedisMessage.NULL_INSTANCE;
+            return Network.nullValue(client);
         }
         return FullBulkValueRedisMessage.ofString(v.getContent());
     }
