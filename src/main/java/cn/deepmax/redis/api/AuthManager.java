@@ -6,6 +6,8 @@ package cn.deepmax.redis.api;
  */
 public interface AuthManager {
 
+    void clearAuth(Client client);
+
     boolean needAuth();
 
     void setAuth(String auth);

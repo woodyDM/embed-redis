@@ -77,7 +77,7 @@ public interface Client {
      *
      * @return
      */
-    Object id();
+    long id();
 
     /**
      * bind channel
@@ -93,8 +93,22 @@ public interface Client {
      */
     void pub(RedisMessage msg);
 
+    /**
+     * client getname
+     *
+     * @return
+     */
+    byte[] getName();
+
+    /**
+     * client setname
+     *
+     * @param name
+     */
+    void setName(byte[] name);
+
     enum Protocol {
         RESP2, RESP3
     }
-    
+
 }

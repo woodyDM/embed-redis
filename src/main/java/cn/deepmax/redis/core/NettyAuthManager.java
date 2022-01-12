@@ -15,6 +15,11 @@ public class NettyAuthManager implements AuthManager {
     private String auth;
 
     @Override
+    public void clearAuth(Client client) {
+        client.channel().attr(AUTH_KEY).set(null);
+    }
+
+    @Override
     public void setAuth(String auth) {
         this.auth = auth;
     }
@@ -31,7 +36,7 @@ public class NettyAuthManager implements AuthManager {
 
     @Override
     public boolean alreadyAuth(Client client) {
-        return client.channel().hasAttr(AUTH_KEY);
+        return "OK".equals(client.channel().attr(AUTH_KEY).get());
     }
 
     @Override

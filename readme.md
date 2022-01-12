@@ -48,28 +48,28 @@
 ### Connection (later)
 |name|supported|description|
 |-----|-----|-----|
-|AUTH| | |
-|CLIENT CACHING| | |
-|CLIENT GETNAME| | |
-|CLIENT GETREDIR| | |
-|CLIENT ID| | |
-|CLIENT INFO| | |
-|CLIENT KILL| | |
-|CLIENT LIST| | |
-|CLIENT NO-EVICT| | |
-|CLIENT PAUSE| | |
-|CLIENT REPLY| | |
-|CLIENT SETNAME| | |
-|CLIENT TRACKING| | |
-|CLIENT TRACKINGINFO| | |
-|CLIENT UNBLOCK| | |
-|CLIENT UNPAUSE| | |
-|ECHO| | |
-|HELLO| | |
-|PING| | |
-|QUIT| | |
-|RESET| | |
-|SELECT| | |
+|AUTH|Y | |
+|CLIENT CACHING|N |track not support |
+|CLIENT GETNAME| Y| |
+|CLIENT GETREDIR| N|track not support |
+|CLIENT ID| Y| |
+|CLIENT INFO|N |utils not support |
+|CLIENT KILL| N|utils not support |
+|CLIENT LIST|N | utils not support|
+|CLIENT NO-EVICT| N| 7.x|
+|CLIENT PAUSE| N| utils not support|
+|CLIENT REPLY|N |utils not support |
+|CLIENT SETNAME| Y| |
+|CLIENT TRACKING|N |track not support |
+|CLIENT TRACKINGINFO|N | track not support|
+|CLIENT UNBLOCK|N | |
+|CLIENT UNPAUSE| N| |
+|ECHO|Y | |
+|HELLO|Y | |
+|PING|Y | |
+|QUIT| Y| |
+|RESET|Y | |
+|SELECT| Y| |
 
 ### Keys
 |name|supported|description|
@@ -289,6 +289,7 @@
 - [ ] Lua types.  
 - [ ] Script error handle.    
 - [ ] redis 7.x support.  
+- [ ] Resp3.    
 - [ ] cluster support.  
 - [ ] scan commands.( all / sortedset / hash / set)     
 - [ ] Block command in Transaction and scripting    

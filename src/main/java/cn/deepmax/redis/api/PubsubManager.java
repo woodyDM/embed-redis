@@ -145,12 +145,12 @@ public interface PubsubManager {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             PubPair pubPair = (PubPair) o;
-            return client.id().equals(pubPair.client.id());
+            return client.id() == pubPair.client.id();
         }
 
         @Override
         public int hashCode() {
-            return client.id().hashCode();
+            return (client.id() + "").hashCode();
         }
     }
 

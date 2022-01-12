@@ -41,8 +41,9 @@ public class RedisServer {
     }
 
     public static void main(String[] args) {
-        RedisConfiguration.Standalone standalone = new RedisConfiguration.Standalone(6380, null);
-        RedisConfiguration.Cluster cluster = new RedisConfiguration.Cluster(null, Arrays.asList(
+        String auth = "123456";
+        RedisConfiguration.Standalone standalone = new RedisConfiguration.Standalone(6380, auth);
+        RedisConfiguration.Cluster cluster = new RedisConfiguration.Cluster(auth, Arrays.asList(
                 new RedisConfiguration.Node("m1", 6391)
                         .appendSlave(new RedisConfiguration.Node("s1", 6394)),
                 new RedisConfiguration.Node("m2", 6392)

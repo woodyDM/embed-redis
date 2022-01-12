@@ -27,6 +27,7 @@ public class Constants {
     public static final IntegerRedisMessage INT_ONE_NEG = new IntegerRedisMessage(-1);
     public static final IntegerRedisMessage INT_ONE = new IntegerRedisMessage(1);
     public static final SimpleStringRedisMessage QUEUED = new SimpleStringRedisMessage("QUEUED");
+    public static final SimpleStringRedisMessage RESET = new SimpleStringRedisMessage("RESET");
     public static final RedisServerException EX_SYNTAX = new RedisServerException(Constants.ERR_SYNTAX);
 
     public static final RedisCommand UNKNOWN_COMMAND = ((type, ctx, engine) -> new ErrorRedisMessage("Embed-redis does not support this command"));

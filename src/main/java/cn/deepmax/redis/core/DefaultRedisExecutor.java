@@ -28,6 +28,7 @@ public class DefaultRedisExecutor implements RedisExecutor {
         authWhiteList.add("hello");
         authWhiteList.add("ping");
         txWhiteList.add("exec");
+        txWhiteList.add("reset");
     }
 
     /**

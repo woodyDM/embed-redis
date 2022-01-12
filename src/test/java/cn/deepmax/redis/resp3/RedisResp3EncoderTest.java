@@ -289,7 +289,7 @@ public class RedisResp3EncoderTest {
         assertThat(result, is(true));
 
         ByteBuf written = readAll(channel);
-        assertThat(bytesOf(written), is(equalTo(bytesOf("%4\r\n+你好😊\r\n$3\r\nbar\r\n_\r\n#f\r\n"))));
+        assertThat(bytesOf(written), is(equalTo(bytesOf("%2\r\n+你好😊\r\n$3\r\nbar\r\n_\r\n#f\r\n"))));
         written.release();
     }
 
@@ -339,12 +339,12 @@ public class RedisResp3EncoderTest {
         assertThat(result, is(true));
 
         ByteBuf written = readAll(channel);
-        String s1 = "%4\r\n+你好😊\r\n$3\r\nbar\r\n_\r\n#f\r\n";
+        String s1 = "%2\r\n+你好😊\r\n$3\r\nbar\r\n_\r\n#f\r\n";
         String s2 = "~2\r\n(3435345\r\n=3\r\nbar\r\n";
         String s3 = "*3\r\n-err\r\n!3\r\nbar\r\n*1\r\n#t\r\n";
         String s4 = "#f\r\n";
 
-        String exp = String.format("|4\r\n%s%s%s%s", s1, s2, s3, s4);
+        String exp = String.format("|2\r\n%s%s%s%s", s1, s2, s3, s4);
         assertThat(bytesOf(written), is(equalTo(bytesOf(exp))));
         written.release();
     }

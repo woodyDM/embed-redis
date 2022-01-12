@@ -84,7 +84,7 @@ public class NettyClient implements Client {
     }
 
     @Override
-    public Object id() {
+    public long id() {
         return getInfo().id;
     }
 
@@ -142,7 +142,19 @@ public class NettyClient implements Client {
         return sb.toString();
     }
 
+    @Override
+    public byte[] getName() {
+        return getInfo().name;
+    }
+
+
+    @Override
+    public void setName(byte[] name) {
+        getInfo().name = name;
+    }
+
     static class Info {
+        byte[] name;
         int flag = 0;
         long id;
         Protocol protocol = Protocol.RESP2;
