@@ -7,6 +7,7 @@ import cn.deepmax.redis.api.RedisObject;
 import cn.deepmax.redis.api.RedisServerException;
 import cn.deepmax.redis.core.Key;
 import cn.deepmax.redis.core.RedisCommand;
+import cn.deepmax.redis.core.RedisDataType;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
@@ -223,6 +224,16 @@ public abstract class ArgsCommand<T extends RedisObject> implements RedisCommand
     public static class RVoid extends AbstractRedisObject {
         public RVoid() {
             super(null);
+        }
+
+        @Override
+        public RedisObject copyTo(Key key) {
+            return this;
+        }
+        
+        @Override
+        public Type type() {
+            return new RedisDataType("void","void");
         }
     }
 } 

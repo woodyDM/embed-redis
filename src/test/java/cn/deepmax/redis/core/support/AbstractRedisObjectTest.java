@@ -1,6 +1,9 @@
 package cn.deepmax.redis.core.support;
 
+import cn.deepmax.redis.api.RedisObject;
 import cn.deepmax.redis.api.TimeProvider;
+import cn.deepmax.redis.core.Key;
+import cn.deepmax.redis.core.RedisDataType;
 import cn.deepmax.redis.support.MockTimeProvider;
 import org.junit.Test;
 
@@ -50,6 +53,16 @@ public class AbstractRedisObjectTest {
     static class MockObj extends AbstractRedisObject {
         public MockObj(TimeProvider timeProvider) {
             super(timeProvider);
+        }
+
+        @Override
+        public RedisObject copyTo(Key key) {
+            return this;
+        }
+        
+        @Override
+        public Type type() {
+            return new RedisDataType("mock","mock");
         }
     }
 

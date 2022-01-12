@@ -74,37 +74,37 @@
 ### Keys
 |name|supported|description|
 |-----|-----|-----|  
-|COPY| | |
-|DEL| | |
-|DUMP| | |
-|EXISTS| | |
-|EXPIRE| | |
-|EXPIREAT| | |
-|EXPIRETIME| | |
-|KEYS| | |
-|MIGRATE| | |
-|MOVE| | |
-|OBJECT ENCODING| | |
-|OBJECT FREQ| | |
-|OBJECT IDLETIME| | |
-|OBJECT REFCOUNT| | |
-|PERSIST| | |
-|PEXPIRE| | |
-|PEXPIREAT| | |
-|PEXPIRETIME| | |
-|PTTL| | |
-|RANDOMKEY| | |
-|RENAME| | |
-|RENAMENX| | |
-|RESTORE| | |
-|SCAN| | |
-|SORT| | |
-|SORT_RO| | |
-|TOUCH| | |
-|TTL| | |
-|TYPE| | |
-|UNLINK| | |
-|WAIT| | |
+|COPY|Y | |
+|DEL|Y | |
+|DUMP|N | db related operation not support|
+|EXISTS| Y| |
+|EXPIRE| Y| |
+|EXPIREAT| Y| |
+|EXPIRETIME|N |7.x |
+|KEYS|Y | |
+|MIGRATE|N| db related operation not support| 
+|MOVE| Y| |
+|OBJECT ENCODING| Y| |
+|OBJECT FREQ|Y|0 if not exist / 1 if exist | 
+|OBJECT IDLETIME|Y | 0 if not exist / 1 if exist|
+|OBJECT REFCOUNT|Y|0 if not exist / 1 if exist |
+|PERSIST| Y| |
+|PEXPIRE| Y| |
+|PEXPIREAT|Y| |
+|PEXPIRETIME|N | 7.x|
+|PTTL| Y| |
+|RANDOMKEY| Y| |
+|RENAME|Y | |
+|RENAMENX|Y | |
+|RESTORE|N |  db related operation not support|
+|SCAN| N|later |
+|SORT| N|  |
+|SORT_RO|N | 7.x|
+|TOUCH|Y | |
+|TTL|Y | |
+|TYPE| Y| |
+|UNLINK| Y| |
+|WAIT|N | |
 
 ### List
 |name|supported|description|

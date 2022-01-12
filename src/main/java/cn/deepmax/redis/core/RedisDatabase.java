@@ -7,6 +7,7 @@ import cn.deepmax.redis.api.RedisObject;
 import cn.deepmax.redis.core.module.ScanMap;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -22,6 +23,21 @@ public class RedisDatabase implements RedisEngine.Db {
     public RedisDatabase(DbManager manager, int idx) {
         this.manager = manager;
         this.idx = idx;
+    }
+
+    @Override
+    public long size() {
+        return data.size();
+    }
+
+    @Override
+    public Key randomKey() {
+        return data.randomKey();
+    }
+
+    @Override
+    public Set<Key> keys() {
+        return data.keys();
     }
 
     @Override

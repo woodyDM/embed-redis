@@ -3,6 +3,7 @@ package cn.deepmax.redis.core.module;
 import cn.deepmax.redis.api.RedisObject;
 import cn.deepmax.redis.api.TimeProvider;
 import cn.deepmax.redis.core.Key;
+import cn.deepmax.redis.core.RedisDataType;
 import cn.deepmax.redis.utils.Tuple;
 
 import java.time.LocalDateTime;
@@ -14,7 +15,6 @@ import java.util.*;
  */
 public class SortedSet extends ZSet<Double, Key> implements RedisObject {
 
-
     protected LocalDateTime expire;
     protected final TimeProvider timeProvider;
     private final Key selfKey;
@@ -22,6 +22,18 @@ public class SortedSet extends ZSet<Double, Key> implements RedisObject {
     public SortedSet(TimeProvider timeProvider, Key key) {
         this.timeProvider = timeProvider;
         this.selfKey = key;
+    }
+
+    @Override
+    public Type type() {
+        return new RedisDataType("zset", "skiplist");
+    }
+
+    @Override
+    public RedisObject copyTo(Key key) {
+        SortedSet copy = new SortedSet(this.timeProvider, key);
+        copy.add(this.toPairs());
+        return copy;
     }
 
     @Override

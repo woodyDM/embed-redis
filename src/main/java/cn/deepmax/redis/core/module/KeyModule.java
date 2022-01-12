@@ -1,6 +1,7 @@
 package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.Constants;
+import cn.deepmax.redis.Network;
 import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.DbManager;
 import cn.deepmax.redis.api.RedisEngine;
@@ -9,19 +10,20 @@ import cn.deepmax.redis.core.Key;
 import cn.deepmax.redis.core.RPattern;
 import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.core.support.BaseModule;
+import cn.deepmax.redis.core.support.CompositeCommand;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.utils.NumberUtils;
+import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
+import io.netty.handler.codec.redis.SimpleStringRedisMessage;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -30,6 +32,11 @@ public class KeyModule extends BaseModule {
     public KeyModule() {
         super("key");
         register(new Del());
+        register("unlink", new Del());
+        register(new Copy());
+        register(new Keys());
+        register(new Move());
+        register(new RandomKey());
         register(new Exists());
         register(new Expire());
         register(new ExpireAt());
@@ -38,7 +45,165 @@ public class KeyModule extends BaseModule {
         register(new Ttl());
         register(new Pttl());
         register(new Persist());
+        register(new Type());
         register(new Scan());
+        register(new Touch());
+        register(new Rename("rename", false));
+        register(new Rename("renamenx", true));
+        register(new CompositeCommand("object")
+                .with(new ObjectEncoding())
+                .with("objectrefcount", new ObjectCmd())
+                .with("objectfreq", new ObjectCmd())
+                .with("objectidletime", new ObjectCmd())
+        );
+    }
+
+    public static class Rename extends ArgsCommand.ThreeEx {
+        private final String name;
+        private final boolean nx;
+
+        public Rename(String name, boolean nx) {
+            this.name = name;
+            this.nx = nx;
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            byte[] newKey = msg.getAt(2).bytes();
+            RedisObject s = engine.getDb(client).get(client, key);
+            RedisObject dest = engine.getDb(client).get(client, newKey);
+            if (s == null) {
+                return new ErrorRedisMessage("ERR no such key");
+            }
+            if (Arrays.equals(key, newKey)) {
+                return nx ? Constants.INT_ZERO : OK;
+            }
+            if (dest != null) {
+                if (nx) {
+                    return Constants.INT_ZERO;
+                } else {
+                    engine.getDb(client).del(client, newKey);
+                }
+            }
+            //keep ttl
+            engine.getDb(client).del(client, key);
+            RedisObject newValue = s.copyTo(new Key(newKey));
+            newValue.expireAt(s.expireTime());
+            engine.getDb(client).set(client, newKey, newValue);
+            return nx ? Constants.INT_ONE : OK;
+        }
+    }
+
+    public static class Touch extends ArgsCommand.Two {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            List<Key> keys = genKeys(msg.children(), 1);
+            int c = 0;
+            for (Key key : keys) {
+                if (engine.getDb(client).get(client, key.getContent()) != null) {
+                    c++;
+                }
+            }
+            return new IntegerRedisMessage(c);
+        }
+    }
+
+    public static class ObjectCmd extends ArgsCommand.ThreeEx {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(2).bytes();
+            RedisObject obj = engine.getDb(client).get(client, key);
+            if (obj == null) {
+                return Constants.INT_ZERO;
+            }
+            return Constants.INT_ONE;
+        }
+    }
+
+    public static class ObjectEncoding extends ArgsCommand.ThreeEx {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(2).bytes();
+            RedisObject obj = engine.getDb(client).get(client, key);
+            if (obj == null) {
+                return Network.nullValue(client);
+            }
+            return FullBulkValueRedisMessage.ofString(obj.type().encoding());
+        }
+    }
+
+    public static class Type extends ArgsCommand.TwoEx {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            RedisObject obj = engine.getDb(client).get(client, key);
+            if (obj == null) {
+                return new SimpleStringRedisMessage("none");
+            }
+            return new SimpleStringRedisMessage(obj.type().name());
+        }
+    }
+
+    public static class Move extends ArgsCommand.ThreeEx {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            long db = msg.getAt(2).val();
+            RedisObject source = engine.getDb(client).get(client, key);
+            if (source == null) {
+                return Constants.INT_ZERO;
+            }
+            RedisObject dest = engine.getDbManager().get((int) db).get(client, key);
+            if (dest != null) {
+                return Constants.INT_ZERO;
+            }
+            engine.getDb(client).del(client, key);
+            engine.getDbManager().get((int) db).set(client, key, source);
+            return Constants.INT_ONE;
+        }
+    }
+
+    public static class Copy extends ArgsCommand.Three {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] source = msg.getAt(1).bytes();
+            byte[] dest = msg.getAt(2).bytes();
+            Optional<Long> dbo = ArgParser.parseLongArg(msg, "db");
+            int db = dbo.map(Long::intValue).orElseGet(() -> engine.getDbManager().getIndex(client));
+            boolean replace = ArgParser.parseFlag(msg, "replace", 3);
+            RedisObject sourceObj = engine.getDbManager().get(client).get(client, source);
+            if (sourceObj == null) {
+                return Constants.INT_ZERO;
+            }
+            RedisObject destObj = engine.getDbManager().get(db).get(client, dest);
+            if (replace) {
+                engine.getDbManager().get(db).del(client, dest);
+            } else if (destObj != null) {
+                return Constants.INT_ZERO;
+            }
+            //to set dest
+            RedisObject copy = sourceObj.copyTo(new Key(dest));
+            engine.getDbManager().get(db).set(client, dest, copy);
+            return Constants.INT_ONE;
+        }
+    }
+
+    public static class RandomKey extends ArgsCommand.OneEx {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            RedisEngine.Db db = engine.getDb(client);
+            if (db.size() == 0) {
+                return Network.nullValue(client);
+            }
+            Key rd = db.randomKey();
+            return FullBulkValueRedisMessage.ofString(rd.getContent());
+        }
     }
 
     public static class Scan extends ArgsCommand.Two {
@@ -174,6 +339,19 @@ public class KeyModule extends BaseModule {
                 return new IntegerRedisMessage(-2);
             }
             return new IntegerRedisMessage(obj.ttl());
+        }
+    }
+
+    public static class Keys extends ArgsCommand.TwoEx {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            String pt = msg.getAt(1).str();
+            RPattern pattern = RPattern.compile(pt);
+            Set<Key> keys = engine.getDb(client).keys();
+            List<RedisMessage> list = keys.stream().filter(k -> pattern.matches(k.str()))
+                    .map(k -> FullBulkValueRedisMessage.ofString(k.getContent()))
+                    .collect(Collectors.toList());
+            return new ListRedisMessage(list);
         }
     }
 

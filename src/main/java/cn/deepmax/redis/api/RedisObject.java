@@ -1,5 +1,7 @@
 package cn.deepmax.redis.api;
 
+import cn.deepmax.redis.core.Key;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
 
@@ -14,6 +16,23 @@ public interface RedisObject {
     void expireAt(LocalDateTime time);
 
     TimeProvider timeProvider();
+
+    /**
+     * copy data ,do not copy ttl
+     *
+     * @param key
+     * @return
+     */
+    RedisObject copyTo(Key key);
+
+    Type type();
+
+    interface Type {
+
+        String encoding();
+
+        String name();
+    }
 
     default long ttl() {
         LocalDateTime expire = expireTime();

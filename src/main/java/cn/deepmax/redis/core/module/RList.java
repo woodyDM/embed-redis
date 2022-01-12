@@ -1,7 +1,9 @@
 package cn.deepmax.redis.core.module;
 
+import cn.deepmax.redis.api.RedisObject;
 import cn.deepmax.redis.api.TimeProvider;
 import cn.deepmax.redis.core.Key;
+import cn.deepmax.redis.core.RedisDataType;
 import cn.deepmax.redis.core.Sized;
 import cn.deepmax.redis.core.support.AbstractRedisObject;
 
@@ -14,6 +16,18 @@ public class RList extends AbstractRedisObject implements Sized {
 
     public RList(TimeProvider timeProvider) {
         super(timeProvider);
+    }
+
+    @Override
+    public Type type() {
+        return new RedisDataType("list","linkedlist");
+    }
+    
+    @Override
+    public RedisObject copyTo(Key key) {
+        RList copy = new RList(this.timeProvider);
+        copy.list.addAll(this.list);
+        return copy;
     }
 
     public void lpush(Key data) {

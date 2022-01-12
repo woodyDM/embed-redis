@@ -310,6 +310,10 @@ abstract class BaseTemplateTest implements ByteHelper {
         return t().getConnectionFactory().getClass().getName().toLowerCase().contains("redisson");
     }
 
+    protected boolean isLettuce() {
+        return t().getConnectionFactory().getClass().getName().toLowerCase().contains("lettuce");
+    }
+
     protected boolean isJedis() {
         return t().getConnectionFactory().getClass().getName().toLowerCase().contains("jedis");
     }

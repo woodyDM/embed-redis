@@ -35,7 +35,7 @@ public class HashModule extends BaseModule {
         register(new HGet());
         register(new HMGet());
         register(new HGetAll());
-        register("hkeys", new HIter(RHash::keys));
+        register("hkeys", new HIter(RHash::keyList));
         register("hvals", new HIter(RHash::values));
         register(new HDel());
         register(new HLen());

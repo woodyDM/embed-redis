@@ -10,14 +10,27 @@ public class ScanMap<K, V> {
     Node<K, V> tail;
     Node<K, V> head;
     private long preIndex = 0L;
+    private Random random = new Random();
 
     public V get(K key) {
         Node<K, V> n = container.get(key);
         return n == null ? null : n.value;
     }
 
+    public Set<K> keys() {
+        return container.keySet();
+    }
+
+    public K randomKey() {
+        if (size() == 1) {
+            return container.keySet().iterator().next();
+        }
+        ArrayList<K> list = new ArrayList<>(container.keySet());
+        return list.get(random.nextInt(list.size()));
+    }
+
     public Set<Map.Entry<K, Node<K, V>>> entrySet() {
-        return  container.entrySet();
+        return container.entrySet();
     }
 
     public void forEach(BiConsumer<? super K, ? super V> c) {

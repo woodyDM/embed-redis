@@ -4,23 +4,34 @@ import cn.deepmax.redis.api.RedisObject;
 import cn.deepmax.redis.api.TimeProvider;
 import cn.deepmax.redis.core.Key;
 import cn.deepmax.redis.core.RandomElements;
+import cn.deepmax.redis.core.RedisDataType;
 import cn.deepmax.redis.utils.NumberUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.function.Function;
 
 public class RHash extends ScanMap<Key, Key> implements RedisObject, RandomElements {
 
     private LocalDateTime expire;
     private final TimeProvider provider;
-    private final Random random = new Random();
 
     public RHash(TimeProvider timeProvider) {
         this.provider = timeProvider;
+    }
+    
+    @Override
+    public Type type() {
+        return new RedisDataType("hash", "hashtable");
+    }
+
+    @Override
+    public RedisObject copyTo(Key key) {
+        RHash copy = new RHash(this.provider);
+        copy.set(this.getAll());
+        return copy;
     }
 
     @Override
@@ -56,7 +67,7 @@ public class RHash extends ScanMap<Key, Key> implements RedisObject, RandomEleme
         return iterate(n -> new Pair(n.key, n.value));
     }
 
-    public List<Key> keys() {
+    public List<Key> keyList() {
         return iterate(n -> n.key);
     }
 

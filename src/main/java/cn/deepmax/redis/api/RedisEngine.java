@@ -5,6 +5,7 @@ import cn.deepmax.redis.core.Module;
 import io.netty.handler.codec.redis.RedisMessage;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public interface RedisEngine extends Flushable {
@@ -47,6 +48,12 @@ public interface RedisEngine extends Flushable {
     CommandManager commandManager();
 
     interface Db extends Flushable {
+
+        long size();
+
+        Key randomKey();
+        
+        Set<Key> keys();
         
         Object getContainer();
         

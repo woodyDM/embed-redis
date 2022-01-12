@@ -34,14 +34,17 @@ public class CompositeCommand implements RedisCommand {
         return name;
     }
 
-    public CompositeCommand with(RedisCommand command) {
-        String subName = command.name();
+    public CompositeCommand with(String subName, RedisCommand command) {
         if (subName.startsWith(this.name)) {
             subCommands.put(subName.substring(this.name.length()).toLowerCase(), command);
             return this;
         } else {
             throw new IllegalStateException("can't put sub command " + subName + "to " + this.name);
         }
+    }
+
+    public CompositeCommand with(RedisCommand command) {
+        return this.with(command.name(), command);
     }
 
     @Override

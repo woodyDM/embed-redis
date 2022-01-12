@@ -2,11 +2,12 @@ package cn.deepmax.redis.core.module;
 
 import cn.deepmax.redis.api.RedisServerException;
 import cn.deepmax.redis.api.TimeProvider;
+import cn.deepmax.redis.core.Key;
+import cn.deepmax.redis.core.RedisDataType;
 import cn.deepmax.redis.core.Sized;
 import cn.deepmax.redis.core.support.AbstractRedisObject;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -28,6 +29,11 @@ class RString extends AbstractRedisObject implements Sized {
     public RString(TimeProvider timeProvider) {
         super(timeProvider);
         this.s = new byte[]{};
+    }
+    
+    @Override
+    public Type type() {
+        return new RedisDataType("string","raw");
     }
 
     public static RString of(TimeProvider timeProvider, byte[] s, int offset) {
@@ -55,7 +61,7 @@ class RString extends AbstractRedisObject implements Sized {
             return null;
         }
         if (!hasEmptyKey && data.size() == 1) {
-            return data.get(0).copy();
+            return data.get(0).copyTo(null);
         }
         int maxLen = data.stream().mapToInt(d -> d.s.length).max().getAsInt();
         byte[] c = new byte[maxLen];
@@ -85,7 +91,7 @@ class RString extends AbstractRedisObject implements Sized {
             return null;
         }
         if (data.size() == 1) {
-            return data.get(0).copy();
+            return data.get(0).copyTo(null);
         }
         int maxLen = data.stream().mapToInt(d -> d.s.length).max().getAsInt();
         byte[] c = new byte[maxLen];
@@ -111,7 +117,7 @@ class RString extends AbstractRedisObject implements Sized {
             return null;
         }
         if (data.size() == 1) {
-            return data.get(0).copy();
+            return data.get(0).copyTo(null);
         }
         int maxLen = data.stream().mapToInt(d -> d.s.length).max().getAsInt();
         byte[] c = new byte[maxLen];
@@ -146,7 +152,8 @@ class RString extends AbstractRedisObject implements Sized {
         return s.length;
     }
 
-    private RString copy() {
+    @Override
+    public RString copyTo(Key key) {
         byte[] c = new byte[this.s.length];
         System.arraycopy(this.s, 0, c, 0, this.s.length);
         return new RString(this.timeProvider, c);

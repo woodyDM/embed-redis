@@ -4,6 +4,7 @@ import cn.deepmax.redis.api.RedisObject;
 import cn.deepmax.redis.api.TimeProvider;
 import cn.deepmax.redis.core.Key;
 import cn.deepmax.redis.core.RandomElements;
+import cn.deepmax.redis.core.RedisDataType;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -14,6 +15,18 @@ public class RSet extends ScanMap<Key, Boolean> implements RedisObject, RandomEl
 
     public RSet(TimeProvider timeProvider) {
         this.timeProvider = timeProvider;
+    }
+    
+    @Override
+    public Type type() {
+        return new RedisDataType("set", "hashtable");
+    }
+
+    @Override
+    public RedisObject copyTo(Key key) {
+        RSet copy = new RSet(this.timeProvider);
+        copy.add(this.members());
+        return copy;
     }
 
     @Override
