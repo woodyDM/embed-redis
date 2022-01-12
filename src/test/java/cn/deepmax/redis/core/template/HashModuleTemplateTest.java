@@ -3,8 +3,10 @@ package cn.deepmax.redis.core.template;
 import cn.deepmax.redis.base.BasePureTemplateTest;
 import cn.deepmax.redis.utils.NumberUtils;
 import org.junit.Test;
+import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 
 import java.util.*;
 
@@ -370,5 +372,41 @@ public class HashModuleTemplateTest extends BasePureTemplateTest {
             if (Arrays.equals(serialize("m12"), e.getKey())) assertArrayEquals(bytes("v2"), e.getValue());
             if (Arrays.equals(serialize("你好😊2"), e.getKey())) assertArrayEquals(bytes("你好😊"), e.getValue());
         });
+    }
+
+    @Test
+    public void shouldScan() {
+        if (!isEmbededRedis()) {
+            return;
+        }
+        Map<String, Object> m = new HashMap<>();
+        m.put("a", "v1");
+        m.put("b", "v2");
+        m.put("c", "v3");
+        m.put("d", "v4");
+        m.put("e", "v5");
+        h().putAll("key", m);
+
+        Cursor<Map.Entry<Object, Object>> c = h().scan("key", ScanOptions.scanOptions()
+                .count(3)
+                .build());
+
+        List<Map.Entry<Object, Object>> list = new ArrayList<>();
+        while (c.hasNext()) {
+            Map.Entry<Object, Object> next = c.next();
+            list.add(next);
+        }
+        assertEquals(list.size(), 5);
+        assertEquals(list.get(0).getKey(), "a");
+        assertEquals(list.get(1).getKey(), "b");
+        assertEquals(list.get(2).getKey(), "c");
+        assertEquals(list.get(3).getKey(), "d");
+        assertEquals(list.get(4).getKey(), "e");
+        assertEquals(list.get(0).getValue(), "v1");
+        assertEquals(list.get(1).getValue(), "v2");
+        assertEquals(list.get(2).getValue(), "v3");
+        assertEquals(list.get(3).getValue(), "v4");
+        assertEquals(list.get(4).getValue(), "v5");
+
     }
 }

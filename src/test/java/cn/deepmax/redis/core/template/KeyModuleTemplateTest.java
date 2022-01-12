@@ -10,9 +10,7 @@ import org.springframework.data.redis.RedisSystemException;
 import org.springframework.data.redis.connection.DataType;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.ValueEncoding;
-import org.springframework.data.redis.core.RedisCallback;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.data.redis.core.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -359,6 +357,68 @@ public class KeyModuleTemplateTest extends BasePureTemplateTest {
         expectedException.expectMessage("no such key");
 
         t().renameIfAbsent("s-not-e", "s");
+
+    }
+
+    @Test
+    public void shouldScan() {
+        v().set("a", "1");
+        v().set("ab", "1");
+        z().add("c", "v", 1.4D);
+        z().add("c1", "v", 1.4D);
+        z().add("c2", "v", 1.4D);
+        l().rightPushAll("d1", "1", "2");
+        l().rightPushAll("d2", "1", "2");
+        s().add("e1", "v1");
+        s().add("e2", "v1");
+        h().put("f2", "h", "va");
+        h().put("f3", "h", "va");
+
+        Cursor<byte[]> c = t().execute((RedisCallback<Cursor<byte[]>>) con -> con.scan(ScanOptions.scanOptions()
+                .type(DataType.STRING).count(1).match("a*")
+                .build()));
+        List<byte[]> list = new ArrayList<>();
+        while (c.hasNext()) list.add(c.next());
+        assertEquals(list.size(), 2);
+        assertArrayEquals(list.get(0), bytes("a"));
+        assertArrayEquals(list.get(1), bytes("ab"));
+
+
+        c = t().execute((RedisCallback<Cursor<byte[]>>) con -> con.scan(ScanOptions.scanOptions()
+                .type(DataType.ZSET).count(1).match("c*")
+                .build()));
+        list = new ArrayList<>();
+        while (c.hasNext()) list.add(c.next());
+        assertEquals(list.size(), 3);
+        assertArrayEquals(list.get(0), bytes("c"));
+        assertArrayEquals(list.get(1), bytes("c1"));
+        assertArrayEquals(list.get(2), bytes("c2"));
+
+        c = t().execute((RedisCallback<Cursor<byte[]>>) con -> con.scan(ScanOptions.scanOptions()
+                .type(DataType.LIST).count(1).match("d*")
+                .build()));
+        list = new ArrayList<>();
+        while (c.hasNext()) list.add(c.next());
+        assertEquals(list.size(), 2);
+        assertArrayEquals(list.get(0), bytes("d1"));
+        assertArrayEquals(list.get(1), bytes("d2"));
+
+        c = t().execute((RedisCallback<Cursor<byte[]>>) con -> con.scan(ScanOptions.scanOptions()
+                .type(DataType.SET).count(1).match("e*")
+                .build()));
+        list = new ArrayList<>();
+        while (c.hasNext()) list.add(c.next());
+        assertEquals(list.size(), 2);
+        assertArrayEquals(list.get(0), bytes("e1"));
+        assertArrayEquals(list.get(1), bytes("e2"));
+
+        c = t().execute((RedisCallback<Cursor<byte[]>>) con -> con.scan(
+                KeyScanOptions.scanOptions(DataType.HASH).count(1).match("f*").build()));
+        list = new ArrayList<>();
+        while (c.hasNext()) list.add(c.next());
+        assertEquals(list.size(), 2);
+        assertArrayEquals(list.get(0), bytes("f2"));
+        assertArrayEquals(list.get(1), bytes("f3"));
 
     }
 }

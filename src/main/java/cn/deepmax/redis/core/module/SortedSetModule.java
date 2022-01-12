@@ -57,11 +57,31 @@ public class SortedSetModule extends BaseModule {
         register(new ZInter());
         register(new ZInterStore());
         register(new ZRevRank());
+        register(new ZScan());
         register(new ZRemRangeByRank());
         register(new ZRemRangeByScore());
         register(new ZRemRangeByLex());
         register(new ZRem());
         register(new ZRandMember());
+    }
+
+    //ZSCAN key cursor [MATCH pattern] [COUNT count]
+    public static class ZScan extends ArgsCommand.ThreeWith<SortedSet> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            Long cursor = msg.getAt(2).val();
+            Optional<String> pattern = ArgParser.parseArg(msg, 3, "match");
+            Long count = ArgParser.parseArg(msg, 3, "count").map(NumberUtils::parse)
+                    .orElse(10L);
+            SortedSet set = get(key);
+            if (set == null) {
+                return ListRedisMessage.newBuilder().append(Constants.INT_ZERO).build();
+            }
+            return ScanMaps.genericScan(set.getDict(), k ->
+                            NumberUtils.formatDouble(set.getDict().get(k)).getBytes(StandardCharsets.UTF_8),
+                    cursor, count, pattern, Optional.empty());
+        }
     }
 
     public static class ZCard extends ArgsCommand.TwoExWith<SortedSet> {

@@ -24,7 +24,6 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class KeyModule extends BaseModule {
@@ -217,32 +216,11 @@ public class KeyModule extends BaseModule {
             Optional<String> type = ArgParser.parseArg(msg, 2, "type");
             Object container = engine.getDb(client).getContainer();
             if (container instanceof ScanMap<?, ?>) {
-                return genericScan((ScanMap<Key, ?>) container, true, cursor, count, pattern, type);
+                return ScanMaps.genericScan((ScanMap<Key, ?>) container, null, cursor, count, pattern, type);
             } else {
                 return Constants.ERR_IMPL_MISMATCH;
             }
         }
-    }
-
-    /**
-     * @param map
-     * @param globalMap 和type配合，false时，忽略type
-     * @param cursor
-     * @param count
-     * @param pattern
-     * @param type      globalMap=true时有效，对key忽略
-     * @return
-     */
-    static RedisMessage genericScan(ScanMap<Key, ?> map, boolean globalMap, Long cursor, Long count, Optional<String> pattern, Optional<String> type) {
-        Optional<RPattern> p = pattern.map(RPattern::compile);
-        Function<Key, Boolean> mapper = k -> !p.isPresent() || p.get().matches(k.str());
-        ScanMap.ScanResult<Key> result = map.scan(cursor, count, mapper);
-        List<RedisMessage> keys = result.getKeyNames().stream().map(k -> FullBulkValueRedisMessage.ofString(k.getContent()))
-                .collect(Collectors.toList());
-        return ListRedisMessage.newBuilder()
-                .append(FullBulkValueRedisMessage.ofString(result.getNextCursor().toString()))
-                .append(new ListRedisMessage(keys))
-                .build();
     }
 
     private static class Del extends ArgsCommand.Two {

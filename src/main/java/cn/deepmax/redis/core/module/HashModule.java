@@ -19,6 +19,7 @@ import io.netty.handler.codec.redis.RedisMessage;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -38,11 +39,29 @@ public class HashModule extends BaseModule {
         register("hkeys", new HIter(RHash::keyList));
         register("hvals", new HIter(RHash::values));
         register(new HDel());
+        register(new HScan());
         register(new HLen());
         register(new HExists());
         register(new HIncrBy());
         register(new HIncrByFloat());
         register(new HRandField());
+    }
+
+    //HSCAN key cursor [MATCH pattern] [COUNT count]
+    public static class HScan extends ArgsCommand.ThreeWith<RHash> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            Long cursor = msg.getAt(2).val();
+            Optional<String> pattern = ArgParser.parseArg(msg, 3, "match");
+            Long count = ArgParser.parseArg(msg, 3, "count").map(NumberUtils::parse)
+                    .orElse(10L);
+            RHash hash = get(key);
+            if (hash == null) {
+                return ListRedisMessage.newBuilder().append(Constants.INT_ZERO).build();
+            }
+            return ScanMaps.genericScan(hash, k -> hash.get(k).getContent(), cursor, count, pattern, Optional.empty());
+        }
     }
 
     public static class HSet extends ArgsCommand.FourWith<RHash> {

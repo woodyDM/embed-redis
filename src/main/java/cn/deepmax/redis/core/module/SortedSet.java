@@ -23,7 +23,7 @@ public class SortedSet extends ZSet<Double, Key> implements RedisObject {
         this.timeProvider = timeProvider;
         this.selfKey = key;
     }
-
+    
     @Override
     public Type type() {
         return new RedisDataType("zset", "skiplist");

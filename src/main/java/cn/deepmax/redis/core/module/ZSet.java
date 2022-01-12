@@ -25,6 +25,10 @@ public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements R
         this.dict = new ScanMap<>();
     }
 
+    public ScanMap<T, S> getDict() {
+        return dict;
+    }
+    
     /**
      * diff
      *

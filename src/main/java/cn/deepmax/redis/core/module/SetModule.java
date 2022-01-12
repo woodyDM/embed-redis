@@ -10,6 +10,7 @@ import cn.deepmax.redis.core.support.BaseModule;
 import cn.deepmax.redis.core.support.SizedOperation;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
+import cn.deepmax.redis.utils.NumberUtils;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 
@@ -29,6 +30,7 @@ public class SetModule extends BaseModule {
         register(new SPop(false, "srandmember"));
         register(new SPop(true, "spop"));
         register(new SRem());
+        register(new SScan());
         register(new SMembers());
         register(new SMove());
         register(new SDiff());
@@ -54,6 +56,23 @@ public class SetModule extends BaseModule {
             int i = set.add(members);
             engine.fireChangeEvent(client, key, DbManager.EventType.UPDATE);
             return new IntegerRedisMessage(i);
+        }
+    }
+
+    //SSCAN key cursor [MATCH pattern] [COUNT count]
+    public static class SScan extends ArgsCommand.ThreeWith<RSet> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            Long cursor = msg.getAt(2).val();
+            Optional<String> pattern = ArgParser.parseArg(msg, 3, "match");
+            Long count = ArgParser.parseArg(msg, 3, "count").map(NumberUtils::parse)
+                    .orElse(10L);
+            RSet set = get(key);
+            if (set == null) {
+                return ListRedisMessage.newBuilder().append(Constants.INT_ZERO).build();
+            }
+            return ScanMaps.genericScan(set, null, cursor, count, pattern, Optional.empty());
         }
     }
 

@@ -288,10 +288,9 @@
 - [ ] HyperLogLog support.  
 - [ ] Lua types.  
 - [ ] Script error handle.    
-- [ ] redis 7.x support.  
 - [ ] Resp3.    
 - [ ] cluster support.  
-- [ ] scan commands.( all / sortedset / hash / set)     
+- [x] scan commands.( scan / sscan / hscan / zscan)     
 - [ ] Block command in Transaction and scripting    
 - [ ] Events and `SizedOperation`   
 - [ ] Use different AuthManager for cluster and standalone mode.  

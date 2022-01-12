@@ -2,8 +2,10 @@ package cn.deepmax.redis.core.template;
 
 import cn.deepmax.redis.base.BasePureTemplateTest;
 import org.junit.Test;
+import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 
 import java.util.*;
 
@@ -627,5 +629,30 @@ public class SetModuleTemplateTest extends BasePureTemplateTest {
         assertTrue(v.contains("v3"));
         assertTrue(v.contains("v4"));
         assertTrue(v.contains("你的"));
+    }
+
+    @Test
+    public void shouldSScan() {
+        if (!isEmbededRedis()) {
+            return;
+        }
+        s().add("kk", "v1");
+        s().add("kk", "v2");
+        s().add("kk", "v3");
+        s().add("kk", "v4");
+        s().add("kk", "你的");
+
+        Cursor<Object> c = s().scan("kk", ScanOptions.scanOptions()
+                .count(2)
+                .build());
+        List<Object> list = new ArrayList<>();
+        while (c.hasNext()) list.add(c.next());
+
+        assertEquals(list.size(), 5);
+        assertEquals(list.get(0), "v1");
+        assertEquals(list.get(1), "v2");
+        assertEquals(list.get(2), "v3");
+        assertEquals(list.get(3), "v4");
+        assertEquals(list.get(4), "你的");
     }
 }

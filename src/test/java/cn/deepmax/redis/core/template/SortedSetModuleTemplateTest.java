@@ -7,9 +7,7 @@ import cn.deepmax.redis.utils.Tuple;
 import org.junit.Test;
 import org.springframework.data.redis.connection.DefaultTuple;
 import org.springframework.data.redis.connection.RedisZSetCommands;
-import org.springframework.data.redis.core.RedisCallback;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.data.redis.core.*;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -47,6 +45,35 @@ public class SortedSetModuleTemplateTest extends BasePureTemplateTest implements
         assertEquals(NumberUtils.formatDouble(list.get(0).getScore()), "1.15");
         assertEquals(NumberUtils.formatDouble(list.get(1).getScore()), "1.2");
         assertEquals(NumberUtils.formatDouble(list.get(2).getScore()), "1.25");
+    }
+
+    @Test
+    public void shouldZScan() {
+        z().add("key", "a", 1.0D);
+        z().add("key", "b", 1.1D);
+        z().add("key", "c", 1.2D);
+        z().add("key", "d", 1.3D);
+        z().add("key", "e", 1.15D);
+        z().add("key", "f", 1.25D);
+        
+        Cursor<ZSetOperations.TypedTuple<Object>> c = z().scan("key", ScanOptions.scanOptions()
+                .count(2).build());
+        List<ZSetOperations.TypedTuple<Object>> list = new ArrayList<>();
+        while (c.hasNext()) list.add(c.next());
+        
+        assertEquals(list.size(), 6);
+        assertEquals(list.get(0).getValue(), "a");
+        assertEquals(list.get(1).getValue(), "b");
+        assertEquals(list.get(2).getValue(), "c");
+        assertEquals(list.get(3).getValue(), "d");
+        assertEquals(list.get(4).getValue(), "e");
+        assertEquals(list.get(5).getValue(), "f");
+        assertEquals(NumberUtils.formatDouble(list.get(0).getScore()), "1");
+        assertEquals(NumberUtils.formatDouble(list.get(1).getScore()), "1.1");
+        assertEquals(NumberUtils.formatDouble(list.get(2).getScore()), "1.2");
+        assertEquals(NumberUtils.formatDouble(list.get(3).getScore()), "1.3");
+        assertEquals(NumberUtils.formatDouble(list.get(4).getScore()), "1.15");
+        assertEquals(NumberUtils.formatDouble(list.get(5).getScore()), "1.25");
     }
 
     @Test
