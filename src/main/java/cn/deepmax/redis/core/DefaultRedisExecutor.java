@@ -57,7 +57,7 @@ public class DefaultRedisExecutor implements RedisExecutor {
     }
 
     private RedisMessage doExec(RedisMessage type, RedisEngine engine, Client client) {
-        AuthManager auth = engine.authManager();
+        AuthManager auth = engine.clientAuthManager(client);
         RedisCommand command = engine.commandManager().getCommand(type);
         String cmdName = command.name().toLowerCase();
 
@@ -98,7 +98,7 @@ public class DefaultRedisExecutor implements RedisExecutor {
         return ((type, client, en) -> {
             if (command instanceof ConnectionModule.Auth ||
                     command == Constants.UNKNOWN_COMMAND ||
-                    en.authManager().alreadyAuth(client)) {
+                    en.clientAuthManager(client).alreadyAuth(client)) {
                 return command.response(type, client, en);
             } else {
                 return Constants.ERR_NO_AUTH;

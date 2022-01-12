@@ -18,6 +18,7 @@ public class DefaultRedisEngine implements RedisEngine {
 
     private final DefaultRedisExecutor executor = new DefaultRedisExecutor();
     private NettyAuthManager authManager = new NettyAuthManager();
+    private NettyAuthManager clusterAuthManager = new NettyAuthManager();
     private final DefaultCommandManager commandManager = new DefaultCommandManager();
     private PubsubManager pubsubManager = new DefaultPubsub();
     private TransactionManager transactionManager = new DefaultTransactionManager(this);
@@ -69,6 +70,9 @@ public class DefaultRedisEngine implements RedisEngine {
     public void setConfiguration(RedisConfiguration configuration) {
         this.configuration = configuration;
         this.authManager.setAuth(configuration.getStandalone().getAuth());
+        if (configuration.getCluster() != null) {
+            this.clusterAuthManager.setAuth(configuration.getCluster().getAuth());
+        }
     }
 
     @Override
@@ -98,6 +102,11 @@ public class DefaultRedisEngine implements RedisEngine {
     @Override
     public AuthManager authManager() {
         return authManager;
+    }
+
+    @Override
+    public AuthManager clusterAuthManager() {
+        return clusterAuthManager;
     }
 
     @Override

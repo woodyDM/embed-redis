@@ -362,6 +362,9 @@ public class KeyModuleTemplateTest extends BasePureTemplateTest {
 
     @Test
     public void shouldScan() {
+        if (!isEmbededRedis()) {
+            return;
+        }
         v().set("a", "1");
         v().set("ab", "1");
         z().add("c", "v", 1.4D);

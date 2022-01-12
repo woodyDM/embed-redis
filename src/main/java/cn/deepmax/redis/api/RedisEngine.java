@@ -6,7 +6,6 @@ import io.netty.handler.codec.redis.RedisMessage;
 
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public interface RedisEngine extends Flushable {
 
@@ -32,14 +31,14 @@ public interface RedisEngine extends Flushable {
         int index = getDbManager().getIndex(client);
         getDbManager().fireChangeEvent(client, new DbManager.KeyEvent(key, index, type));
     }
-
-    default void fireChangeEvents(Client client, List<Key> keys, DbManager.EventType type) {
-        int index = getDbManager().getIndex(client);
-        List<DbManager.KeyEvent> events = keys.stream().map(k -> new DbManager.KeyEvent(k.getContent(), index, type)).collect(Collectors.toList());
-        getDbManager().fireChangeEvents(client, events);
-    }
-
+    
     AuthManager authManager();
+
+    AuthManager clusterAuthManager();
+
+    default AuthManager clientAuthManager(Client client) {
+        return client.node().isPresent() ? clusterAuthManager() : authManager();
+    }
 
     PubsubManager pubsub();
 

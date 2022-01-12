@@ -73,7 +73,7 @@ public class ConnectionModule extends BaseModule {
             if (msg.children().size() > 2) {
                 return new ErrorRedisMessage("Redis6 ACL is not supported");
             }
-            AuthManager auth = engine.authManager();
+            AuthManager auth = engine.clientAuthManager(client);
             String userAuth = msg.getAt(1).str();
             if (!auth.needAuth() || auth.tryAuth(userAuth, client)) {
                 return OK;
@@ -135,7 +135,7 @@ public class ConnectionModule extends BaseModule {
                 if (pos != size) return Constants.ERR_SYNTAX;
             }
 
-            AuthManager authManager = engine.authManager();
+            AuthManager authManager = engine.clientAuthManager(client);
             if (auth != null) {
                 boolean ok = authManager.tryAuth(auth, client);
                 if (!ok) {
@@ -189,7 +189,7 @@ public class ConnectionModule extends BaseModule {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             client.setProtocol(Client.Protocol.RESP2);
-            engine.authManager().clearAuth(client);
+            engine.clientAuthManager(client).clearAuth(client);
             engine.getDbManager().switchTo(client, 0);
             engine.transactionManager().unwatch(client);
             engine.pubsub().quit(client);

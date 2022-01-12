@@ -293,7 +293,7 @@
 - [x] scan commands.( scan / sscan / hscan / zscan)     
 - [ ] Block command in Transaction and scripting    
 - [ ] Events and `SizedOperation`   
-- [ ] Use different AuthManager for cluster and standalone mode.  
+- [x] Use different AuthManager for cluster and standalone mode.  
 
   
 
