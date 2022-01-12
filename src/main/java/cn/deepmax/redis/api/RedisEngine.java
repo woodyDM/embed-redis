@@ -9,6 +9,8 @@ import java.util.stream.Collectors;
 
 public interface RedisEngine extends Flushable {
 
+    Statistic statistic();
+    
     void loadModule(Module module);
 
     TimeProvider timeProvider();

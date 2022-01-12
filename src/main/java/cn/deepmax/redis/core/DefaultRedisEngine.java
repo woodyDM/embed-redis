@@ -16,7 +16,7 @@ import java.util.Objects;
 @Slf4j
 public class DefaultRedisEngine implements RedisEngine {
 
-    private final RedisExecutor executor = new DefaultRedisExecutor();
+    private final DefaultRedisExecutor executor = new DefaultRedisExecutor();
     private NettyAuthManager authManager = new NettyAuthManager();
     private final DefaultCommandManager commandManager = new DefaultCommandManager();
     private PubsubManager pubsubManager = new DefaultPubsub();
@@ -45,6 +45,11 @@ public class DefaultRedisEngine implements RedisEngine {
         loadModule(new HashModule());
         loadModule(new SetModule());
         loadModule(new ClusterModule());
+    }
+
+    @Override
+    public Statistic statistic() {
+        return executor.statistic();
     }
 
     @Override

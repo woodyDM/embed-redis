@@ -15,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author wudi
@@ -23,19 +22,16 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Slf4j
 public class MessagePrinter {
-
-    private final static AtomicLong requestCounter = new AtomicLong();
-    private final static AtomicLong responseCounter = new AtomicLong();
-
-    public static void requestStart(Client client) {
+    
+    public static void requestStart(Client client, long seq) {
         if (log.isDebugEnabled()) {
-            log.debug("[{}][{}]Request", requestCounter.getAndIncrement(), clientInfo(client));
+            log.debug("[{}][{}]Request", seq, clientInfo(client));
         }
     }
 
-    public static void responseStart(Client client) {
+    public static void responseStart(Client client, long seq) {
         if (log.isDebugEnabled()) {
-            log.debug("[{}][{}]Response", responseCounter.getAndIncrement(), clientInfo(client));
+            log.debug("[{}][{}]Response", seq, clientInfo(client));
         }
     }
 

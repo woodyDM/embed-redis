@@ -90,7 +90,7 @@ public class NettyClient implements Client {
 
     @Override
     public void pub(RedisMessage msg) {
-        MessagePrinter.responseStart(this);
+        MessagePrinter.responseStart(this, engine.statistic().incrSend());
         MessagePrinter.printMessage(msg, queued());
         channel.writeAndFlush(msg);
     }

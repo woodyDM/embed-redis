@@ -13,39 +13,39 @@
 |GETBIT| Y| |
 |SETBIT|Y | |
 
-### Cluster (later)
+### Cluster 
 |name|supported|description|
 |-----|-----|-----|
 |ASKING| | |
-|CLUSTER ADDSLOTS| | |
-|CLUSTER ADDSLOTSRANGE| | |
-|CLUSTER BUMPEPOCH| | |
-|CLUSTER COUNT-FAILURE-REPORTS| | |
-|CLUSTER COUNTKEYSINSLOT| | |
-|CLUSTER DELSLOTS| | |
-|CLUSTER DELSLOTSRANGE| | |
-|CLUSTER FAILOVER| | |
-|CLUSTER FLUSHSLOTS| | |
-|CLUSTER FORGET| | |
-|CLUSTER GETKEYSINSLOT| | |
-|CLUSTER INFO| | |
-|CLUSTER KEYSLOT| | |
-|CLUSTER LINKS| | |
-|CLUSTER MEET| | |
-|CLUSTER MYID| | |
-|CLUSTER NODES| | |
-|CLUSTER REPLICAS| | |
-|CLUSTER REPLICATE| | |
-|CLUSTER RESET| | |
-|CLUSTER SAVECONFIG| | |
-|CLUSTER SET-CONFIG-EPOCH| | |
-|CLUSTER SETSLOT| | |
-|CLUSTER SLAVES| | |
-|CLUSTER SLOTS| | |
-|READONLY| | |
-|READWRITE| | |
+|CLUSTER ADDSLOTS| N|utils not support |
+|CLUSTER ADDSLOTSRANGE|N | utils not support|
+|CLUSTER BUMPEPOCH|N |utils not support |
+|CLUSTER COUNT-FAILURE-REPORTS|N | utils not support|
+|CLUSTER COUNTKEYSINSLOT|N | utils not support|
+|CLUSTER DELSLOTS| N| utils not support|
+|CLUSTER DELSLOTSRANGE|N |utils not support |
+|CLUSTER FAILOVER|N |utils not support |
+|CLUSTER FLUSHSLOTS| N| utils not support|
+|CLUSTER FORGET|N |utils not support |
+|CLUSTER GETKEYSINSLOT| N|utils not support |
+|CLUSTER INFO|Y | |
+|CLUSTER KEYSLOT| N|utils/dubug not support |
+|CLUSTER LINKS| N| 7.x|
+|CLUSTER MEET|N |utils not support |
+|CLUSTER MYID|Y | |
+|CLUSTER NODES|Y | |
+|CLUSTER REPLICAS| Y| |
+|CLUSTER REPLICATE|N | utils not support|
+|CLUSTER RESET|N |utils not support |
+|CLUSTER SAVECONFIG| N| utils not support|
+|CLUSTER SET-CONFIG-EPOCH| N|utils not support |
+|CLUSTER SETSLOT|N |utils not support |
+|CLUSTER SLAVES|Y | |
+|CLUSTER SLOTS| Y| |
+|READONLY|Y | just response OK|
+|READWRITE| Y|just response OK|
 
-### Connection (later)
+### Connection 
 |name|supported|description|
 |-----|-----|-----|
 |AUTH|Y | |

@@ -1,10 +1,7 @@
 package cn.deepmax.redis.core;
 
 import cn.deepmax.redis.Constants;
-import cn.deepmax.redis.api.AuthManager;
-import cn.deepmax.redis.api.Client;
-import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.api.RedisServerException;
+import cn.deepmax.redis.api.*;
 import cn.deepmax.redis.core.module.ConnectionModule;
 import cn.deepmax.redis.utils.MessagePrinter;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
@@ -14,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author wudi
@@ -24,11 +22,22 @@ public class DefaultRedisExecutor implements RedisExecutor {
     static Set<String> authWhiteList = new HashSet<>();
     static Set<String> txWhiteList = new HashSet<>();
 
+    private final AtomicLong requestCounter = new AtomicLong();
+    private final AtomicLong responseCounter = new AtomicLong();
+    private final DefaultStatistic statistic = new DefaultStatistic();
+
     static {
         authWhiteList.add("hello");
         authWhiteList.add("ping");
         txWhiteList.add("exec");
         txWhiteList.add("reset");
+    }
+
+    /**
+     * @return
+     */
+    public Statistic statistic() {
+        return statistic;
     }
 
     /**
@@ -42,7 +51,7 @@ public class DefaultRedisExecutor implements RedisExecutor {
     @Override
     public RedisMessage execute(RedisMessage type, RedisEngine engine, Client client) {
         Objects.requireNonNull(client);
-        MessagePrinter.requestStart(client);
+        MessagePrinter.requestStart(client, requestCounter.getAndIncrement());
         MessagePrinter.printMessage(type, client.queued());
         return doExec(type, engine, client);
     }
@@ -70,7 +79,7 @@ public class DefaultRedisExecutor implements RedisExecutor {
             response = new ErrorRedisMessage("ERR internal redis server error!");
             log.error("Embed server error, may be bug! ", e);
         }
-        MessagePrinter.responseStart(client);
+        MessagePrinter.responseStart(client, responseCounter.getAndIncrement());
         MessagePrinter.printMessage(response, client.queued());
         return response;
     }
@@ -97,5 +106,21 @@ public class DefaultRedisExecutor implements RedisExecutor {
         });
     }
 
+    class DefaultStatistic implements Statistic {
+        @Override
+        public long messageRev() {
+            return requestCounter.get();
+        }
+
+        @Override
+        public long messageSend() {
+            return responseCounter.get();
+        }
+
+        @Override
+        public long incrSend() {
+            return responseCounter.getAndIncrement();
+        }
+    }
 }
 
