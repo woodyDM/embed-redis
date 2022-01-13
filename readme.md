@@ -1,19 +1,19 @@
-## Debug  
--Dio.netty.leakDetectionLevel=PARANOID
+# Embed-redis    
+Java embed redis for integration test.     
 
 ## Commands
-### Bitmap 
+### Bitmap [ok]
 |name|supported|description|
 |-----|-----|-----|
 |BITCOUNT| Y| |
-|BITFIELD| |later |
-|BITFIELD_RO| | later|
+|BITFIELD|N |  |
+|BITFIELD_RO|N |  |
 |BITOP|Y | |
 |BITPOS|Y | |
 |GETBIT| Y| |
 |SETBIT|Y | |
 
-### Cluster 
+### Cluster  [ok]
 |name|supported|description|
 |-----|-----|-----|
 |ASKING| | |
@@ -45,7 +45,7 @@
 |READONLY|Y | just response OK|
 |READWRITE| Y|just response OK|
 
-### Connection 
+### Connection  [ok]
 |name|supported|description|
 |-----|-----|-----|
 |AUTH|Y | |
@@ -71,7 +71,7 @@
 |RESET|Y | |
 |SELECT| Y| |
 
-### Keys
+### Keys [ok]
 |name|supported|description|
 |-----|-----|-----|  
 |COPY|Y | |
@@ -97,7 +97,7 @@
 |RENAME|Y | |
 |RENAMENX|Y | |
 |RESTORE|N |  db related operation not support|
-|SCAN| N|later |
+|SCAN| Y|  |
 |SORT| N|  |
 |SORT_RO|N | 7.x|
 |TOUCH|Y | |
@@ -106,7 +106,7 @@
 |UNLINK| Y| |
 |WAIT|N | |
 
-### List
+### List [ok]
 |name|supported|description|
 |-----|-----|-----|
 |LPOP|Y||
@@ -132,43 +132,8 @@
 |BRPOPLPUSH|Y||
 |BLMPOP|N|redis 7.x|
 
-### Pub/sub  
-|name|supported|description|
-|-----|-----|-----|
-|PSUBSCRIBE| | |
-|PUBLISH| | |
-|PUBSUB CHANNELS| | |
-|PUBSUB NUMPAT| | |
-|PUBSUB NUMSUB| | |
-|PUNSUBSCRIBE| | |
-|SUBSCRIBE| | |
-|UNSUBSCRIBE| | |
  
-### Scripting 
-|name|supported|description|
-|-----|-----|-----|
-|EVAL| | |
-|EVALSHA| | |
-|EVALSHA_RO| | |
-|EVAL_RO| | |
-|FCALL| | |
-|FCALL_RO| | |
-|FUNCTION CREATE| | |
-|FUNCTION DELETE| | |
-|FUNCTION DUMP| | |
-|FUNCTION FLUSH| | |
-|FUNCTION INFO| | |
-|FUNCTION KILL| | |
-|FUNCTION LIST| | |
-|FUNCTION RESTORE| | |
-|FUNCTION STATS| | |
-|SCRIPT DEBUG| | |
-|SCRIPT EXISTS| | |
-|SCRIPT FLUSH| | |
-|SCRIPT KILL| | |
-|SCRIPT LOAD| | |
- 
-### Strings 
+### Strings [ok]
 |name|supported|description|
 |-----|-----|-----|
 |APPEND| Y| |
@@ -194,7 +159,7 @@
 |STRLEN|Y | |
 |SUBSTR|Y | |
 
-### Sorted Set
+### Sorted Set [ok]
 |name|supported|description|
 |-----|-----|-----|
 |BZMPOP|N|7.x|
@@ -228,12 +193,12 @@
 |ZREVRANGEBYLEX|Y||
 |ZREVRANGEBYSCORE|Y||
 |ZREVRANK|Y||
-|ZSCAN| |later|
+|ZSCAN|Y | |
 |ZSCORE|Y||
 |ZUNION|Y||
 |ZUNIONSTORE|Y||
 
-### Hash  
+### Hash  [ok]
 |name|supported|description|
 |-----|-----|-----|
 |HDEL| Y| |
@@ -247,13 +212,13 @@
 |HMGET|Y | |
 |HMSET|Y | |
 |HRANDFIELD| Y| |
-|HSCAN| | later|
+|HSCAN| Y|  |
 |HSET|Y | |
 |HSETNX|Y | |
 |HSTRLEN|Y | |
 |HVALS|Y | |
 
-### Set 
+### Set [ok]
 |name|supported|description|
 |-----|-----|-----|
 |SADD| Y| |
@@ -270,11 +235,11 @@
 |SPOP|Y | |
 |SRANDMEMBER| Y| |
 |SREM|Y | |
-|SSCAN| |later |
+|SSCAN|Y |  |
 |SUNION|Y | |
 |SUNIONSTORE| Y| |
 
-### Transaction
+### Transaction 
 |name|supported|description|
 |-----|-----|-----| 
 |DISCARD| Y| |
@@ -282,6 +247,46 @@
 |MULTI| Y| |
 |UNWATCH| Y| |
 |WATCH| Y| |
+
+
+### Pub/sub [ok]  
+|name|supported|description|
+|-----|-----|-----|
+|PSUBSCRIBE|Y | |
+|PUBLISH|Y | |
+|PUBSUB CHANNELS| Y| |
+|PUBSUB NUMPAT|Y | |
+|PUBSUB NUMSUB| Y| |
+|PUNSUBSCRIBE|Y | |
+|SUBSCRIBE|Y| |
+|UNSUBSCRIBE| Y| |
+ 
+### Scripting 
+|name|supported|description|
+|-----|-----|-----|
+|EVAL| | |
+|EVALSHA| | |
+|EVALSHA_RO| | |
+|EVAL_RO| | |
+|FCALL| | |
+|FCALL_RO| | |
+|FUNCTION CREATE| | |
+|FUNCTION DELETE| | |
+|FUNCTION DUMP| | |
+|FUNCTION FLUSH| | |
+|FUNCTION INFO| | |
+|FUNCTION KILL| | |
+|FUNCTION LIST| | |
+|FUNCTION RESTORE| | |
+|FUNCTION STATS| | |
+|SCRIPT DEBUG| | |
+|SCRIPT EXISTS| | |
+|SCRIPT FLUSH| | |
+|SCRIPT KILL| | |
+|SCRIPT LOAD| | |
+
+## Test leak detection  
+-Dio.netty.leakDetectionLevel=PARANOID
 
 ## TODO - list 
 - [ ] Geo support.    

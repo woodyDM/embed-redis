@@ -100,12 +100,12 @@ public class NettyClient implements Client {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         NettyClient that = (NettyClient) o;
-        return Objects.equals(channel, that.channel);
+        return Objects.equals(id(), that.id());
     }
 
     @Override
     public int hashCode() {
-        return channel.hashCode();
+        return Long.valueOf(id()).hashCode();
     }
     
     @Override

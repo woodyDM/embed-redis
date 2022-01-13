@@ -38,6 +38,24 @@ public class PubsubModuleTest extends BaseMemEngineTest {
         List<RedisMessage> msg2 = readAllMessage(c2.channel());
 
         //assert sub 1
+        RedisMessage mc = exec("pubsub channels ab*");
+        assertEquals(((ListRedisMessage) mc).children().size(), 1);
+        mc = exec("pubsub channels");
+        assertEquals(((ListRedisMessage) mc).children().size(), 2);
+        RedisMessage pn = exec("pubsub numpat");
+        assertEquals(((IntegerRedisMessage)pn).value(),4);
+        ListRedisMessage ns = exec("pubsub numsub");
+        assertEquals(ns.children().size(),0);
+
+        ns = exec("pubsub numsub 123 abc d");
+        assertEquals(ns.children().size(),6);
+        assertEquals(ns.getAt(0).str(),"123");
+        assertEquals(ns.getAt(2).str(),"abc");
+        assertEquals(ns.getAt(4).str(),"d");
+        assertEquals(((IntegerRedisMessage)ns.children().get(1)).value(),1L);
+        assertEquals(((IntegerRedisMessage)ns.children().get(3)).value(),1L);
+        assertEquals(((IntegerRedisMessage)ns.children().get(5)).value(),0L);
+        
         assertTrue(m1 instanceof CompositeRedisMessage);
         List<RedisMessage> ml1 = ((CompositeRedisMessage) m1).children();
         assertEquals(ml1.size(), 2);

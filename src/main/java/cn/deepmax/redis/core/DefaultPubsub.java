@@ -17,8 +17,47 @@ import java.util.stream.Collectors;
  */
 public class DefaultPubsub implements PubsubManager {
 
-    private final Pubsub n = new Direct();
-    private final Pubsub r = new PatternPubSub();
+    private final Direct n = new Direct();
+    private final PatternPubSub r = new PatternPubSub();
+
+    /**
+     * subscribe client nubmers
+     *
+     * @param keys
+     * @return
+     */
+    @Override
+    public Map<Key, Integer> numbersub(List<Key> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<Key, Integer> map = new LinkedHashMap<>();
+        n.container.forEach((k, c) -> map.put(k, c.size()));
+        return map;
+    }
+
+    /**
+     * psubscribe patterns
+     *
+     * @return
+     */
+    @Override
+    public long numberPattern() {
+        return r.container.size();
+    }
+
+    /**
+     * @param pattern nullable
+     * @return
+     */
+    @Override
+    public List<Key> channelNumbers(RPattern pattern) {
+        Set<Key> channels = n.container.keySet();
+        if (pattern == null) {
+            return new ArrayList<>(channels);
+        }
+        return channels.stream().filter(k -> pattern.matches(k.str())).collect(Collectors.toList());
+    }
 
     @Override
     public Pubsub direct() {
@@ -47,18 +86,18 @@ public class DefaultPubsub implements PubsubManager {
             if (channels == null) {
                 return Collections.emptyList();
             }
-            List<RedisMessage> msg = new ArrayList<>();
-            msg.add(FullBulkValueRedisMessage.ofString("message"));
-            msg.add(FullBulkValueRedisMessage.ofString(channel.getContent()));
-            msg.add(FullBulkValueRedisMessage.ofString(message));
-            return channels.stream().map(ch -> new PubPair(ch, new ListRedisMessage(msg))).collect(Collectors.toList());
+            return channels.stream().map(ch -> {
+                List<RedisMessage> msg = new ArrayList<>();
+                msg.add(FullBulkValueRedisMessage.ofString("message"));
+                msg.add(FullBulkValueRedisMessage.ofString(channel.getContent()));
+                msg.add(FullBulkValueRedisMessage.ofString(message));
+                return new PubPair(ch, new ListRedisMessage(msg));
+            }).collect(Collectors.toList());
         }
 
     }
 
     private class PatternPubSub extends BasePubsub {
-
-        private final Map<Key, RPattern> patternMap = new LinkedHashMap<>();
 
         @Override
         protected String name() {
@@ -73,30 +112,25 @@ public class DefaultPubsub implements PubsubManager {
         @Override
         public List<PubPair> matches(Key channel, byte[] message) {
             List<PubPair> result = new ArrayList<>();
+            //key:pattern  value:client sub to pattern
             for (Map.Entry<Key, List<Client>> entry : container.entrySet()) {
-                Key p = entry.getKey();
+                Key pt = entry.getKey();
                 List<Client> chs = entry.getValue();
                 if (chs != null && !chs.isEmpty()) {
-                    RPattern pattern = patternMap.get(p);
-                    boolean match = pattern.matches(channel.str());
+                    boolean match = RPattern.compile(pt.str()).matches(channel.str());
                     if (match) {
-                        List<RedisMessage> msg = new ArrayList<>();
-                        msg.add(FullBulkValueRedisMessage.ofString("pmessage"));
-                        msg.add(FullBulkValueRedisMessage.ofString(p.getContent()));
-                        msg.add(FullBulkValueRedisMessage.ofString(channel.getContent()));
-                        msg.add(FullBulkValueRedisMessage.ofString(message));
                         for (Client ch : chs) {
+                            List<RedisMessage> msg = new ArrayList<>();
+                            msg.add(FullBulkValueRedisMessage.ofString("pmessage"));
+                            msg.add(FullBulkValueRedisMessage.ofString(pt.getContent()));
+                            msg.add(FullBulkValueRedisMessage.ofString(channel.getContent()));
+                            msg.add(FullBulkValueRedisMessage.ofString(message));
                             result.add(new PubPair(ch, new ListRedisMessage(msg)));
                         }
                     }
                 }
             }
             return result;
-        }
-
-        @Override
-        protected void postSub(Client client, Key channel) {
-            patternMap.computeIfAbsent(channel, key -> RPattern.compile(channel.str()));
         }
     }
 
@@ -117,11 +151,6 @@ public class DefaultPubsub implements PubsubManager {
         abstract protected String unname();
 
         @Override
-        public void pub(PubPair pubPair) {
-            pubPair.getClient().pub(pubPair.getMsg());
-        }
-
-        @Override
         public List<RedisMessage> sub(Client client, List<Key> patternChannel) {
             if (inValidChannels(patternChannel)) {
                 return Collections.emptyList();
@@ -133,7 +162,6 @@ public class DefaultPubsub implements PubsubManager {
                 if (!exist) {
                     old.add(client);
                 }
-                postSub(client, ch);
                 ListRedisMessage oneMsg = ListRedisMessage.newBuilder()
                         .append(name())
                         .append(ch.getContent())
@@ -143,9 +171,6 @@ public class DefaultPubsub implements PubsubManager {
             return result;
         }
 
-        protected void postSub(Client client, Key channel) {
-        }
-
         @Override
         public List<RedisMessage> unsubAll(Client client) {
             List<RedisMessage> msg = new ArrayList<>();
@@ -153,9 +178,9 @@ public class DefaultPubsub implements PubsubManager {
                 Iterator<Client> it = v.iterator();
                 while (it.hasNext()) {
                     Client c = it.next();
-                    if (c == client) {
+                    if (c.equals(client)) {
                         it.remove();
-                        msg.add(createUnsubMessage(c, k)); 
+                        msg.add(createUnsubMessage(c, k));
                         break;
                     }
                 }
