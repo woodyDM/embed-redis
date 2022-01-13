@@ -49,13 +49,16 @@ public class SortedSetModuleTemplateTest extends BasePureTemplateTest implements
 
     @Test
     public void shouldZScan() {
+        if (!isEmbededRedis()) {
+            return;
+        }
         z().add("key", "a", 1.0D);
         z().add("key", "b", 1.1D);
         z().add("key", "c", 1.2D);
         z().add("key", "d", 1.3D);
         z().add("key", "e", 1.15D);
         z().add("key", "f", 1.25D);
-        
+
         Cursor<ZSetOperations.TypedTuple<Object>> c = z().scan("key", ScanOptions.scanOptions()
                 .count(2).build());
         List<ZSetOperations.TypedTuple<Object>> list = new ArrayList<>();

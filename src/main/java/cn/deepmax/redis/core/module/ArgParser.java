@@ -100,6 +100,10 @@ public class ArgParser {
         return parseArg(msg, 3, name).map(NumberUtils::parse);
     }
 
+    static Optional<Long> parseLongArg(ListRedisMessage msg, String name,int pos) {
+        return parseArg(msg, pos, name).map(NumberUtils::parse);
+    }
+
     /**
      * 解析count
      * @param msg

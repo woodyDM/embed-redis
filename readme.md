@@ -175,8 +175,8 @@
 |DECR| Y| |
 |DECRBY| Y| |
 |GET|Y | |
-|GETDEL| | |
-|GETEX| | |
+|GETDEL| Y| |
+|GETEX| Y| |
 |GETRANGE| Y| |
 |GETSET| Y| |
 |INCR|Y | |
@@ -192,7 +192,7 @@
 |SETNX|Y | |
 |SETRANGE|Y | |
 |STRLEN|Y | |
-|SUBSTR| | later|
+|SUBSTR|Y | |
 
 ### Sorted Set
 |name|supported|description|

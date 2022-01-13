@@ -9,16 +9,20 @@ import cn.deepmax.redis.core.support.BaseModule;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.utils.NumberUtils;
+import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.FullBulkStringRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class StringModule extends BaseModule {
     static final int FLAG_EMPTY = 0;
@@ -29,6 +33,8 @@ public class StringModule extends BaseModule {
     public StringModule() {
         super("string");
         register(new Get());
+        register(new GetDel());
+        register(new GetEx());
         register(new Set());
         register(new SetNx());
         register(new SetEx());
@@ -39,7 +45,8 @@ public class StringModule extends BaseModule {
         register(new Decr());
         register(new DecrBy());
         register(new Strlen());
-        register(new GetRange());
+        register(new GetRange("getrange"));
+        register(new GetRange("substr"));
         register(new SetRange());
         register(new GetSet());
         register(new MGet());
@@ -118,11 +125,69 @@ public class StringModule extends BaseModule {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();
-            RedisObject obj = engine.getDb(client).get(client, key);
-            if (obj == null) {
+            RString s = get(key);
+            if (s == null) {
                 return Network.nullValue(client);
             }
+            return FullBulkValueRedisMessage.ofString(s.getS());
+        }
+    }
+
+    public static class GetDel extends ArgsCommand.TwoExWith<RString> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
             RString s = get(key);
+            if (s == null) {
+                return Network.nullValue(client);
+            }
+            engine.getDb(client).del(client, key);
+            return FullBulkValueRedisMessage.ofString(s.getS());
+        }
+    }
+
+    //GETEX key [EX seconds|PX milliseconds|EXAT unix-time|PXAT unix-time|PERSIST]
+    public static class GetEx extends ArgsCommand.TwoWith<RString> {
+        @Override
+        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+            byte[] key = msg.getAt(1).bytes();
+            Optional<Long> ex = ArgParser.parseLongArg(msg, "ex", 2);
+            Optional<Long> px = ArgParser.parseLongArg(msg, "px", 2);
+            Optional<Long> exat = ArgParser.parseLongArg(msg, "exat", 2);
+            Optional<Long> pxat = ArgParser.parseLongArg(msg, "pxat", 2);
+            boolean persist = ArgParser.parseFlag(msg, "persist", 2);
+
+            if (persist && (ex.isPresent() || px.isPresent() || exat.isPresent() || pxat.isPresent())) {
+                return Constants.ERR_SYNTAX;
+            }
+            long c = Stream.of(ex, px, exat, pxat).filter(Optional::isPresent).count();
+            if (c > 1) return Constants.ERR_SYNTAX;
+            boolean neg = Stream.of(ex, px, exat, pxat).filter(Optional::isPresent).anyMatch(i -> i.get() <= 0);
+            if (neg) return new ErrorRedisMessage("invalid expire time in getex");
+
+            RString s = get(key);
+            if (s == null) {
+                return Network.nullValue(client);
+            }
+            //no expire and no persist
+            if (persist && s.expireTime() != null) {
+                s.expireAt(null);
+                engine.fireChangeEvent(client, key, DbManager.EventType.UPDATE);
+            } else if (c == 1) {
+                LocalDateTime now = engine.timeProvider().now();
+                LocalDateTime unix = engine.timeProvider().now();
+                if (ex.isPresent()) unix = unix.plusSeconds(ex.get());
+                if (px.isPresent()) unix = unix.plusNanos(px.get() * 1000_000);
+                if (exat.isPresent()) unix = new Timestamp(exat.get() * 1000).toLocalDateTime();
+                if (pxat.isPresent()) unix = new Timestamp(pxat.get()).toLocalDateTime();
+                boolean expire = unix.isBefore(now);
+                if (expire) {
+                    engine.getDb(client).del(client, key);
+                } else {
+                    s.expireAt(unix);
+                    engine.fireChangeEvent(client, key, DbManager.EventType.UPDATE);
+                }
+            }
             return FullBulkValueRedisMessage.ofString(s.getS());
         }
     }
@@ -260,6 +325,17 @@ public class StringModule extends BaseModule {
     }
 
     public static class GetRange extends ArgsCommand.FourExWith<RString> {
+        private final String name;
+
+        public GetRange(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             byte[] key = msg.getAt(1).bytes();

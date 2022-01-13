@@ -22,6 +22,35 @@ public class StringModuleTemplateTest extends BasePureTemplateTest {
         super(redisTemplate);
     }
 
+    @Test
+    public void shouldGetDel() {
+        if (isRedisson()) {
+            return;
+        }
+        v().set("1", "v");
+
+        Object o = v().getAndDelete("1");
+        assertEquals(o, "v");
+        assertEquals(t().countExistingKeys(Arrays.asList("1")).intValue(), 0);
+    }
+
+    @Test
+    public void shouldGetex() {
+        if (isRedisson()) {
+            return;
+        }
+        v().set("1", "v");
+
+        Object o = v().getAndExpire("1", 100, TimeUnit.SECONDS);
+        assertEquals(o, "v");
+        Long expire = t().getExpire("1");
+        if (isEmbededRedis()) {
+            assertEquals(expire.intValue(), 100);
+        } else {
+            assertTrue(expire.intValue() > 50);
+        }
+    }
+
     // ------ setnx ------
     @Test
     public void shouldSetNx() {
