@@ -49,11 +49,10 @@ public class RedisConfiguration {
 
     public static class Cluster {
 
-        private String auth;
-        private List<Node> nodes;
-        private List<Node> allNodes;
-
         private static final int MAX_SLOT_IDX = (1 << 14) - 1;
+        private final String auth;
+        private final List<Node> nodes;
+        private List<Node> allNodes;
 
         public Cluster(String auth, List<Node> masterNodes) {
             Objects.requireNonNull(masterNodes);

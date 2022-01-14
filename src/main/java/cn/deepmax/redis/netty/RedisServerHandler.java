@@ -2,7 +2,6 @@ package cn.deepmax.redis.netty;
 
 import cn.deepmax.redis.api.RedisEngine;
 import cn.deepmax.redis.core.NettyClient;
-import cn.deepmax.redis.lua.LuaChannelContext;
 import cn.deepmax.redis.type.CallbackRedisMessage;
 import cn.deepmax.redis.type.CompositeRedisMessage;
 import io.netty.channel.ChannelFuture;
@@ -31,11 +30,9 @@ public class RedisServerHandler extends ChannelInboundHandlerAdapter {
         RedisMessage type = (RedisMessage) msg;
         RedisMessage response;
         try {
-            LuaChannelContext.set(ctx);
             response = engine.execute(type, new NettyClient(engine,ctx.channel()));
         } finally {
             ReferenceCountUtil.release(type);
-            LuaChannelContext.remove();
         }
         if (response != null) {
             if (response instanceof CompositeRedisMessage) {

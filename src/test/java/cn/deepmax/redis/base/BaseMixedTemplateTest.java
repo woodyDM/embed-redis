@@ -1,7 +1,6 @@
 package cn.deepmax.redis.base;
 
 import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.api.RedisEngineHolder;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -44,7 +43,6 @@ public abstract class BaseMixedTemplateTest extends BaseTemplateTest implements 
 
     @Before
     public void setUp() {
-        RedisEngineHolder.set(engine());
         engine().flush();
     }
 

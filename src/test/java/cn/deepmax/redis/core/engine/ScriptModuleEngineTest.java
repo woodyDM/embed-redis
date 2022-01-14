@@ -17,7 +17,7 @@ import static org.junit.Assert.assertTrue;
  * @author wudi
  * @date 2021/12/15
  */
-public class LuaEngineTest extends BaseMemEngineTest {
+public class ScriptModuleEngineTest extends BaseMemEngineTest {
 
     @Test
     public void shouldLoad() {

@@ -1,7 +1,7 @@
 package cn.deepmax.redis.core.template;
 
 import cn.deepmax.redis.base.BasePureTemplateTest;
-import cn.deepmax.redis.core.mixed.LuaMixedTest;
+import cn.deepmax.redis.core.mixed.ScriptModuleMixedTest;
 import org.junit.Test;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -11,8 +11,8 @@ import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 
-public class LuaTemplateTest extends BasePureTemplateTest {
-    public LuaTemplateTest(RedisTemplate<String, Object> redisTemplate) {
+public class ScriptModuleTemplateTest extends BasePureTemplateTest {
+    public ScriptModuleTemplateTest(RedisTemplate<String, Object> redisTemplate) {
         super(redisTemplate);
     }
 
@@ -40,7 +40,7 @@ public class LuaTemplateTest extends BasePureTemplateTest {
     }
 
     /**
-     * @see LuaMixedTest#shouldExec2()
+     * @see ScriptModuleMixedTest#shouldExec2()
      */
     @Test
     public void shouldExec2() {

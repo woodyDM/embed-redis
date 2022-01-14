@@ -266,23 +266,23 @@ Java embed redis for integration test.
 |-----|-----|-----|
 |EVAL| | |
 |EVALSHA| | |
-|EVALSHA_RO| | |
-|EVAL_RO| | |
-|FCALL| | |
-|FCALL_RO| | |
-|FUNCTION CREATE| | |
-|FUNCTION DELETE| | |
-|FUNCTION DUMP| | |
-|FUNCTION FLUSH| | |
-|FUNCTION INFO| | |
-|FUNCTION KILL| | |
-|FUNCTION LIST| | |
-|FUNCTION RESTORE| | |
-|FUNCTION STATS| | |
-|SCRIPT DEBUG| | |
+|EVALSHA_RO| N| 7.x|
+|EVAL_RO| N| 7.x|
+|FCALL| N| 7.x|
+|FCALL_RO| N| 7.x|
+|FUNCTION CREATE| N| 7.x|
+|FUNCTION DELETE| N| 7.x|
+|FUNCTION DUMP| N| 7.x|
+|FUNCTION FLUSH| N| 7.x|
+|FUNCTION INFO| N| 7.x|
+|FUNCTION KILL| N| 7.x|
+|FUNCTION LIST| N| 7.x|
+|FUNCTION RESTORE| N| 7.x|
+|FUNCTION STATS| N| 7.x|
+|SCRIPT DEBUG|N | not support|
 |SCRIPT EXISTS| | |
 |SCRIPT FLUSH| | |
-|SCRIPT KILL| | |
+|SCRIPT KILL| N| not support|
 |SCRIPT LOAD| | |
 
 ## Test leak detection  

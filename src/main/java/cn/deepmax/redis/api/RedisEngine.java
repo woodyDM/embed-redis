@@ -10,7 +10,7 @@ import java.util.Set;
 public interface RedisEngine extends Flushable {
 
     Statistic statistic();
-    
+
     void loadModule(Module module);
 
     TimeProvider timeProvider();
@@ -31,7 +31,7 @@ public interface RedisEngine extends Flushable {
         int index = getDbManager().getIndex(client);
         getDbManager().fireChangeEvent(client, new DbManager.KeyEvent(key, index, type));
     }
-    
+
     AuthManager authManager();
 
     AuthManager clusterAuthManager();
@@ -51,11 +51,11 @@ public interface RedisEngine extends Flushable {
         long size();
 
         Key randomKey();
-        
+
         Set<Key> keys();
-        
+
         Object getContainer();
-        
+
         DbManager getDbManager();
 
         int selfIndex();

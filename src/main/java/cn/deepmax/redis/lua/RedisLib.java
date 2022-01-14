@@ -1,12 +1,9 @@
+package cn.deepmax.redis.lua;
+
+import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.api.RedisEngineHolder;
-import cn.deepmax.redis.core.NettyClient;
-import cn.deepmax.redis.lua.LuaChannelContext;
-import cn.deepmax.redis.lua.LuaFuncException;
-import cn.deepmax.redis.lua.RedisLuaConverter;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +15,6 @@ import org.luaj.vm2.lib.VarArgFunction;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * lua bridge for redis
@@ -29,7 +25,15 @@ import java.util.Objects;
  * @date 2021/4/30
  */
 @Slf4j
-public class redis extends TwoArgFunction {
+public class RedisLib extends TwoArgFunction {
+
+    private final RedisEngine engine;
+    private final Client client;
+
+    public RedisLib(RedisEngine engine, Client client) {
+        this.engine = engine;
+        this.client = client;
+    }
 
     /**
      * package load entry
@@ -52,11 +56,7 @@ public class redis extends TwoArgFunction {
         env.set("redis", library);
         return library;
     }
-
-    private RedisEngine engine() {
-        return RedisEngineHolder.instance();
-    }
-
+    
     /**
      * https://redis.io/commands/eval
      */
@@ -89,10 +89,8 @@ public class redis extends TwoArgFunction {
                 // a Redis command call will result in an error, redis.call() will 
                 // raise a Lua error that in turn will force EVAL to return an error to the command caller,
                 // redis.pcall will trap the error and return a Lua table representing the error.
-                ChannelHandlerContext ctx = LuaChannelContext.get();
-                Objects.requireNonNull(ctx);
-                RedisEngine engine = engine();
-                resp = engine.execute(msg, new NettyClient(engine,ctx.channel()));
+
+                resp = engine.execute(msg, client);
                 //todo blog error
                 if (resp instanceof ErrorRedisMessage) {
                     resp = onError(resp);

@@ -1,19 +1,20 @@
 package cn.deepmax.redis.core.module;
 
+import cn.deepmax.redis.Constants;
 import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.Flushable;
 import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.api.RedisServerException;
+import cn.deepmax.redis.core.Key;
 import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.core.support.BaseModule;
+import cn.deepmax.redis.core.support.CompositeCommand;
 import cn.deepmax.redis.lua.LuaFuncException;
-import cn.deepmax.redis.lua.LuaScript;
+import cn.deepmax.redis.lua.RedisLib;
 import cn.deepmax.redis.lua.RedisLuaConverter;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
 import cn.deepmax.redis.utils.SHA1;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
-import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.luaj.vm2.Globals;
@@ -25,8 +26,8 @@ import org.luaj.vm2.lib.jse.JsePlatform;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * @author wudi
@@ -35,15 +36,16 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class ScriptingModule extends BaseModule implements Flushable {
     private final Map<String, String> scriptCache = new ConcurrentHashMap<>();
-    private final Load cmdLoad = new Load();
-    private final Exists cmdExists = new Exists();
-    private final Flush cmdFlush = new Flush();
 
     public ScriptingModule() {
         super("scripting");
-        register(new Script());
         register(new Eval());
         register(new Evalsha());
+        register(new CompositeCommand("script")
+                .with(new ScriptLoad())
+                .with(new ScriptFlush())
+                .with(new ScriptExists())
+        );
     }
 
     @Override
@@ -52,86 +54,8 @@ public class ScriptingModule extends BaseModule implements Flushable {
         scriptCache.clear();
     }
 
-    public class Script extends ArgsCommand.Two {
-        @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
-            String subCommand = msg.getAt(1).str().toLowerCase();
-            switch (subCommand) {
-                case "flush":
-                    return cmdFlush.response(msg, client, engine);
-                case "load":
-                    return cmdLoad.response(msg, client, engine);
-                case "exists":
-                    return cmdExists.response(msg, client, engine);
-                default:
-                    throw new IllegalStateException("in valid subCommand");
-            }
-        }
-
-        @Override
-        public Optional<ErrorRedisMessage> preCheckLength(RedisMessage type) {
-            ListRedisMessage msg = cast(type);
-            int len = msg.children().size();
-            String subCommand = msg.getAt(1).str().toLowerCase();
-            String errMsg = String.format("ERR Unknown subcommand or wrong number of arguments for '%s'. Try SCRIPT HELP.", subCommand);
-            switch (subCommand) {
-                case "exists":
-                case "load":
-                    if (len != 3) return Optional.of(new ErrorRedisMessage(errMsg));
-                    break;
-                case "flush":
-                    if (len != 2) return Optional.of(new ErrorRedisMessage(errMsg));
-                    break;
-                default:
-                    return Optional.of(new ErrorRedisMessage(errMsg));
-            }
-            return super.preCheckLength(type);
-        }
-    }
-
-    private RedisMessage response(String luaScript, RedisMessage type, Client client, RedisEngine engine) {
-        try {
-            ListRedisMessage msg = (ListRedisMessage) type;
-            int keyNum = msg.getAt(2).val().intValue();
-            List<FullBulkValueRedisMessage> key = new ArrayList<>();
-            List<FullBulkValueRedisMessage> arg = new ArrayList<>();
-            for (int i = 3; i < 3 + keyNum; i++) {
-                key.add(msg.getAt(i));
-            }
-            for (int i = 3 + keyNum; i < msg.children().size(); i++) {
-                arg.add(msg.getAt(i));
-            }
-            client.setFlag(Client.FLAG_SCRIPTING, true);
-            String fullLua = LuaScript.make(luaScript);
-
-            Globals globals = JsePlatform.standardGlobals();
-            globals.set("KEYS", make(key));
-            globals.set("ARGV", make(arg));
-
-            LuaValue lua = globals.load(fullLua);
-            LuaValue callResult = lua.call();
-            client.setFlag(Client.FLAG_SCRIPTING, false);
-            //now flag scripting is off. events fired in RedisExecutor
-            return RedisLuaConverter.toRedis(callResult);
-        } catch (LuaError error) {
-            if (error.getCause() instanceof LuaFuncException) {
-                LuaFuncException c = (LuaFuncException) error.getCause();
-                return new ErrorRedisMessage(c.getMessage());
-            }
-            return new ErrorRedisMessage("ERR " + error.getMessage());
-        }
-    }
-
-    private LuaTable make(List<FullBulkValueRedisMessage> list) {
-        LuaTable table = LuaTable.tableOf();
-        for (int i = 0; i < list.size(); i++) {
-            FullBulkValueRedisMessage msg = list.get(i);
-            table.set(1 + i, LuaValue.valueOf(msg.bytes()));
-        }
-        return table;
-    }
-
-    private class Eval extends ArgsCommand.Two {
+    //EVAL script numkeys [key [key ...]] [arg [arg ...]]
+    public class Eval extends ArgsCommand.Two {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             String lua = msg.getAt(1).str();
@@ -139,8 +63,8 @@ public class ScriptingModule extends BaseModule implements Flushable {
         }
     }
 
-    //sub command: script evalsha xxx
-    private class Evalsha extends ArgsCommand.Two {
+    //EVALSHA sha1 numkeys [key [key ...]] [arg [arg ...]]
+    public class Evalsha extends ArgsCommand.Two {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             String sha1 = msg.getAt(1).str();
@@ -153,41 +77,83 @@ public class ScriptingModule extends BaseModule implements Flushable {
         }
     }
 
-    private class Load extends ArgsCommand.ThreeEx {
+    private RedisMessage response(String luaScript, RedisMessage type, Client client, RedisEngine engine) {
+        try {
+            ListRedisMessage msg = (ListRedisMessage) type;
+            int keyNum = msg.getAt(2).val().intValue();
+            List<FullBulkValueRedisMessage> key = new ArrayList<>();
+            for (int i = 3; i < 3 + keyNum; i++) {
+                key.add(msg.getAt(i));
+            }
+            List<FullBulkValueRedisMessage> arg = new ArrayList<>();
+            for (int i = 3 + keyNum; i < msg.children().size(); i++) {
+                arg.add(msg.getAt(i));
+            }
+
+            Globals globals = JsePlatform.standardGlobals();
+            //load redis lib and set envs
+            globals.load(new RedisLib(engine, client));
+            globals.set("KEYS", makeArgs(key));
+            globals.set("ARGV", makeArgs(arg));
+
+            LuaValue lua = globals.load(luaScript);
+            client.setFlag(Client.FLAG_SCRIPTING, true);
+            LuaValue callResult = lua.call();
+            //now flag scripting is off. events fired in RedisExecutor
+            return RedisLuaConverter.toRedis(callResult);
+        } catch (LuaError error) {
+            if (error.getCause() instanceof LuaFuncException) {
+                LuaFuncException c = (LuaFuncException) error.getCause();
+                return new ErrorRedisMessage(c.getMessage());
+            }
+            return new ErrorRedisMessage("ERR " + error.getMessage());
+        } finally {
+            client.setFlag(Client.FLAG_SCRIPTING, false);
+        }
+    }
+
+    private LuaTable makeArgs(List<FullBulkValueRedisMessage> list) {
+        LuaTable table = LuaTable.tableOf();
+        for (int i = 0; i < list.size(); i++) {
+            FullBulkValueRedisMessage msg = list.get(i);
+            table.set(1 + i, LuaValue.valueOf(msg.bytes()));
+        }
+        return table;
+    }
+
+
+    public class ScriptLoad extends ArgsCommand.ThreeEx {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             String script = msg.getAt(2).str();
-            if (script == null || script.length() == 0) {
-                throw new RedisServerException("invalid lua script");
+            if (script.length() == 0) {
+                return new ErrorRedisMessage("invalid lua script");
             }
             String v = SHA1.encode(script);
             scriptCache.put(v, script);
             return FullBulkValueRedisMessage.ofString(v);
         }
-
     }
 
-    private class Exists extends ArgsCommand.ThreeEx {
+    public class ScriptExists extends ArgsCommand.Three {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
-            List<RedisMessage> result = new ArrayList<>();
-            for (int i = 2; i < msg.children().size(); i++) {
-                String sha1 = msg.getAt(i).str();
-                boolean exist = scriptCache.containsKey(sha1);
-                result.add(new IntegerRedisMessage(exist ? 1 : 0));
-            }
+            List<Key> shaValues = genKeys(msg.children(), 2);
+
+            List<RedisMessage> result = shaValues.stream().map(s -> {
+                boolean exist = scriptCache.containsKey(s.str().toLowerCase());
+                return exist ? Constants.INT_ONE : Constants.INT_ZERO;
+            }).collect(Collectors.toList());
             return new ListRedisMessage(result);
         }
-
     }
 
-    private class Flush extends ArgsCommand.TwoEx {
+    public class ScriptFlush extends ArgsCommand.TwoEx {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
             scriptCache.clear();
             return OK;
         }
-
     }
 }
 

@@ -10,7 +10,7 @@ import java.util.List;
  * @date 2021/12/24
  */
 public interface TransactionManager {
-    
+
     void multi(Client client);
 
     RedisMessage exec(Client client);

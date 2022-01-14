@@ -2,7 +2,6 @@ package cn.deepmax.redis;
 
 import cn.deepmax.redis.api.RedisConfiguration;
 import cn.deepmax.redis.api.RedisEngine;
-import cn.deepmax.redis.api.RedisEngineHolder;
 import cn.deepmax.redis.core.DefaultRedisEngine;
 import cn.deepmax.redis.netty.RedisServerHandler;
 import cn.deepmax.redis.resp3.RedisAggTypesAggregator;
@@ -57,7 +56,6 @@ public class RedisServer {
     public void start() {
         ServerBootstrap boot = new ServerBootstrap();
         engine.setConfiguration(configuration);
-        RedisEngineHolder.set(engine);
 
         boss = new NioEventLoopGroup(1);
         workerGroup = new NioEventLoopGroup(1);

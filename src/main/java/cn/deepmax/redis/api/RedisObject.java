@@ -27,13 +27,6 @@ public interface RedisObject {
 
     Type type();
 
-    interface Type {
-
-        String encoding();
-
-        String name();
-    }
-
     default long ttl() {
         LocalDateTime expire = expireTime();
         if (expire == null) {
@@ -65,8 +58,15 @@ public interface RedisObject {
     default boolean isExpire() {
         return expireTime() != null && timeProvider().now().isAfter(expireTime());
     }
-    
+
     default void persist() {
         expireAt(null);
+    }
+
+    interface Type {
+
+        String encoding();
+
+        String name();
     }
 }

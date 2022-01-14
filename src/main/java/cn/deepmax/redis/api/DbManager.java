@@ -43,14 +43,14 @@ public interface DbManager extends Flushable {
 
     void removeListener(KeyEventListener listener);
 
+    enum EventType {
+        DEL, NEW_OR_REPLACE, UPDATE, EXPIRE
+    }
+
     @FunctionalInterface
     interface KeyEventListener {
 
         void accept(List<KeyEvent> modified, KeyEventListener listener);
-    }
-
-    enum EventType {
-        DEL, NEW_OR_REPLACE, UPDATE, EXPIRE
     }
 
     class KeyEvent extends DbKey {

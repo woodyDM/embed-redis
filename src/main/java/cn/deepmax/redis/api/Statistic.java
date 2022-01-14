@@ -11,5 +11,5 @@ public interface Statistic {
     long messageSend();
 
     long incrSend();
-    
+
 }
