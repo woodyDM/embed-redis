@@ -5,6 +5,7 @@ import io.netty.util.AbstractReferenceCounted;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ReferenceCounted;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,8 +13,10 @@ import java.util.Map;
 public abstract class AbstractMapRedisMessage extends AbstractReferenceCounted implements RedisMessage {
 
     private final Map<RedisMessage, RedisMessage> data = new LinkedHashMap<>();
+    private final List<RedisMessage> children;
 
     protected AbstractMapRedisMessage() {
+        this(null);
     }
 
     public AbstractMapRedisMessage(List<RedisMessage> list) {
@@ -25,11 +28,18 @@ public abstract class AbstractMapRedisMessage extends AbstractReferenceCounted i
             for (int i = 0; i < len / 2; i++) {
                 data.put(list.get(i * 2), list.get(i * 2 + 1));
             }
+            children = Collections.unmodifiableList(list);
+        } else {
+            children = Collections.emptyList();
         }
     }
 
     public Map<RedisMessage, RedisMessage> content() {
         return data;
+    }
+
+    public List<RedisMessage> children() {
+        return children;
     }
 
     @Override

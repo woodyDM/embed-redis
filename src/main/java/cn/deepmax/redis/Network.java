@@ -14,15 +14,19 @@ import io.netty.handler.codec.redis.RedisMessage;
  */
 public class Network {
 
+    public static RedisMessage nullValue(Client.Protocol protocol) {
+        return protocol == Client.Protocol.RESP2 ? FullBulkValueRedisMessage.NULL_INSTANCE : NullRedisMessage.INSTANCE;
+    }
+
     public static RedisMessage nullValue(Client client) {
-        return client.isV2() ? FullBulkValueRedisMessage.NULL_INSTANCE : NullRedisMessage.INSTANCE;
+        return nullValue(client.resp());
     }
 
     public static RedisMessage nullArray(Client client) {
         return client.isV2() ? ArrayRedisMessage.NULL_INSTANCE : NullRedisMessage.INSTANCE;
     }
-    
-    public static RedisMessage map(Client client, ListRedisMessage msg){
+
+    public static RedisMessage map(Client client, ListRedisMessage msg) {
         return client.isV2() ? msg : new MapRedisMessage(msg.children());
     }
 

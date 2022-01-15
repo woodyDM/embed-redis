@@ -2,7 +2,9 @@ package cn.deepmax.redis.core.template;
 
 import cn.deepmax.redis.base.BasePureTemplateTest;
 import cn.deepmax.redis.core.mixed.ScriptModuleMixedTest;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 
@@ -16,6 +18,9 @@ public class ScriptModuleTemplateTest extends BasePureTemplateTest {
         super(redisTemplate);
     }
 
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
     @Test
     public void shouldExec() {
         String sc = " redis.call('SET', KEYS[1], ARGV[1]) ; return 1; ";
@@ -24,6 +29,47 @@ public class ScriptModuleTemplateTest extends BasePureTemplateTest {
 
         assertEquals(execute.longValue(), 1L);
         assertEquals(v().get("name"), "myName你👌");
+    }
+
+    @Test
+    public void shouldErrSetRespArg2() {
+        expectMsg("redis.setresp() requires one argument");
+
+        String sc = " redis.setresp('a','aa') ; return 1; ";
+        DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>(sc, Long.class);
+        t().execute(redisScript, Collections.emptyList());
+    }
+
+    @Test
+    public void shouldErrSetRespArg0() {
+        expectMsg("redis.setresp() requires one argument");
+
+        String sc = " redis.setresp() ; return 1; ";
+        DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>(sc, Long.class);
+        t().execute(redisScript, Collections.emptyList());
+    }
+
+    @Test
+    public void shouldErrSetRespArg1_Err() {
+        expectMsg("RESP version must be 2 or 3.");
+
+        String sc = " redis.setresp('4') ; return 1; ";
+        DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>(sc, Long.class);
+        t().execute(redisScript, Collections.emptyList());
+    }
+
+    @Test
+    public void shouldSetRespArg2() {
+        String sc = " redis.setresp(2) ; return 1; ";
+        DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>(sc, Long.class);
+        t().execute(redisScript, Collections.emptyList());
+    }
+
+    @Test
+    public void shouldSetResp3() {
+        String sc = " redis.setresp(3) ; return 1; ";
+        DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>(sc, Long.class);
+        t().execute(redisScript, Collections.emptyList());
     }
 
     @Test
@@ -55,5 +101,9 @@ public class ScriptModuleTemplateTest extends BasePureTemplateTest {
         assertEquals(execute, "myName你👌");
         assertEquals(v().get("key1"), "myName你👌");
         assertEquals(l().rightPop("key2"), "list_value");
+    }
+
+    private void expectMsg(String msg) {
+        expectedException.expectMessage(msg);
     }
 }

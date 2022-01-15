@@ -1,5 +1,6 @@
 package cn.deepmax.redis.resp3;
 
+import cn.deepmax.redis.utils.NumberUtils;
 import io.netty.handler.codec.redis.RedisMessage;
 
 import java.math.BigDecimal;
@@ -16,6 +17,12 @@ public class DoubleRedisMessage implements RedisMessage {
 
     public DoubleRedisMessage(BigDecimal value) {
         this.value = value;
+    }
+
+    public static DoubleRedisMessage ofDouble(double d) {
+        if (d == Double.POSITIVE_INFINITY) return INF;
+        if (d == Double.NEGATIVE_INFINITY) return INF_NEG;
+        return new DoubleRedisMessage(new BigDecimal(NumberUtils.formatDouble(d)));
     }
 
     public Double getValue() {

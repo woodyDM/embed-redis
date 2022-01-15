@@ -24,9 +24,9 @@ import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class ScriptingModule extends BaseModule implements Flushable {
-    private final Map<String, String> scriptCache = new ConcurrentHashMap<>();
+    private final Map<String, String> scriptCache = new HashMap<>();
 
     public ScriptingModule() {
         super("scripting");
@@ -48,18 +48,17 @@ public class ScriptingModule extends BaseModule implements Flushable {
         );
     }
 
-    @Override
-    public void flush() {
-        log.debug("flush all script");
-        scriptCache.clear();
-    }
-
-    //EVAL script numkeys [key [key ...]] [arg [arg ...]]
+    /**
+     * EVAL script numkeys [key [key ...]] [arg [arg ...]]
+     * cache script and eval
+     */
     public class Eval extends ArgsCommand.Two {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
-            String lua = msg.getAt(1).str();
-            return ScriptingModule.this.response(lua, msg, client, engine);
+            String script = msg.getAt(1).str();
+            String sha = SHA1.encode(script);
+            scriptCache.computeIfAbsent(sha, k -> script);
+            return ScriptingModule.this.response(script, sha, msg, client, engine);
         }
     }
 
@@ -70,14 +69,15 @@ public class ScriptingModule extends BaseModule implements Flushable {
             String sha1 = msg.getAt(1).str();
             String lua = scriptCache.get(sha1.toLowerCase());
             if (lua != null) {
-                return ScriptingModule.this.response(lua, msg, client, engine);
+                return ScriptingModule.this.response(lua, sha1, msg, client, engine);
             } else {
                 return new ErrorRedisMessage("NOSCRIPT No matching script. Please use EVAL.");
             }
         }
     }
 
-    private RedisMessage response(String luaScript, RedisMessage type, Client client, RedisEngine engine) {
+    private RedisMessage response(String luaScript, String sha, RedisMessage type, Client client, RedisEngine engine) {
+        Client.Protocol oldResp = client.resp();
         try {
             ListRedisMessage msg = (ListRedisMessage) type;
             int keyNum = msg.getAt(2).val().intValue();
@@ -89,18 +89,16 @@ public class ScriptingModule extends BaseModule implements Flushable {
             for (int i = 3 + keyNum; i < msg.children().size(); i++) {
                 arg.add(msg.getAt(i));
             }
-
             Globals globals = JsePlatform.standardGlobals();
             //load redis lib and set envs
+            LuaValue lua = globals.load(luaScript);
             globals.load(new RedisLib(engine, client));
             globals.set("KEYS", makeArgs(key));
             globals.set("ARGV", makeArgs(arg));
 
-            LuaValue lua = globals.load(luaScript);
-            client.setFlag(Client.FLAG_SCRIPTING, true);
+            prepareScripting(client);
             LuaValue callResult = lua.call();
-            //now flag scripting is off. events fired in RedisExecutor
-            return RedisLuaConverter.toRedis(callResult);
+            return RedisLuaConverter.toRedis(callResult, oldResp);
         } catch (LuaError error) {
             if (error.getCause() instanceof LuaFuncException) {
                 LuaFuncException c = (LuaFuncException) error.getCause();
@@ -108,8 +106,18 @@ public class ScriptingModule extends BaseModule implements Flushable {
             }
             return new ErrorRedisMessage("ERR " + error.getMessage());
         } finally {
-            client.setFlag(Client.FLAG_SCRIPTING, false);
+            resetAfterScripting(client, oldResp);
         }
+    }
+
+    private static void prepareScripting(Client client) {
+        client.setFlag(Client.FLAG_SCRIPTING, true);
+        client.setProtocol(Client.Protocol.RESP2);
+    }
+
+    private static void resetAfterScripting(Client client, Client.Protocol old) {
+        client.setFlag(Client.FLAG_SCRIPTING, false);
+        client.setProtocol(old);
     }
 
     private LuaTable makeArgs(List<FullBulkValueRedisMessage> list) {
@@ -121,7 +129,6 @@ public class ScriptingModule extends BaseModule implements Flushable {
         return table;
     }
 
-
     public class ScriptLoad extends ArgsCommand.ThreeEx {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
@@ -130,7 +137,7 @@ public class ScriptingModule extends BaseModule implements Flushable {
                 return new ErrorRedisMessage("invalid lua script");
             }
             String v = SHA1.encode(script);
-            scriptCache.put(v, script);
+            scriptCache.computeIfAbsent(v, k -> script);
             return FullBulkValueRedisMessage.ofString(v);
         }
     }
@@ -154,6 +161,12 @@ public class ScriptingModule extends BaseModule implements Flushable {
             scriptCache.clear();
             return OK;
         }
+    }
+
+    @Override
+    public void flush() {
+        log.debug("flush all script");
+        scriptCache.clear();
     }
 }
 

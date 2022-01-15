@@ -47,11 +47,16 @@ public class FullBulkValueRedisMessage extends FullBulkStringRedisMessage {
         return type;
     }
 
-    public byte[] bytes() {
-        int len = content().readableBytes();
+    public static byte[] bytesOf(FullBulkStringRedisMessage v) {
+        ByteBuf content = v.content();
+        int len = content.readableBytes();
         byte[] bs = new byte[len];
-        content().getBytes(content().readerIndex(), bs);
+        content.getBytes(content.readerIndex(), bs);
         return bs;
+    }
+
+    public byte[] bytes() {
+        return bytesOf(this);
     }
 
     public Key key() {

@@ -14,10 +14,17 @@ import java.nio.charset.StandardCharsets;
  * @date 2021/12/15
  */
 public class RedisMessages {
-
+    /**
+     * error has two types
+     *
+     * @param msg
+     * @return
+     */
     public static boolean isError(RedisMessage msg) {
         boolean ok = msg instanceof ErrorRedisMessage;
-        if (ok) return true;
+        if (ok) {
+            return true;
+        }
         if (msg instanceof FullBulkValueRedisMessage) {
             return ((FullBulkValueRedisMessage) msg).type() == RedisMessageType.BLOG_ERROR;
         }
