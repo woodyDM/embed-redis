@@ -5,7 +5,6 @@ import cn.deepmax.redis.Network;
 import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.resp3.RedisMessageType;
 import cn.deepmax.redis.resp3.*;
-import cn.deepmax.redis.type.RedisMessages;
 import io.netty.handler.codec.redis.*;
 import org.luaj.vm2.*;
 
@@ -37,8 +36,10 @@ public class RedisLuaConverter {
             return table("big_number", ((BigNumberRedisMessage) type).content());
         } else if (type instanceof SimpleStringRedisMessage) {
             return table("ok", ((SimpleStringRedisMessage) type).content());
-        } else if (RedisMessages.isError(type)) {
-            return table("err", RedisMessages.getStr(type));
+        } else if (type instanceof ErrorRedisMessage) {
+            return table("err", ((ErrorRedisMessage) type).content());
+        } else if (type instanceof FullBulkValueRedisMessage && ((FullBulkValueRedisMessage) type).type() == RedisMessageType.BLOG_ERROR) {
+            return table("err", FullBulkValueRedisMessage.bytesOf((FullBulkStringRedisMessage) type));
         } else if (type instanceof IntegerRedisMessage) {
             return LuaValue.valueOf((int) ((IntegerRedisMessage) type).value());
         } else if (type instanceof FullBulkValueRedisMessage) {
@@ -61,18 +62,16 @@ public class RedisLuaConverter {
     }
 
     private static LuaValue ofAgg(RedisMessageType type, List<RedisMessage> msg, Client.Protocol resp) {
+        LuaTable outTable = LuaTable.tableOf();
         if (resp == Client.Protocol.RESP2 || type == RedisMessageType.AGG_ARRAY) {
-            LuaTable table = LuaTable.tableOf();
             for (int i = 0; i < msg.size(); i++) {
                 //start at index 1
-                table.set(1 + i, toLua(msg.get(i), resp));
+                outTable.set(1 + i, toLua(msg.get(i), resp));
             }
-            return table;
         } else {
-            LuaTable outTable = LuaTable.tableOf();
             LuaTable innerTable = LuaTable.tableOf();
             if (type == RedisMessageType.AGG_MAP) {
-                for (int i = 0; i < msg.size() / 2; i += 2) {
+                for (int i = 0; i < msg.size(); i += 2) {
                     LuaValue key = toLua(msg.get(i), resp);
                     LuaValue value = toLua(msg.get(i + 1), resp);
                     innerTable.set(key, value);
@@ -87,8 +86,8 @@ public class RedisLuaConverter {
             } else {
                 throw new LuaError("lua not support  redis type " + type.name());
             }
-            return outTable;
         }
+        return outTable;
     }
 
     public static LuaTable table(String key, double value) {
@@ -100,6 +99,12 @@ public class RedisLuaConverter {
     public static LuaTable table(String key, String value) {
         LuaTable table = LuaTable.tableOf();
         table.set(key, value);
+        return table;
+    }
+
+    public static LuaTable table(String key, byte[] value) {
+        LuaTable table = LuaTable.tableOf();
+        table.set(key, LuaValue.valueOf(value));
         return table;
     }
 

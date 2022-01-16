@@ -49,7 +49,7 @@ abstract class BaseTemplateTest implements ByteHelper {
 
     static {
         if (MODE == TestMode.EMBED_ALL) {
-            MAIN_PORT = 6380;
+            MAIN_PORT = 6381;
         } else {
             MAIN_PORT = 6379;
         }
