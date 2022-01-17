@@ -24,7 +24,6 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -38,51 +37,22 @@ abstract class BaseTemplateTest implements ByteHelper {
     public static final Logger log = LoggerFactory.getLogger(BaseTemplateTest.class);
     protected static ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     protected static final int POOL_SIZE = 4;
-    protected static final String AUTH = "123456";
     protected static final String HOST = "localhost";
-    protected static final String SERVER_HOST = "localhost";
-    protected static final RedisConfiguration config;
     protected static RedisEngine engine;
-    protected static final int MAIN_PORT;
-    //to change this flag for tests.
-    protected static final TestMode MODE = TestMode.EMBED_ALL;
+    protected static final RedisConfiguration config;
 
     static {
-        if (MODE == TestMode.EMBED_ALL) {
-            MAIN_PORT = 6381;
-        } else {
-            MAIN_PORT = 6379;
-        }
-        RedisConfiguration.Standalone standalone = new RedisConfiguration.Standalone(MAIN_PORT, AUTH);
-        RedisConfiguration.Cluster cluster = new RedisConfiguration.Cluster(AUTH, Arrays.asList(
-                new RedisConfiguration.Node("m1", 6391)
-                        .appendSlave(new RedisConfiguration.Node("s1", 6394)),
-                new RedisConfiguration.Node("m2", 6392)
-                        .appendSlave(new RedisConfiguration.Node("s2", 6395)),
-                new RedisConfiguration.Node("m3", 6393)
-                        .appendSlave(new RedisConfiguration.Node("s3", 6396))
-        ));
-        config = new RedisConfiguration(SERVER_HOST, standalone, cluster);
-
+        engine = EmbedRedisRunner.start();
+        config = engine.configuration();
         scheduler.submit(() -> System.out.println("warn up"));
-
-        if (isEmbededRedis()) {
-            engine = EmbedRedisRunner.start(config);
-        }
-    }
-
-    enum TestMode {
-        EMBED_ALL,
-        LOCAL_REDIS_STANDALONE,
-        LOCAL_REDIS_ALL
     }
 
     protected static boolean isEmbededRedis() {
-        return MODE == TestMode.EMBED_ALL;
+        return EmbedRedisRunner.isEmbededRedis();
     }
 
     protected static boolean needCluster() {
-        return MODE != TestMode.LOCAL_REDIS_STANDALONE;
+        return EmbedRedisRunner.needCluster();
     }
 
     public BaseTemplateTest(RedisTemplate<String, Object> redisTemplate) {

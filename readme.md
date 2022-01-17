@@ -16,7 +16,7 @@ Java embed redis for integration test.
 ### Cluster  [ok]
 |name|supported|description|
 |-----|-----|-----|
-|ASKING| | |
+|ASKING|N | |
 |CLUSTER ADDSLOTS| N|utils not support |
 |CLUSTER ADDSLOTSRANGE|N | utils not support|
 |CLUSTER BUMPEPOCH|N |utils not support |
@@ -291,12 +291,13 @@ Java embed redis for integration test.
 ## TODO - list 
 - [ ] Geo support.    
 - [ ] HyperLogLog support.  
-- [ ] Lua types.  
-- [ ] Script error handle.    
+- [ ] Steam support.  
+- [x] Lua types.  
+- [x] Script error handle.    
 - [ ] Resp3.    
-- [ ] cluster support.  
+- [x] cluster support.  
 - [x] scan commands.( scan / sscan / hscan / zscan)     
-- [ ] Block command in Transaction and scripting    
+- [x] Block command in Transaction and scripting    
 - [ ] Events and `SizedOperation`   
 - [x] Use different AuthManager for cluster and standalone mode.  
 

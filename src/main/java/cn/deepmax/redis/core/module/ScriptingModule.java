@@ -58,7 +58,7 @@ public class ScriptingModule extends BaseModule implements Flushable {
             String script = msg.getAt(1).str();
             String sha = SHA1.encode(script);
             scriptCache.computeIfAbsent(sha, k -> script);
-            return ScriptingModule.this.response(script, sha, msg, client, engine);
+            return ScriptingModule.this.response(script, msg, client, engine);
         }
     }
 
@@ -69,14 +69,14 @@ public class ScriptingModule extends BaseModule implements Flushable {
             String sha1 = msg.getAt(1).str();
             String lua = scriptCache.get(sha1.toLowerCase());
             if (lua != null) {
-                return ScriptingModule.this.response(lua, sha1, msg, client, engine);
+                return ScriptingModule.this.response(lua, msg, client, engine);
             } else {
                 return new ErrorRedisMessage("NOSCRIPT No matching script. Please use EVAL.");
             }
         }
     }
 
-    private RedisMessage response(String luaScript, String sha, RedisMessage type, Client client, RedisEngine engine) {
+    private RedisMessage response(String luaScript, RedisMessage type, Client client, RedisEngine engine) {
         Client.Protocol oldResp = client.resp();
         try {
             ListRedisMessage msg = (ListRedisMessage) type;
@@ -99,9 +99,12 @@ public class ScriptingModule extends BaseModule implements Flushable {
             prepareScripting(client);
             LuaValue callResult = lua.call();
             return RedisLuaConverter.toRedis(callResult, oldResp);
-        } catch (LuaError error) {
+        } catch (LuaError | LuaFuncException error) {
             if (error.getCause() instanceof LuaFuncException) {
                 LuaFuncException c = (LuaFuncException) error.getCause();
+                return new ErrorRedisMessage(c.getMessage());
+            } else if (error instanceof LuaFuncException) {
+                LuaFuncException c = (LuaFuncException) error;
                 return new ErrorRedisMessage(c.getMessage());
             }
             return new ErrorRedisMessage("ERR " + error.getMessage());

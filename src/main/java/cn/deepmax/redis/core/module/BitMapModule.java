@@ -147,7 +147,7 @@ public class BitMapModule extends BaseModule {
         }
     }
 
-    //todo
+    //not support this method
     public static class BitField extends ArgsCommand.ThreeWith<RString> {
         @Override
         protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {

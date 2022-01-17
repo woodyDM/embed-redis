@@ -2,7 +2,9 @@ package cn.deepmax.redis.lua;
 
 import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.RedisEngine;
+import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
+import cn.deepmax.redis.resp3.RedisMessageType;
 import cn.deepmax.redis.type.RedisMessages;
 import io.netty.handler.codec.redis.ErrorRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
@@ -58,14 +60,14 @@ public class RedisLib extends TwoArgFunction {
      * @see <a href='https://redis.io/commands/eval'></a>
      */
     final class Call extends TheCall {
-        //todo blog error
         @Override
         protected RedisMessage onError(RedisMessage resp) {
             if (resp instanceof ErrorRedisMessage) {
                 throw new LuaFuncException(((ErrorRedisMessage) resp).content());
+            } else if (resp instanceof FullBulkValueRedisMessage && ((FullBulkValueRedisMessage) resp).type() == RedisMessageType.BLOG_ERROR) {
+                throw new LuaFuncException(((FullBulkValueRedisMessage) resp).str());
             } else {
-                //todo
-                throw new LuaFuncException("Invalid redis type");
+                throw new IllegalStateException("unknown error type " + resp.getClass().getName());
             }
         }
     }

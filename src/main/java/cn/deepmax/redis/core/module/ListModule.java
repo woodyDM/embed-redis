@@ -419,9 +419,12 @@ public class ListModule extends BaseModule {
             if (returnMsg.isPresent()) {
                 return returnMsg.get();
             }
+            if (client.commandInstantExec()) {
+                return Network.nullArray(client);
+            }
             new BlockTask(client, keys, timeout, engine,
                     () -> tryLPop(keys, client),
-                    () -> FullBulkStringRedisMessage.NULL_INSTANCE).block();
+                    () -> Network.nullArray(client)).block();
             return null;
         }
 
@@ -459,10 +462,13 @@ public class ListModule extends BaseModule {
             if (fetch.isPresent()) {
                 return fetch.get();
             }
+            if (client.commandInstantExec()) {
+                return Network.nullArray(client);
+            }
             Long timeout = NumberUtils.parseTimeout(msg.getAt(3).str());
             new BlockTask(client, Collections.singletonList(new Key(sourceKey)), timeout, engine,
                     () -> doResponseO(client, engine, RList::rPop, RList::lpush, sourceKey, destKey),
-                    () -> FullBulkValueRedisMessage.NULL_INSTANCE).block();
+                    () -> Network.nullArray(client)).block();
             return null;
         }
 
@@ -509,11 +515,14 @@ public class ListModule extends BaseModule {
             if (fetched.isPresent()) {
                 return fetched.get();
             }
+            if (client.commandInstantExec()) {
+                return Network.nullArray(client);
+            }
             //block to get 
             Long timeout = NumberUtils.parseTimeout(msg.getAt(5).str());
             new BlockTask(client, Collections.singletonList(new Key(source)), timeout, engine,
                     () -> doResponseO(client, engine, t.a, t.b, msg.getAt(1).bytes(), destKey),
-                    () -> FullBulkValueRedisMessage.NULL_INSTANCE).block();
+                    () -> Network.nullArray(client)).block();
             return null;
         }
 

@@ -87,6 +87,13 @@ public interface Client {
     Channel channel();
 
     /**
+     * command should be execute when called .
+     * when in Script or Transaction , command should not block to wait
+     * @return
+     */
+    boolean commandInstantExec();
+
+    /**
      * publish message to this client
      *
      * @param msg

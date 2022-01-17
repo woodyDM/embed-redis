@@ -27,16 +27,20 @@ import java.util.List;
  */
 @Slf4j
 public class RedisServer {
-    private final RedisConfiguration configuration;
+
     private EventLoopGroup boss = null;
     private EventLoopGroup workerGroup = null;
     private List<ChannelFuture> binds = new ArrayList<>();
     private final RedisEngine engine;
 
     public RedisServer(@NonNull RedisEngine engine, RedisConfiguration configuration) {
+        configuration.check();
         this.engine = engine;
-        this.configuration = configuration;
-        this.configuration.check();
+        this.engine.setConfiguration(configuration);
+    }
+
+    private RedisConfiguration configuration() {
+        return engine.configuration();
     }
 
     public static void main(String[] args) {
@@ -55,7 +59,6 @@ public class RedisServer {
 
     public void start() {
         ServerBootstrap boot = new ServerBootstrap();
-        engine.setConfiguration(configuration);
 
         boss = new NioEventLoopGroup(1);
         workerGroup = new NioEventLoopGroup(1);
@@ -76,6 +79,7 @@ public class RedisServer {
         //to bind ports
         StringBuilder logText = new StringBuilder();
         logText.append("Redis started ");
+        RedisConfiguration configuration = configuration();
         if (configuration.getStandalone() != null) {
             binds.add(boot.bind(configuration.getStandalone().getPort()));
             logText.append("with standalone port ").append(configuration.getStandalone().getPort()).append(" ");

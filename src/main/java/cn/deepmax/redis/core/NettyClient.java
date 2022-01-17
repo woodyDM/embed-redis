@@ -83,6 +83,17 @@ public class NettyClient implements Client {
         return channel;
     }
 
+    /**
+     * command should be execute when called .
+     * when in Script or Transaction , command should not block to wait
+     *
+     * @return
+     */
+    @Override
+    public boolean commandInstantExec() {
+        return queryFlag(FLAG_QUEUE_EXEC) || queryFlag(FLAG_SCRIPTING);
+    }
+
     @Override
     public long id() {
         return getInfo().id;
