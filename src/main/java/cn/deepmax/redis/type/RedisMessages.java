@@ -51,9 +51,7 @@ public class RedisMessages {
         } else if (msg instanceof FullBulkStringRedisMessage) {
             return ((FullBulkStringRedisMessage) msg).content().toString(StandardCharsets.UTF_8);
         } else {
-            //todo
-            throw new UnsupportedOperationException();
-
+            throw new UnsupportedOperationException("Printer not suppport " + msg.getClass().getName());
         }
     }
 

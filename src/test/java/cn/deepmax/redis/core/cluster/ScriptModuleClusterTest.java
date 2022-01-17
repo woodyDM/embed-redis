@@ -1,6 +1,6 @@
-package cn.deepmax.redis.core.template;
+package cn.deepmax.redis.core.cluster;
 
-import cn.deepmax.redis.base.BasePureTemplateTest;
+import cn.deepmax.redis.base.BaseClusterTemplateTest;
 import cn.deepmax.redis.core.mixed.ScriptModuleMixedTest;
 import org.junit.Rule;
 import org.junit.Test;
@@ -13,8 +13,8 @@ import java.util.Collections;
 
 import static org.junit.Assert.*;
 
-public class ScriptModuleTemplateTest extends BasePureTemplateTest {
-    public ScriptModuleTemplateTest(RedisTemplate<String, Object> redisTemplate) {
+public class ScriptModuleClusterTest extends BaseClusterTemplateTest {
+    public ScriptModuleClusterTest(RedisTemplate<String, Object> redisTemplate) {
         super(redisTemplate);
     }
 
@@ -37,7 +37,7 @@ public class ScriptModuleTemplateTest extends BasePureTemplateTest {
 
         String sc = " redis.setresp('a','aa') ; return 1; ";
         DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>(sc, Long.class);
-        t().execute(redisScript, Collections.emptyList());
+        t().execute(redisScript,  Collections.singletonList("any"), "any");
     }
 
     @Test
@@ -46,7 +46,7 @@ public class ScriptModuleTemplateTest extends BasePureTemplateTest {
 
         String sc = " redis.setresp() ; return 1; ";
         DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>(sc, Long.class);
-        t().execute(redisScript, Collections.emptyList());
+        t().execute(redisScript,  Collections.singletonList("any"), "any");
     }
 
     @Test
@@ -55,14 +55,14 @@ public class ScriptModuleTemplateTest extends BasePureTemplateTest {
 
         String sc = " redis.setresp('4') ; return 1; ";
         DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>(sc, Long.class);
-        t().execute(redisScript, Collections.emptyList());
+        t().execute(redisScript, Collections.singletonList("any"), "any");
     }
 
     @Test
     public void shouldSetRespArg2() {
         String sc = " redis.setresp(2) ; return 1; ";
         DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>(sc, Long.class);
-        t().execute(redisScript, Collections.emptyList());
+        t().execute(redisScript, Collections.singletonList("any"), "any");
     }
 
     @Test
@@ -72,7 +72,7 @@ public class ScriptModuleTemplateTest extends BasePureTemplateTest {
         }
         String sc = " return redis.call('brpop','list',300) ";
         DefaultRedisScript<Object> redisScript = new DefaultRedisScript<>(sc, Object.class);
-        Object result = t().execute(redisScript, Collections.emptyList());
+        Object result = t().execute(redisScript, Collections.singletonList("any"), "any");
 
         assertNull(result);
     }
@@ -83,7 +83,7 @@ public class ScriptModuleTemplateTest extends BasePureTemplateTest {
 
         String sc = " return redis.error_reply('some error') ";
         DefaultRedisScript<String> redisScript = new DefaultRedisScript<>(sc, String.class);
-        String result = t().execute(redisScript, Collections.emptyList());
+        String result = t().execute(redisScript, Collections.singletonList("any"), "any");
     }
 
     @Test
@@ -94,7 +94,7 @@ public class ScriptModuleTemplateTest extends BasePureTemplateTest {
         DefaultRedisScript<String> redisScript = new DefaultRedisScript<>(sc, String.class);
 
         try {
-            t().execute(redisScript, Collections.emptyList());
+            t().execute(redisScript, Collections.singletonList("any"), "any");
         } catch (Exception e) {
             //ignore
         }
@@ -111,7 +111,7 @@ public class ScriptModuleTemplateTest extends BasePureTemplateTest {
         DefaultRedisScript<String> redisScript = new DefaultRedisScript<>(sc, String.class);
 
         try {
-            t().execute(redisScript, Collections.emptyList());
+            t().execute(redisScript, Collections.singletonList("any"), "any");
         } catch (Exception e) {
             //ignore
         }
@@ -123,7 +123,7 @@ public class ScriptModuleTemplateTest extends BasePureTemplateTest {
     public void shouldSetResp3() {
         String sc = " redis.setresp(3) ; return 1; ";
         DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>(sc, Long.class);
-        t().execute(redisScript, Collections.emptyList());
+        t().execute(redisScript, Collections.singletonList("any"), "any");
     }
 
     @Test
@@ -150,11 +150,11 @@ public class ScriptModuleTemplateTest extends BasePureTemplateTest {
                 " return v; ";
 
         DefaultRedisScript<String> redisScript = new DefaultRedisScript<>(sc, String.class);
-        String execute = t().execute(redisScript, Arrays.asList("key1", "key2"), "myName你👌", "list_value");
+        String execute = t().execute(redisScript, Arrays.asList("key1{slot}", "key2{slot}"), "myName你👌", "list_value");
 
         assertEquals(execute, "myName你👌");
-        assertEquals(v().get("key1"), "myName你👌");
-        assertEquals(l().rightPop("key2"), "list_value");
+        assertEquals(v().get("key1{slot}"), "myName你👌");
+        assertEquals(l().rightPop("key2{slot}"), "list_value");
     }
 
     private void expectMsg(String msg) {

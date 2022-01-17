@@ -2,6 +2,7 @@ package cn.deepmax.redis.utils;
 
 import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.resp3.AbstractMapRedisMessage;
+import cn.deepmax.redis.resp3.BooleanRedisMessage;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.NullRedisMessage;
 import cn.deepmax.redis.type.CallbackRedisMessage;
@@ -68,6 +69,8 @@ public class MessagePrinter {
             } else {
                 word = RedisMessages.getStr(msg);
             }
+        } else if (msg instanceof BooleanRedisMessage) {
+            word = ((BooleanRedisMessage) msg).value() + "";
         } else if (msg instanceof IntegerRedisMessage) {
             word = "" + ((IntegerRedisMessage) msg).value();
         } else if (msg instanceof ArrayRedisMessage) {
