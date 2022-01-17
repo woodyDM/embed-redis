@@ -154,7 +154,7 @@ public class RedisLuaConverterTest implements ByteHelper {
         assertEquals(((FullBulkValueRedisMessage) r).str(), "你好");
 
         v = LuaValue.NIL;
-        assertSame(toRedis(v, resp), NullRedisMessage.INSTANCE);
+        assertSame(toRedis(v, resp), FullBulkValueRedisMessage.NULL_INSTANCE);
 
         v = LuaValue.valueOf(true);
         r = toRedis(v, resp);
@@ -218,9 +218,17 @@ public class RedisLuaConverterTest implements ByteHelper {
 
         SetRedisMessage set = (SetRedisMessage) r;
         assertEquals(set.children().size(), 3);
-        assertEquals(((FullBulkValueRedisMessage) set.children().get(0)).str(), "someKey");
-        assertEquals(((IntegerRedisMessage) set.children().get(1)).value(), 100L);
-        assertEquals(((ErrorRedisMessage) set.children().get(2)).content(), "param error");
+        for (RedisMessage child : set.children()) {
+            if (child instanceof FullBulkValueRedisMessage) {
+                assertEquals(((FullBulkValueRedisMessage) child).str(), "someKey");
+            } else if (child instanceof IntegerRedisMessage) {
+                assertEquals(((IntegerRedisMessage) child).value(), 100L);
+            } else if (child instanceof ErrorRedisMessage) {
+                assertEquals(((ErrorRedisMessage) child).content(), "param error");
+            } else {
+                throw new IllegalStateException("test fail");
+            }
+        }
     }
 
     @Test
@@ -241,6 +249,7 @@ public class RedisLuaConverterTest implements ByteHelper {
 
     @Test
     public void shouldVarLuaToRedisList() {
+        //table will not appear in Lua Vararg function
         Varargs in = LuaValue.varargsOf(new LuaValue[]{
                 LuaValue.valueOf("someKey"), LuaValue.valueOf(100), table("err", "param error")
                 , LuaValue.NIL, LuaValue.valueOf(true)
@@ -249,9 +258,8 @@ public class RedisLuaConverterTest implements ByteHelper {
         RedisMessage r = toRedis(in, Client.Protocol.RESP2);
 
         ListRedisMessage list = (ListRedisMessage) r;
-        assertEquals(list.children().size(), 3);
+        assertEquals(list.children().size(), 2);
         assertEquals(((FullBulkValueRedisMessage) list.children().get(0)).str(), "someKey");
-        assertEquals(((IntegerRedisMessage) list.children().get(1)).value(), 100L);
-        assertEquals(((ErrorRedisMessage) list.children().get(2)).content(), "param error");
+        assertEquals(((FullBulkValueRedisMessage) list.children().get(1)).str(), "100");
     }
 }
