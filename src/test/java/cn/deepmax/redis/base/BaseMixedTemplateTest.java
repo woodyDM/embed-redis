@@ -1,6 +1,7 @@
 package cn.deepmax.redis.base;
 
 import cn.deepmax.redis.api.RedisEngine;
+import cn.deepmax.redis.support.EmbedRedisRunner;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -48,7 +49,7 @@ public abstract class BaseMixedTemplateTest extends BaseTemplateTest implements 
 
     @Override
     public String auth() {
-        return AUTH;
+        return EmbedRedisRunner.AUTH;
     }
 
     @Override

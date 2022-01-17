@@ -115,7 +115,7 @@ public class RedisLuaConverter {
             LuaValue v = value.arg1();
             switch (v.type()) {
                 case LuaValue.TNIL:
-                    return NullRedisMessage.INSTANCE;
+                    return Network.nullValue(resp);
                 case LuaValue.TSTRING:
                     return FullBulkValueRedisMessage.ofString(v.strvalue().m_bytes);
                 case LuaValue.TBOOLEAN:
@@ -171,9 +171,10 @@ public class RedisLuaConverter {
                     throw new LuaError("unsupported lua type " + v.typename());
             }
         } else {
+            //redis.call(Varargs) should convert all children to FullBulkValueRedisMessage
             List<RedisMessage> r = new ArrayList<>();
             for (int j = 0; j < argLen; j++) {
-                LuaValue arg = value.arg(j + 1);
+                LuaValue arg = value.arg(j + 1).tostring();
                 //truncated to the first nil inside the Lua array if any
                 if (arg.type() == LuaValue.TNIL) {
                     break;

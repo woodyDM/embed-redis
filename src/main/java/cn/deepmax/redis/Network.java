@@ -18,12 +18,12 @@ public class Network {
         return protocol == Client.Protocol.RESP2 ? FullBulkValueRedisMessage.NULL_INSTANCE : NullRedisMessage.INSTANCE;
     }
 
-    public static RedisMessage nullValue(Client client) {
-        return nullValue(client.resp());
-    }
-
     public static RedisMessage nullArray(Client client) {
         return client.isV2() ? ArrayRedisMessage.NULL_INSTANCE : NullRedisMessage.INSTANCE;
+    }
+
+    public static RedisMessage nullValue(Client client) {
+        return nullValue(client.resp());
     }
 
     public static RedisMessage map(Client client, ListRedisMessage msg) {

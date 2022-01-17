@@ -722,10 +722,13 @@ public class SortedSetModule extends BaseModule {
             if (ok.isPresent()) {
                 return ok.get();
             }
+            if (client.commandInstantExec()) {
+                return Network.nullArray(client);
+            }
             //block
             new BlockTask(client, keys, timeout, engine,
                     () -> this.tryPop(keys),
-                    () -> ListRedisMessage.NULL_INSTANCE).block();
+                    () -> Network.nullArray(client)).block();
             return null;
         }
 
