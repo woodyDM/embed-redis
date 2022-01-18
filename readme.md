@@ -25,76 +25,9 @@ java -jar target/embed-redis-1.0.0-SNAPSHOT.jar -a yourAuth -h localhost -p 6381
 ```
 
 ## Commands
-### Bitmap [ok]
-|name|supported|description|
-|-----|-----|-----|
-|BITCOUNT| Y| |
-|BITFIELD|N |  |
-|BITFIELD_RO|N |  |
-|BITOP|Y | |
-|BITPOS|Y | |
-|GETBIT| Y| |
-|SETBIT|Y | |
 
-### Cluster  [ok]
-|name|supported|description|
-|-----|-----|-----|
-|ASKING|N | |
-|CLUSTER ADDSLOTS| N|utils not support |
-|CLUSTER ADDSLOTSRANGE|N | utils not support|
-|CLUSTER BUMPEPOCH|N |utils not support |
-|CLUSTER COUNT-FAILURE-REPORTS|N | utils not support|
-|CLUSTER COUNTKEYSINSLOT|N | utils not support|
-|CLUSTER DELSLOTS| N| utils not support|
-|CLUSTER DELSLOTSRANGE|N |utils not support |
-|CLUSTER FAILOVER|N |utils not support |
-|CLUSTER FLUSHSLOTS| N| utils not support|
-|CLUSTER FORGET|N |utils not support |
-|CLUSTER GETKEYSINSLOT| N|utils not support |
-|CLUSTER INFO|Y | |
-|CLUSTER KEYSLOT| N|utils/dubug not support |
-|CLUSTER LINKS| N| 7.x|
-|CLUSTER MEET|N |utils not support |
-|CLUSTER MYID|Y | |
-|CLUSTER NODES|Y | |
-|CLUSTER REPLICAS| Y| |
-|CLUSTER REPLICATE|N | utils not support|
-|CLUSTER RESET|N |utils not support |
-|CLUSTER SAVECONFIG| N| utils not support|
-|CLUSTER SET-CONFIG-EPOCH| N|utils not support |
-|CLUSTER SETSLOT|N |utils not support |
-|CLUSTER SLAVES|Y | |
-|CLUSTER SLOTS| Y| |
-|READONLY|Y | just response OK|
-|READWRITE| Y|just response OK|
 
-### Connection  [ok]
-|name|supported|description|
-|-----|-----|-----|
-|AUTH|Y | |
-|CLIENT CACHING|N |track not support |
-|CLIENT GETNAME| Y| |
-|CLIENT GETREDIR| N|track not support |
-|CLIENT ID| Y| |
-|CLIENT INFO|N |utils not support |
-|CLIENT KILL| N|utils not support |
-|CLIENT LIST|N | utils not support|
-|CLIENT NO-EVICT| N| 7.x|
-|CLIENT PAUSE| N| utils not support|
-|CLIENT REPLY|N |utils not support |
-|CLIENT SETNAME| Y| |
-|CLIENT TRACKING|N |track not support |
-|CLIENT TRACKINGINFO|N | track not support|
-|CLIENT UNBLOCK|N | |
-|CLIENT UNPAUSE| N| |
-|ECHO|Y | |
-|HELLO|Y | |
-|PING|Y | |
-|QUIT| Y| |
-|RESET|Y | |
-|SELECT| Y| |
-
-### Keys [ok]
+### Keys 
 |name|supported|description|
 |-----|-----|-----|  
 |COPY|Y | |
@@ -129,34 +62,8 @@ java -jar target/embed-redis-1.0.0-SNAPSHOT.jar -a yourAuth -h localhost -p 6381
 |UNLINK| Y| |
 |WAIT|N | |
 
-### List [ok]
-|name|supported|description|
-|-----|-----|-----|
-|LPOP|Y||
-|RPOP|Y||
-|LPUSH|Y||
-|RPUSH|Y||
-|LPUSHX|Y||
-|RPUSHX|Y||
-|LLEN|Y||
-|LPOS|Y||
-|LTRIM|Y||
-|LINDEX|Y||
-|LRANGE|Y||
-|RPOPLPUSH|Y||
-|LMOVE|Y||
-|LMPOP|N||
-|LINSERT|Y||
-|LREM|Y||
-|LSET|Y||
-|BLPOP|Y||
-|BRPOP|Y||
-|BLMOVE|N|redis 7.x|
-|BRPOPLPUSH|Y||
-|BLMPOP|N|redis 7.x|
 
- 
-### Strings [ok]
+### Strings 
 |name|supported|description|
 |-----|-----|-----|
 |APPEND| Y| |
@@ -182,7 +89,44 @@ java -jar target/embed-redis-1.0.0-SNAPSHOT.jar -a yourAuth -h localhost -p 6381
 |STRLEN|Y | |
 |SUBSTR|Y | |
 
-### Sorted Set [ok]
+### Bitmap 
+|name|supported|description|
+|-----|-----|-----|
+|BITCOUNT| Y| |
+|BITFIELD|N |  |
+|BITFIELD_RO|N |  |
+|BITOP|Y | |
+|BITPOS|Y | |
+|GETBIT| Y| |
+|SETBIT|Y | |
+
+### List 
+|name|supported|description|
+|-----|-----|-----|
+|LPOP|Y||
+|RPOP|Y||
+|LPUSH|Y||
+|RPUSH|Y||
+|LPUSHX|Y||
+|RPUSHX|Y||
+|LLEN|Y||
+|LPOS|Y||
+|LTRIM|Y||
+|LINDEX|Y||
+|LRANGE|Y||
+|RPOPLPUSH|Y||
+|LMOVE|Y||
+|LMPOP|N||
+|LINSERT|Y||
+|LREM|Y||
+|LSET|Y||
+|BLPOP|Y||
+|BRPOP|Y||
+|BLMOVE|N|redis 7.x|
+|BRPOPLPUSH|Y||
+|BLMPOP|N|redis 7.x|
+
+### Sorted Set 
 |name|supported|description|
 |-----|-----|-----|
 |BZMPOP|N|7.x|
@@ -221,7 +165,7 @@ java -jar target/embed-redis-1.0.0-SNAPSHOT.jar -a yourAuth -h localhost -p 6381
 |ZUNION|Y||
 |ZUNIONSTORE|Y||
 
-### Hash  [ok]
+### Hash  
 |name|supported|description|
 |-----|-----|-----|
 |HDEL| Y| |
@@ -241,7 +185,7 @@ java -jar target/embed-redis-1.0.0-SNAPSHOT.jar -a yourAuth -h localhost -p 6381
 |HSTRLEN|Y | |
 |HVALS|Y | |
 
-### Set [ok]
+### Set 
 |name|supported|description|
 |-----|-----|-----|
 |SADD| Y| |
@@ -272,7 +216,7 @@ java -jar target/embed-redis-1.0.0-SNAPSHOT.jar -a yourAuth -h localhost -p 6381
 |WATCH| Y| |
 
 
-### Pub/sub [ok]  
+### Pub/sub 
 |name|supported|description|
 |-----|-----|-----|
 |PSUBSCRIBE|Y | |
@@ -287,8 +231,8 @@ java -jar target/embed-redis-1.0.0-SNAPSHOT.jar -a yourAuth -h localhost -p 6381
 ### Scripting 
 |name|supported|description|
 |-----|-----|-----|
-|EVAL| | |
-|EVALSHA| | |
+|EVAL| Y| |
+|EVALSHA|Y | |
 |EVALSHA_RO| N| 7.x|
 |EVAL_RO| N| 7.x|
 |FCALL| N| 7.x|
@@ -303,25 +247,83 @@ java -jar target/embed-redis-1.0.0-SNAPSHOT.jar -a yourAuth -h localhost -p 6381
 |FUNCTION RESTORE| N| 7.x|
 |FUNCTION STATS| N| 7.x|
 |SCRIPT DEBUG|N | not support|
-|SCRIPT EXISTS| | |
-|SCRIPT FLUSH| | |
+|SCRIPT EXISTS|Y | |
+|SCRIPT FLUSH|Y | |
 |SCRIPT KILL| N| not support|
-|SCRIPT LOAD| | |
+|SCRIPT LOAD| Y| |
+
+### Cluster 
+|name|supported|description|
+|-----|-----|-----|
+|ASKING|N | |
+|CLUSTER ADDSLOTS| N|utils not support |
+|CLUSTER ADDSLOTSRANGE|N | utils not support|
+|CLUSTER BUMPEPOCH|N |utils not support |
+|CLUSTER COUNT-FAILURE-REPORTS|N | utils not support|
+|CLUSTER COUNTKEYSINSLOT|N | utils not support|
+|CLUSTER DELSLOTS| N| utils not support|
+|CLUSTER DELSLOTSRANGE|N |utils not support |
+|CLUSTER FAILOVER|N |utils not support |
+|CLUSTER FLUSHSLOTS| N| utils not support|
+|CLUSTER FORGET|N |utils not support |
+|CLUSTER GETKEYSINSLOT| N|utils not support |
+|CLUSTER INFO|Y | |
+|CLUSTER KEYSLOT| N|utils/dubug not support |
+|CLUSTER LINKS| N| 7.x|
+|CLUSTER MEET|N |utils not support |
+|CLUSTER MYID|Y | |
+|CLUSTER NODES|Y | |
+|CLUSTER REPLICAS| Y| |
+|CLUSTER REPLICATE|N | utils not support|
+|CLUSTER RESET|N |utils not support |
+|CLUSTER SAVECONFIG| N| utils not support|
+|CLUSTER SET-CONFIG-EPOCH| N|utils not support |
+|CLUSTER SETSLOT|N |utils not support |
+|CLUSTER SLAVES|Y | |
+|CLUSTER SLOTS| Y| |
+|READONLY|Y | just response OK|
+|READWRITE| Y|just response OK|
+
+### Connection 
+|name|supported|description|
+|-----|-----|-----|
+|AUTH|Y | |
+|CLIENT CACHING|N |track not support |
+|CLIENT GETNAME| Y| |
+|CLIENT GETREDIR| N|track not support |
+|CLIENT ID| Y| |
+|CLIENT INFO|N |utils not support |
+|CLIENT KILL| N|utils not support |
+|CLIENT LIST|N | utils not support|
+|CLIENT NO-EVICT| N| 7.x|
+|CLIENT PAUSE| N| utils not support|
+|CLIENT REPLY|N |utils not support |
+|CLIENT SETNAME| Y| |
+|CLIENT TRACKING|N |track not support |
+|CLIENT TRACKINGINFO|N | track not support|
+|CLIENT UNBLOCK|N | |
+|CLIENT UNPAUSE| N| |
+|ECHO|Y | |
+|HELLO|Y | |
+|PING|Y | |
+|QUIT| Y| |
+|RESET|Y | |
+|SELECT| Y| |
 
 ## Test leak detection  
 -Dio.netty.leakDetectionLevel=PARANOID
 
-## TODO - list 
+## TODO list 
 - [ ] Geo support.    
 - [ ] HyperLogLog support.  
 - [ ] Steam support.  
+- [ ] Events and `SizedOperation`   
 - [x] Lua types.  
 - [x] Script error handle.    
-- [ ] Resp3.    
+- [x] Resp3.    
 - [x] cluster support.  
 - [x] scan commands.( scan / sscan / hscan / zscan)     
 - [x] Block command in Transaction and scripting    
-- [ ] Events and `SizedOperation`   
 - [x] Use different AuthManager for cluster and standalone mode.  
 
   
