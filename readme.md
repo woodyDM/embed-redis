@@ -1,5 +1,28 @@
 # Embed-redis    
-Java embed redis for integration test.     
+Java Embed redis for integration test.  
+All data in memory. 
+Support standalone and cluster .     
+Require JDK8+.    
+
+## Usage
+####  In Java code  
+```java
+        RedisConfiguration.Standalone standalone = new RedisConfiguration.Standalone(6379,"yourAuth");
+        RedisConfiguration.Cluster cluster = new RedisConfiguration.Cluster("yourClusterAuth", Arrays.asList(
+                new RedisConfiguration.Node("master1", 6391)
+                        .appendSlave(new RedisConfiguration.Node("slave1", 6394)),
+                new RedisConfiguration.Node("master2", 6392)
+                        .appendSlave(new RedisConfiguration.Node("slave2", 6395)),
+                new RedisConfiguration.Node("master3", 6393)
+                        .appendSlave(new RedisConfiguration.Node("slave3", 6396))
+        ));
+        new RedisServer(new RedisConfiguration("localhost", standalone, cluster)).startWithShutdownHook();
+```
+#### Use jar  
+```shell script
+mvn clean package -DskipTests
+java -jar target/embed-redis-1.0.0-SNAPSHOT.jar -a yourAuth -h localhost -p 6381 --clusterAuth yourClusterAuth   
+```
 
 ## Commands
 ### Bitmap [ok]

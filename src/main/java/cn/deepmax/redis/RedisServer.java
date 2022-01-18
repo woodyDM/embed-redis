@@ -25,47 +25,48 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * Hello world!
+ * Embed redis server
  */
 @Slf4j
 public class RedisServer {
 
     private EventLoopGroup boss = null;
     private EventLoopGroup workerGroup = null;
-    private List<ChannelFuture> binds = new ArrayList<>();
+    private final List<ChannelFuture> binds = new ArrayList<>();
     private final RedisEngine engine;
+    private boolean stoped = false;
 
     public RedisServer(@NonNull RedisEngine engine, RedisConfiguration configuration) {
         configuration.check();
         this.engine = engine;
         this.engine.setConfiguration(configuration);
     }
-    
-    static Args.Flag<String> F_AUTH = Args.Flag.newInstance("a", null, Function.identity());
-    static Args.Flag<String> F_CLUSTER_AUTH = Args.Flag.newInstance("ca", null, Function.identity());
-    static Args.Flag<Integer> F_PORT = Args.Flag.newInstance("p", "6381", Integer::new);
-    static Args.Flag<String> F_H = Args.Flag.newInstance("h", "localhost", Function.identity());
+
+    public RedisServer(RedisConfiguration configuration) {
+        this(DefaultRedisEngine.defaultEngine(), configuration);
+    }
+
+    private static final Args.Flag<String> F_AUTH = Args.Flag.newInstance("a", null, Function.identity());
+    private static final Args.Flag<String> F_CLUSTER_AUTH = Args.Flag.newInstance("clusterAuth", null, Function.identity());
+    private static final Args.Flag<Integer> F_PORT = Args.Flag.newInstance("p", "6381", Integer::new);
+    private static final Args.Flag<String> F_HOST = Args.Flag.newInstance("h", "localhost", Function.identity());
 
     public static void main(String[] args) {
         new Args().flag(F_AUTH)
                 .flag(F_CLUSTER_AUTH)
-                .flag(F_H)
+                .flag(F_HOST)
                 .flag(F_PORT).parse(args);
 
         RedisConfiguration.Standalone standalone = new RedisConfiguration.Standalone(F_PORT.get(), F_AUTH.get());
-        RedisConfiguration.Cluster cluster = new RedisConfiguration.Cluster(F_AUTH.get(), Arrays.asList(
-                new RedisConfiguration.Node("m1", 6391)
-                        .appendSlave(new RedisConfiguration.Node("s1", 6394)),
-                new RedisConfiguration.Node("m2", 6392)
-                        .appendSlave(new RedisConfiguration.Node("s2", 6395)),
-                new RedisConfiguration.Node("m3", 6393)
-                        .appendSlave(new RedisConfiguration.Node("s3", 6396))
+        RedisConfiguration.Cluster cluster = new RedisConfiguration.Cluster(F_CLUSTER_AUTH.get(), Arrays.asList(
+                new RedisConfiguration.Node("master1", 6391)
+                        .appendSlave(new RedisConfiguration.Node("slave1", 6394)),
+                new RedisConfiguration.Node("master2", 6392)
+                        .appendSlave(new RedisConfiguration.Node("slave2", 6395)),
+                new RedisConfiguration.Node("master3", 6393)
+                        .appendSlave(new RedisConfiguration.Node("slave3", 6396))
         ));
-        new RedisServer(DefaultRedisEngine.defaultEngine(), new RedisConfiguration(F_H.get(), standalone, cluster)).start();
-    }
-
-    private RedisConfiguration configuration() {
-        return engine.configuration();
+        new RedisServer(new RedisConfiguration(F_HOST.get(), standalone, cluster)).startWithShutdownHook();
     }
 
     public void startWithShutdownHook() {
@@ -97,15 +98,17 @@ public class RedisServer {
         logText.append("Redis started ");
         RedisConfiguration configuration = configuration();
         if (configuration.getStandalone() != null) {
-            binds.add(boot.bind(configuration.getStandalone().getPort()));
-            logText.append("with standalone port ").append(configuration.getStandalone().getPort()).append(" ");
+            int port = configuration.getStandalone().getPort();
+            binds.add(h(boot.bind(port), port));
+            logText.append("with standalone port ").append(port).append(" ");
         }
         if (configuration.getCluster() != null) {
             logText.append(", with cluster port: ");
             List<RedisConfiguration.Node> nodes = configuration.getCluster().getAllNodes();
             for (int i = 0; i < nodes.size(); i++) {
-                binds.add(boot.bind(nodes.get(i).port));
-                logText.append(nodes.get(i).port);
+                int port = nodes.get(i).port;
+                binds.add(h(boot.bind(port), port));
+                logText.append(port);
                 if (i < nodes.size() - 1) {
                     logText.append(",");
                 }
@@ -114,12 +117,27 @@ public class RedisServer {
         binds.forEach(ChannelFuture::syncUninterruptibly);
         log.info("{} !", logText.toString());
     }
-    
+
+    private ChannelFuture h(ChannelFuture future, int port) {
+        return future.addListener(c -> {
+            if (!c.isSuccess()) {
+                if (!c.cause().getClass().getName().contains("StacklessClosedChannelException")) {
+                    log.error("Embed redis failed to start at port " + port, c.cause());
+                }
+                this.stop();
+            }
+        });
+    }
+
     public void stop() {
+        if (stoped) {
+            return;
+        }
+        stoped = true;
         for (ChannelFuture ch : binds) {
             try {
                 ch.channel().close();
-                log.info("Redis server shutdown for address: {}",ch.channel().localAddress());
+                log.info("Redis server shutdown for address: {}", ch.channel().localAddress());
             } catch (Exception e) {
                 log.error("Close error ", e);
             }
@@ -131,6 +149,10 @@ public class RedisServer {
             workerGroup.shutdownGracefully();
         }
         log.info("Redis server shutdown successfully !");
+    }
+
+    private RedisConfiguration configuration() {
+        return engine.configuration();
     }
 
 }
