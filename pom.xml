@@ -11,10 +11,12 @@
     <name>embed-redis</name>
     
     <properties>
-      <plugin.maven-compiler.version>3.8.1</plugin.maven-compiler.version>
-      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <plugin.maven-compiler.version>3.8.1</plugin.maven-compiler.version>
+        <plugin.maven-shade-plugin.version>3.2.4</plugin.maven-shade-plugin.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+
         <redisson.version>3.16.7</redisson.version>
         <jedis.version>3.8.0</jedis.version>
         <lettuce-core.version>6.1.5.RELEASE</lettuce-core.version>
@@ -111,7 +113,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.4</version>
+                <version>${plugin.maven-shade-plugin.version}</version>
                 <configuration>
                     <transformers>
                         <transformer
@@ -137,10 +139,5 @@
                 </executions>
             </plugin>
         </plugins>
-
-
     </build>
-   
-
-
 </project>

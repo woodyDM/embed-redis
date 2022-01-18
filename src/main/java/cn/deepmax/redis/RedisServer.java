@@ -2,6 +2,7 @@ package cn.deepmax.redis;
 
 import cn.deepmax.redis.api.RedisConfiguration;
 import cn.deepmax.redis.api.RedisEngine;
+import cn.deepmax.redis.args.Args;
 import cn.deepmax.redis.core.DefaultRedisEngine;
 import cn.deepmax.redis.netty.RedisServerHandler;
 import cn.deepmax.redis.resp3.RedisAggTypesAggregator;
@@ -21,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Hello world!
@@ -38,15 +40,20 @@ public class RedisServer {
         this.engine = engine;
         this.engine.setConfiguration(configuration);
     }
-
-    private RedisConfiguration configuration() {
-        return engine.configuration();
-    }
+    
+    static Args.Flag<String> F_AUTH = Args.Flag.newInstance("a", null, Function.identity());
+    static Args.Flag<String> F_CLUSTER_AUTH = Args.Flag.newInstance("ca", null, Function.identity());
+    static Args.Flag<Integer> F_PORT = Args.Flag.newInstance("p", "6381", Integer::new);
+    static Args.Flag<String> F_H = Args.Flag.newInstance("h", "localhost", Function.identity());
 
     public static void main(String[] args) {
-        String auth = "123456";
-        RedisConfiguration.Standalone standalone = new RedisConfiguration.Standalone(6380, auth);
-        RedisConfiguration.Cluster cluster = new RedisConfiguration.Cluster(auth, Arrays.asList(
+        new Args().flag(F_AUTH)
+                .flag(F_CLUSTER_AUTH)
+                .flag(F_H)
+                .flag(F_PORT).parse(args);
+
+        RedisConfiguration.Standalone standalone = new RedisConfiguration.Standalone(F_PORT.get(), F_AUTH.get());
+        RedisConfiguration.Cluster cluster = new RedisConfiguration.Cluster(F_AUTH.get(), Arrays.asList(
                 new RedisConfiguration.Node("m1", 6391)
                         .appendSlave(new RedisConfiguration.Node("s1", 6394)),
                 new RedisConfiguration.Node("m2", 6392)
@@ -54,7 +61,18 @@ public class RedisServer {
                 new RedisConfiguration.Node("m3", 6393)
                         .appendSlave(new RedisConfiguration.Node("s3", 6396))
         ));
-        new RedisServer(DefaultRedisEngine.defaultEngine(), new RedisConfiguration("localhost",standalone, cluster)).start();
+        new RedisServer(DefaultRedisEngine.defaultEngine(), new RedisConfiguration(F_H.get(), standalone, cluster)).start();
+    }
+
+    private RedisConfiguration configuration() {
+        return engine.configuration();
+    }
+
+    public void startWithShutdownHook() {
+        start();
+        Thread hookThread = new Thread(this::stop);
+        hookThread.setName("Embed-redis shutdownHook");
+        Runtime.getRuntime().addShutdownHook(hookThread);
     }
 
     public void start() {
@@ -70,10 +88,8 @@ public class RedisServer {
                         ch.pipeline().addLast(new RedisResp3Decoder())
                                 .addLast(new RedisBulkValueAggregator())
                                 .addLast(new RedisAggTypesAggregator())
-//                                .addLast(redisTypeDecoder)
                                 .addLast(new RedisResp3Encoder())
                                 .addLast(new RedisServerHandler(engine));
-
                     }
                 });
         //to bind ports
@@ -95,7 +111,7 @@ public class RedisServer {
                 }
             }
         }
-        binds.forEach(i -> i.syncUninterruptibly());
+        binds.forEach(ChannelFuture::syncUninterruptibly);
         log.info("{} !", logText.toString());
     }
     

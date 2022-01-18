@@ -54,10 +54,7 @@ public class EmbedRedisRunner {
         TIME_PROVIDER.reset();
         server = new RedisServer(engine, config);
         if (isEmbededRedis()) {
-            server.start();
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                server.stop();
-            }));
+            server.startWithShutdownHook();
         }
         return engine;
     }
