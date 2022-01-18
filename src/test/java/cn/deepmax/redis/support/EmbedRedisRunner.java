@@ -17,7 +17,7 @@ public class EmbedRedisRunner {
     public static RedisServer server;
     public static DefaultRedisEngine engine;
     //to change this flag for tests.
-    public static TestMode MODE = TestMode.LOCAL_REDIS_STANDALONE;
+    public static TestMode MODE = TestMode.EMBED_ALL;
 
 
     public synchronized static DefaultRedisEngine start() {
@@ -73,7 +73,6 @@ public class EmbedRedisRunner {
     public enum TestMode {
         EMBED_ALL,
         LOCAL_REDIS_STANDALONE,
-        LOCAL_REDIS_ALL
     }
 
 }

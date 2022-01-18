@@ -75,7 +75,11 @@ public class StringModuleTemplateTest extends BasePureTemplateTest {
         v().set("key", "hello你好", 15, TimeUnit.SECONDS);
 
         assertThat(v().get("key"), is("hello你好"));
-        assertThat(t().getExpire("key"), is(15L));
+        if (isEmbededRedis()) {
+            assertThat(t().getExpire("key"), is(15L));
+        } else {
+            assertTrue(t().getExpire("key") >= 13L);
+        }
     }
 
     @Test
@@ -93,7 +97,11 @@ public class StringModuleTemplateTest extends BasePureTemplateTest {
 
         assertTrue(ok);
         assertThat(v().get("key"), is("OK2"));
-        assertThat(t().getExpire("key"), is(60L));
+        if (isEmbededRedis()) {
+            assertThat(t().getExpire("key"), is(60L));
+        } else {
+            assertTrue(t().getExpire("key") >= 58L);
+        }
     }
 
     @Test

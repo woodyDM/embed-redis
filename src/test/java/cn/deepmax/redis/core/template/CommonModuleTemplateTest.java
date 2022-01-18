@@ -51,11 +51,12 @@ public class CommonModuleTemplateTest extends BasePureTemplateTest {
         assertThat(v().get("key"), is("你好"));
 
         t().expire("key", 5, TimeUnit.SECONDS);
-        assertThat(t().getExpire("key"), is(5L));
         if (isEmbededRedis()) {
+            assertThat(t().getExpire("key"), is(5L));
             assertThat(t().getExpire("key", TimeUnit.MILLISECONDS), is(5000L));
         } else {
-            assertTrue(t().getExpire("key", TimeUnit.MILLISECONDS) > 4500L);
+            assertTrue(t().getExpire("key") >= 3L);
+            assertTrue(t().getExpire("key", TimeUnit.MILLISECONDS) > 4000L);
         }
         assertThat(v().get("key"), is("你好"));
 
