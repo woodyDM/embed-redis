@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 
 /**
  * @author wudi
- * @date 2021/12/27
  */
 public class ListModule extends BaseModule {
 

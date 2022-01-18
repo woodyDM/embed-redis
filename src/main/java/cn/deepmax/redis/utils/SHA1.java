@@ -5,7 +5,6 @@ import java.security.MessageDigest;
 
 /**
  * @author wudi
- * @date 2021/5/7
  */
 public class SHA1 {
 

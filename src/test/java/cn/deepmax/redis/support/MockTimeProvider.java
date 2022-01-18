@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 
 /**
  * @author wudi
- * @date 2021/12/21
  */
 public class MockTimeProvider implements TimeProvider {
     public LocalDateTime time;

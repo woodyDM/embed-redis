@@ -22,7 +22,6 @@ import static org.junit.Assert.*;
 
 /**
  * @author wudi
- * @date 2022/1/12
  */
 public class KeyModuleTemplateTest extends BasePureTemplateTest {
     public KeyModuleTemplateTest(RedisTemplate<String, Object> redisTemplate) {

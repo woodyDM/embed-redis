@@ -10,7 +10,6 @@ import io.netty.handler.codec.redis.RedisMessage;
 
 /**
  * @author wudi
- * @date 2022/1/11
  */
 public class Network {
 

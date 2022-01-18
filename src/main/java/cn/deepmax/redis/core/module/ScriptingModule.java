@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 
 /**
  * @author wudi
- * @date 2021/5/7
  */
 @Slf4j
 public class ScriptingModule extends BaseModule implements Flushable {

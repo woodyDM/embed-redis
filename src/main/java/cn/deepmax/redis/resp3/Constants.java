@@ -3,7 +3,6 @@ package cn.deepmax.redis.resp3;
 
 /**
  * @author wudi
- * @date 2021/12/3
  */
 final class Constants {
 

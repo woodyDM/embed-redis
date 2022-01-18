@@ -14,7 +14,6 @@ import java.util.function.Function;
 
 /**
  * @author wudi
- * @date 2022/1/12
  */
 public class ScanMaps {
     /**

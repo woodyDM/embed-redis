@@ -4,7 +4,6 @@ import io.netty.handler.codec.redis.RedisMessage;
 
 /**
  * @author wudi
- * @date 2021/12/3
  */
 public class BooleanRedisMessage implements RedisMessage {
 

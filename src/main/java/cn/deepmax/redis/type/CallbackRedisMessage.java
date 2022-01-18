@@ -8,7 +8,6 @@ import java.util.function.Consumer;
 
 /**
  * @author wudi
- * @date 2021/12/17
  */
 public interface CallbackRedisMessage extends RedisMessage {
     RedisMessage unwrap();

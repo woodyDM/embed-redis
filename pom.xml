@@ -9,11 +9,34 @@
     <version>1.0.0-SNAPSHOT</version>
 
     <name>embed-redis</name>
-    
+    <description>embed redis for Java integration test</description>
+    <url>https://github.com/woodyDM/embed-redis</url>
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>woodyDM</name>
+            <email>woody_me@qq.com</email>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:git://github.com/woodyDM/embed-redis.git</connection>
+        <developerConnection>scm:git:ssh://github.com:woodyDM/embed-redis.git</developerConnection>
+        <url>https://github.com/woodyDM/embed-redis/tree/master</url>
+    </scm>
+
     <properties>
         <plugin.maven-compiler.version>3.8.1</plugin.maven-compiler.version>
         <plugin.maven-shade-plugin.version>3.2.4</plugin.maven-shade-plugin.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <plugin.maven-source-plugin.version>3.2.1</plugin.maven-source-plugin.version>
+        <plugin.maven-javadoc-plugin.version>2.9.1</plugin.maven-javadoc-plugin.version>
+        <plugin.maven-gpg-plugin.version>1.6</plugin.maven-gpg-plugin.version>
+        
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
 
@@ -102,6 +125,53 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>${plugin.maven-source-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${plugin.maven-javadoc-plugin.version}</version>
+                <configuration>
+                    <source>8</source>
+                    <charset>UTF-8</charset>
+                    <encoding>UTF-8</encoding>
+                    <docencoding>UTF-8</docencoding>
+                    <additionalparam>-Xdoclint:none</additionalparam>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>${plugin.maven-gpg-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

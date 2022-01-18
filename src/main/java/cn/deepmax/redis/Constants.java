@@ -12,7 +12,6 @@ import static cn.deepmax.redis.core.RedisCommand.OK;
 
 /**
  * @author wudi
- * @date 2021/4/29
  */
 public class Constants {
     public static final ErrorRedisMessage ERR_NO_AUTH = of("NOAUTH Authentication required.");

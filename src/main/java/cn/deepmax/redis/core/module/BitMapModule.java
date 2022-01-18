@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 
 /**
  * @author wudi
- * @date 2021/12/23
  */
 public class BitMapModule extends BaseModule {
     public BitMapModule() {

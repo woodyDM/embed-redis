@@ -15,7 +15,6 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * @author wudi
- * @date 2021/12/30
  */
 public class KeyModuleTest extends BasePureTemplateTest {
     public KeyModuleTest(RedisTemplate<String, Object> redisTemplate) {

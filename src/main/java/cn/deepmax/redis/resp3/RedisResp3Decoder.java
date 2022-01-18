@@ -15,7 +15,6 @@ import java.util.List;
  * https://github.com/antirez/RESP3/blob/master/spec.md
  *
  * @author wudi
- * @date 2021/12/3
  */
 @Slf4j
 public final class RedisResp3Decoder extends ByteToMessageDecoder {

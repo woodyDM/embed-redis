@@ -9,42 +9,41 @@ import java.util.Map;
 
 /**
  * @author wudi
- * @date 2021/5/10
  */
 public interface PubsubManager {
 
     /**
      * subscribe client nubmers
      *
-     * @return
+     * @return sub numbers
      */
     Map<Key, Integer> numbersub(List<Key> keys);
 
     /**
      * psubscribe patterns
      *
-     * @return
+     * @return psubscribe patterns
      */
     long numberPattern();
 
     /**
      * @param pattern nullable
-     * @return
+     * @return listened pattern channels 
      */
     List<Key> channelNumbers(RPattern pattern);
 
     /**
      * subscribe / unsubscribe
      *
-     * @return
+     * @return direct pubsub
      */
     Pubsub direct();
 
     /**
      * psubscribe / punsubscribe
      *
-     * @return
-     */
+     * @return pattern pubsub
+     */ 
     Pubsub pattern();
 
     /**
@@ -52,7 +51,7 @@ public interface PubsubManager {
      *
      * @param channel
      * @param message
-     * @return
+     * @return publish message
      */
     default int pub(Key channel, byte[] message) {
         List<PubPair> p1 = direct().matches(channel, message);
@@ -67,7 +66,7 @@ public interface PubsubManager {
      * total client sub channel.
      *
      * @param client
-     * @return
+     * @return total count
      */
     default long subscribeCount(Client client) {
         return direct().subCount(client) + pattern().subCount(client);
@@ -92,7 +91,7 @@ public interface PubsubManager {
          *
          * @param channel
          * @param msg
-         * @return
+         * @return channel matches
          */
         List<PubPair> matches(Key channel, byte[] msg);
 
@@ -101,7 +100,7 @@ public interface PubsubManager {
          *
          * @param client
          * @param channel
-         * @return
+         * @return subscribe result
          */
         List<RedisMessage> sub(Client client, List<Key> channel);
 
@@ -110,7 +109,7 @@ public interface PubsubManager {
          *
          * @param client
          * @param channel
-         * @return
+         * @return unsub result
          */
         List<RedisMessage> unsub(Client client, List<Key> channel);
 
@@ -118,7 +117,7 @@ public interface PubsubManager {
          * unsubscribe all
          *
          * @param client
-         * @return
+         * @return unsub result
          */
         List<RedisMessage> unsubAll(Client client);
 
@@ -126,14 +125,14 @@ public interface PubsubManager {
          * query total client sub count
          *
          * @param client
-         * @return
+         * @return sub count
          */
         long subCount(Client client);
 
         /**
          * called when disconnect
          *
-         * @param client
+         * @param client 
          */
         void quit(Client client);
     }

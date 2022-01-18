@@ -19,7 +19,6 @@ import java.util.Map;
 
 /**
  * @author wudi
- * @date 2021/12/28
  */
 @Slf4j
 public class MessagePrinter {

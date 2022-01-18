@@ -6,7 +6,6 @@ import java.util.List;
 
 /**
  * @author wudi
- * @date 2021/12/17
  */
 public interface CompositeRedisMessage extends RedisMessage {
 

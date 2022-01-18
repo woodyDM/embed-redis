@@ -18,7 +18,6 @@ import static org.junit.Assert.*;
 
 /**
  * @author wudi
- * @date 2021/12/16
  */
 public class CommonModuleTemplateTest extends BasePureTemplateTest {
     public CommonModuleTemplateTest(RedisTemplate<String, Object> redisTemplate) {

@@ -14,7 +14,6 @@ import java.util.function.Supplier;
 
 /**
  * @author wudi
- * @date 2021/12/27
  */
 public class BlockTask {
     private final Client client;

@@ -193,7 +193,7 @@ public class StringModule extends BaseModule {
     }
 
     /**
-     * SET key value [NX] [XX] [KEEPTTL] [EX <seconds>] [PX <milliseconds>]
+     * SET key value [NX] [XX] [KEEPTTL] [EX seconds] [PX milliseconds]
      */
     public static class Set extends ArgsCommand.ThreeWith<RString> {
 

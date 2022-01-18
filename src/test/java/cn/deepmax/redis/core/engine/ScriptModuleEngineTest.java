@@ -15,7 +15,6 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author wudi
- * @date 2021/12/15
  */
 public class ScriptModuleEngineTest extends BaseMemEngineTest {
 

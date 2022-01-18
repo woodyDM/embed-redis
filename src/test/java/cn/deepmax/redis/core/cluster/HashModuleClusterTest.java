@@ -9,7 +9,6 @@ import static org.junit.Assert.assertNull;
 
 /**
  * @author wudi
- * @date 2022/1/11
  */
 public class HashModuleClusterTest extends BaseClusterTemplateTest {
     public HashModuleClusterTest(RedisTemplate<String, Object> redisTemplate) {

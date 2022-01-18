@@ -21,7 +21,6 @@ import java.util.Optional;
 
 /**
  * @author wudi
- * @date 2021/12/21
  */
 public abstract class ArgsCommand<T extends RedisObject> implements RedisCommand {
     protected int[] validArgs;

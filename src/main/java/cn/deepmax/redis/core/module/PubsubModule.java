@@ -19,7 +19,6 @@ import java.util.Map;
 
 /**
  * @author wudi
- * @date 2021/5/10
  */
 public class PubsubModule extends BaseModule {
 

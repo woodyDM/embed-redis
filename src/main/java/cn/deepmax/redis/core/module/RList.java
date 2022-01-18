@@ -196,9 +196,9 @@ public class RList extends AbstractRedisObject implements Sized {
     }
 
     /**
-     * count > 0: Remove elements equal to element moving from head to tail.
-     * count < 0: Remove elements equal to element moving from tail to head.
-     * count = 0: Remove all elements equal to element.
+     * count gt 0: Remove elements equal to element moving from head to tail.
+     * count lt 0: Remove elements equal to element moving from tail to head.
+     * count eq 0: Remove all elements equal to element.
      *
      * @param ele
      * @param count numbers

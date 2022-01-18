@@ -15,7 +15,6 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author wudi
- * @date 2021/12/24
  */
 public class TransactionModuleTest extends BaseMixedTemplateTest {
     public TransactionModuleTest(RedisTemplate<String, Object> redisTemplate) {

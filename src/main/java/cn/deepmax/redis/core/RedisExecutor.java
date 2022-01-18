@@ -6,7 +6,6 @@ import io.netty.handler.codec.redis.RedisMessage;
 
 /**
  * @author wudi
- * @date 2021/6/28
  */
 @FunctionalInterface
 public interface RedisExecutor {

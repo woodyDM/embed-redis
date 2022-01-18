@@ -9,8 +9,8 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * @param <S>
- * @param <T>
+ * @param <S> score
+ * @param <T> element
  */
 public class ZSet<S extends Comparable<S>, T extends Comparable<T>> implements RandomElements {
 

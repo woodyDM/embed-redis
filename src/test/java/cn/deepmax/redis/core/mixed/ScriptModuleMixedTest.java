@@ -12,7 +12,6 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * @author wudi
- * @date 2021/12/15
  */
 public class ScriptModuleMixedTest extends BaseMixedTemplateTest {
     public ScriptModuleMixedTest(RedisTemplate<String, Object> redisTemplate) {

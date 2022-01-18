@@ -43,7 +43,7 @@ public enum RedisMessageType {
      */
     NULL('_', true),
     /**
-     * ,<floating-point-number>\r\n          ",inf\r\n"   ",-inf\r\n"
+     * ,[floating-point-number]\r\n          ",inf\r\n"   ",-inf\r\n"
      * only v3: {@link DoubleRedisMessage}
      */
     DOUBLE(',', true),
@@ -53,7 +53,7 @@ public enum RedisMessageType {
      */
     BOOLEAN('#', true),
     /**
-     * !<length>\r\n<bytes>\r\n
+     * ![length]\r\n[bytes]\r\n
      * only v3
      * v3 {@link BulkValueHeaderRedisMessage}
      * v3 {@link io.netty.handler.codec.redis.BulkStringRedisContent}
@@ -61,7 +61,7 @@ public enum RedisMessageType {
      */
     BLOG_ERROR('!', false),
     /**
-     * =<length>\r\n<bytes>\r\n
+     * =[length]\r\n[bytes]\r\n
      * only v3
      * v3 {@link BulkValueHeaderRedisMessage}
      * v3 {@link io.netty.handler.codec.redis.BulkStringRedisContent}
@@ -69,7 +69,7 @@ public enum RedisMessageType {
      */
     VERBATIM_STRING('=', false),
     /**
-     * (<big number>\r\n
+     * ([big number]\r\n
      * only v3: {@link BigNumberRedisMessage}
      */
     BIG_NUMBER('(', true),

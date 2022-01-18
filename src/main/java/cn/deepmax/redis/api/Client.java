@@ -32,7 +32,7 @@ public interface Client {
     /**
      * engine
      *
-     * @return
+     * @return engine
      */
     RedisEngine engine();
 
@@ -49,17 +49,17 @@ public interface Client {
 
     /**
      * @param f
-     * @return
+     * @return flag result
      */
     boolean queryFlag(int f);
 
     /**
-     * @return
+     * @return is queued
      */
     boolean queued();
 
     /**
-     * @return
+     * @return current protocol
      */
     Protocol resp();
 
@@ -68,42 +68,42 @@ public interface Client {
     }
 
     /**
-     * @param p
+     * @param p protocol to set
      */
     void setProtocol(Protocol p);
 
     /**
      * UniqueId
      *
-     * @return
+     * @return clientId
      */
     long id();
 
     /**
      * bind channel
      *
-     * @return
+     * @return netty channel
      */
     Channel channel();
 
     /**
      * command should be execute when called .
      * when in Script or Transaction , command should not block to wait
-     * @return
+     * @return true or false
      */
     boolean commandInstantExec();
 
     /**
      * publish message to this client
      *
-     * @param msg
+     * @param msg redismessage
      */
     void pub(RedisMessage msg);
 
     /**
      * client getname
      *
-     * @return
+     * @return client's name
      */
     byte[] getName();
 

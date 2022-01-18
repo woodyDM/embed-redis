@@ -2,7 +2,6 @@ package cn.deepmax.redis.utils;
 
 /**
  * @author wudi
- * @date 2021/12/22
  */
 public class Triple<A,B,C> {
     public final A a;

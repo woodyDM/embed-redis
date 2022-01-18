@@ -21,7 +21,6 @@ import static org.junit.Assert.assertNull;
 
 /**
  * @author wudi
- * @date 2022/1/17
  */
 public class BaseRedissonScriptTest {
 

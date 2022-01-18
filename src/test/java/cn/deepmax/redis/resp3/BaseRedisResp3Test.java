@@ -21,7 +21,6 @@ import static org.junit.Assert.*;
 
 /**
  * @author wudi
- * @date 2021/12/3
  */
 public abstract class BaseRedisResp3Test {
     protected EmbeddedChannel channel;

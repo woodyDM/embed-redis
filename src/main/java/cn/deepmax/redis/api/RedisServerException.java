@@ -5,7 +5,6 @@ import io.netty.handler.codec.redis.RedisMessage;
 
 /**
  * @author wudi
- * @date 2021/5/7
  */
 public class RedisServerException extends RuntimeException {
 

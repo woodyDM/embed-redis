@@ -8,7 +8,6 @@ import java.util.Objects;
 
 /**
  * @author wudi
- * @date 2021/5/10
  */
 public class NettyAuthManager implements AuthManager {
     private static final AttributeKey<String> AUTH_KEY = AttributeKey.newInstance("AUTH");

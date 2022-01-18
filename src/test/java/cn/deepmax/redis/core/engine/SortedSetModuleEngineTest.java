@@ -14,7 +14,6 @@ import static org.junit.Assert.assertSame;
 
 /**
  * @author wudi
- * @date 2022/1/6
  */
 public class SortedSetModuleEngineTest extends BaseMemEngineTest {
     @Test

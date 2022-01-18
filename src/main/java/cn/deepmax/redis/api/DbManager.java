@@ -7,10 +7,6 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * @author wudi
- * @date 2021/5/20
- */
 public interface DbManager extends Flushable {
 
     RedisEngine engine();

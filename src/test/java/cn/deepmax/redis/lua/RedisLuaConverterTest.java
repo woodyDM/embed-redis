@@ -19,7 +19,6 @@ import static org.junit.Assert.*;
 
 /**
  * @author wudi
- * @date 2022/1/14
  */
 public class RedisLuaConverterTest implements ByteHelper {
 

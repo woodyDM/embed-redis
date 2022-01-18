@@ -13,7 +13,6 @@ import java.util.List;
 
 /**
  * @author wudi
- * @date 2021/5/8
  */
 public class RedisLuaConverter {
     /**

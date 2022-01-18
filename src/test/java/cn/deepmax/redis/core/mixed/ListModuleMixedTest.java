@@ -22,7 +22,6 @@ import static org.junit.Assert.*;
 
 /**
  * @author wudi
- * @date 2021/12/28
  */
 public class ListModuleMixedTest extends BaseMixedTemplateTest implements BlockTest {
     public ListModuleMixedTest(RedisTemplate<String, Object> redisTemplate) {

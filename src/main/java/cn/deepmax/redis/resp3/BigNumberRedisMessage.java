@@ -6,7 +6,6 @@ import java.math.BigDecimal;
 
 /**
  * @author wudi
- * @date 2021/12/3
  */
 public class BigNumberRedisMessage implements RedisMessage {
     private final BigDecimal value;

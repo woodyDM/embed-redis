@@ -23,7 +23,6 @@ import static org.junit.Assert.*;
 
 /**
  * @author wudi
- * @date 2021/12/3
  */
 public class RedisResp3DecoderTest extends BaseRedisResp3Test {
 

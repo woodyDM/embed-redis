@@ -4,7 +4,6 @@ import java.util.*;
 
 /**
  * @author wudi
- * @date 2021/12/24
  */
 public class DbKey extends Key {
     public final int db;
@@ -18,7 +17,7 @@ public class DbKey extends Key {
      * support child class equals .
      *
      * @param o
-     * @return
+     * @return equals
      */
     @Override
     public boolean equals(Object o) {
@@ -37,11 +36,11 @@ public class DbKey extends Key {
     /**
      * decode intersect for listeners
      *
-     * @param l1
-     * @param l2
-     * @param <A>
-     * @param <B>
-     * @return
+     * @param l1 list 1
+     * @param l2 list 2
+     * @param <A> generic
+     * @param <B> generic
+     * @return intersect result
      */
     public static <A extends DbKey, B extends DbKey> boolean intersect(List<A> l1, List<B> l2) {
         Set<A> s = new HashSet<>(l1);
@@ -51,9 +50,9 @@ public class DbKey extends Key {
     /**
      * filter duplicated event
      *
-     * @param list
-     * @param <A>
-     * @return
+     * @param list list
+     * @param <A> generic
+     * @return distinct keys
      */
     public static <A extends DbKey> List<A> compress(List<A> list) {
         Set<A> set = new HashSet<>();

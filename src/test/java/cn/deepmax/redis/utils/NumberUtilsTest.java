@@ -12,7 +12,6 @@ import static org.junit.Assert.*;
 
 /**
  * @author wudi
- * @date 2021/12/31
  */
 public class NumberUtilsTest {
     @Rule

@@ -4,7 +4,6 @@ import cn.deepmax.redis.api.RedisObject;
 
 /**
  * @author wudi
- * @date 2022/1/12
  */
 public class RedisDataType implements RedisObject.Type {
 

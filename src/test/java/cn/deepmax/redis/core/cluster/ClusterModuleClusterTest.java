@@ -10,7 +10,6 @@ import static org.junit.Assert.assertNotNull;
 
 /**
  * @author wudi
- * @date 2022/1/12
  */
 public class ClusterModuleClusterTest extends BaseClusterTemplateTest {
     public ClusterModuleClusterTest(RedisTemplate<String, Object> redisTemplate) {

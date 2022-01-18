@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 
 /**
  * @author wudi
- * @date 2021/5/20
  */
 @Slf4j
 public class DefaultDbManager implements DbManager {

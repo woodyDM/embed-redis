@@ -15,7 +15,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author wudi
- * @date 2021/5/8
  */
 @Slf4j
 public class DefaultRedisExecutor implements RedisExecutor {

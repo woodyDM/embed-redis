@@ -2,7 +2,6 @@ package cn.deepmax.redis.utils;
 
 /**
  * @author wudi
- * @date 2021/12/31
  */
 public class Range<T extends Comparable<T>> {
     T start;

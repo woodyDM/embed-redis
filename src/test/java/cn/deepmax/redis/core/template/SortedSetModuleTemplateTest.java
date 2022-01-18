@@ -17,7 +17,6 @@ import static org.junit.Assert.*;
 
 /**
  * @author wudi
- * @date 2021/12/30
  */
 public class SortedSetModuleTemplateTest extends BasePureTemplateTest implements BlockTest {
     public SortedSetModuleTemplateTest(RedisTemplate<String, Object> redisTemplate) {
