@@ -17,14 +17,14 @@ public class EmbedRedisRunner {
     public static RedisServer server;
     public static DefaultRedisEngine engine;
     //to change this flag for tests.
-    public static TestMode MODE = TestMode.EMBED_ALL;
+    public static TestMode MODE = TestMode.LOCAL_REDIS_STANDALONE;
 
 
     public synchronized static DefaultRedisEngine start() {
         if (MODE == TestMode.EMBED_ALL) {
-            MAIN_PORT = 6380;
+            MAIN_PORT = 6381;
         } else {
-            MAIN_PORT = 6379;
+            MAIN_PORT = 6380;
         }
         return start(MAIN_PORT, AUTH, AUTH, SERVER_HOST);
     }
