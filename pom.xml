@@ -6,7 +6,7 @@
 
     <groupId>cn.deepmax</groupId>
     <artifactId>embed-redis</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 
     <name>embed-redis</name>
     <description>embed redis for Java integration test</description>
@@ -50,7 +50,7 @@
         <lombok.version>1.18.20</lombok.version>
         <logback-classic.version>1.2.3</logback-classic.version>
         <luaj-jse.version>3.0.1</luaj-jse.version>
-        <netty-all.version>4.1.63.Final</netty-all.version>
+        <netty-all.version>4.1.73.Final</netty-all.version>
     </properties>
 
     <dependencies>
@@ -211,42 +211,6 @@
                 <configuration>
                     <showWarnings>true</showWarnings>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>${plugin.maven-shade-plugin.version}</version>
-                <configuration>
-                    <filters>
-                        <filter>
-                            <artifact>*:*</artifact>
-                            <excludes>
-                                <exclude>META-INF/*</exclude>
-                            </excludes>
-                        </filter>
-                    </filters>
-                    <transformers>
-                        <transformer
-                                implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                            <mainClass>cn.deepmax.redis.RedisServer</mainClass>
-                        </transformer>
-                    </transformers>
-                    <minimizeJar>true</minimizeJar>
-                    <relocations>
-                        <relocation>
-                            <pattern>io.netty</pattern>
-                            <shadedPattern>io.shaded.netty</shadedPattern>
-                        </relocation>
-                    </relocations>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
