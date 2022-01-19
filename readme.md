@@ -5,6 +5,14 @@ Support standalone and cluster .
 Require JDK8+.    
 
 ## Usage
+#### Maven 
+```xml
+<dependency>
+    <groupId>cn.deepmax</groupId>
+    <artifactId>embed-redis</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
 ####  In Java code  
 ```java
         RedisConfiguration.Standalone standalone = new RedisConfiguration.Standalone(6379,"yourAuth");
@@ -18,15 +26,13 @@ Require JDK8+.
         ));
         new RedisServer(new RedisConfiguration("localhost", standalone, cluster)).startWithShutdownHook();
 ```
-#### Use jar  
+#### Compile from source  
 ```shell script
 mvn clean package -DskipTests
 java -jar target/embed-redis-1.0.0-SNAPSHOT.jar -a yourAuth -h localhost -p 6381 --clusterAuth yourClusterAuth   
 ```
 
-## Commands
-
-
+## Commands  
 ### Keys 
 |name|supported|description|
 |-----|-----|-----|  
