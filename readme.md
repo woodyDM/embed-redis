@@ -10,7 +10,7 @@ Require JDK8+.
 <dependency>
     <groupId>cn.deepmax</groupId>
     <artifactId>embed-redis</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 ####  In Java code  
@@ -28,8 +28,7 @@ Require JDK8+.
 ```
 #### Compile from source  
 ```shell script
-mvn clean package -DskipTests
-java -jar target/embed-redis-1.0.0-SNAPSHOT.jar -a yourAuth -h localhost -p 6381 --clusterAuth yourClusterAuth   
+mvn clean package
 ```
 
 ## Commands  
