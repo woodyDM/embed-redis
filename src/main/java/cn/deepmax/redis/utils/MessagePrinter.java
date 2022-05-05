@@ -9,6 +9,7 @@ import cn.deepmax.redis.type.CallbackRedisMessage;
 import cn.deepmax.redis.type.CompositeRedisMessage;
 import cn.deepmax.redis.type.RedisMessages;
 import io.netty.handler.codec.redis.ArrayRedisMessage;
+import io.netty.handler.codec.redis.InlineCommandRedisMessage;
 import io.netty.handler.codec.redis.IntegerRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 import lombok.extern.slf4j.Slf4j;
@@ -97,6 +98,9 @@ public class MessagePrinter {
                 doPrint(v, depth + 1, false, queued);
             });
             return;
+        } else if (msg instanceof InlineCommandRedisMessage) {
+            InlineCommandRedisMessage lmsg = (InlineCommandRedisMessage) msg;
+            word = lmsg.content();
         } else {
             throw new IllegalStateException("can't print msg " + msg.getClass().getName());
         }

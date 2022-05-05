@@ -6,6 +6,7 @@ import cn.deepmax.redis.api.AuthManager;
 import cn.deepmax.redis.api.Client;
 import cn.deepmax.redis.api.RedisConfiguration;
 import cn.deepmax.redis.api.RedisEngine;
+import cn.deepmax.redis.core.RedisCommand;
 import cn.deepmax.redis.core.support.ArgsCommand;
 import cn.deepmax.redis.core.support.BaseModule;
 import cn.deepmax.redis.core.support.CompositeCommand;
@@ -170,9 +171,9 @@ public class ConnectionModule extends BaseModule {
         }
     }
 
-    private static class Ping extends ArgsCommand.OneEx {
+    private static class Ping implements RedisCommand {
         @Override
-        protected RedisMessage doResponse(ListRedisMessage msg, Client client, RedisEngine engine) {
+        public RedisMessage response(RedisMessage type, Client client, RedisEngine engine) {
             return new SimpleStringRedisMessage("PONG");
         }
     }

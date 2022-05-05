@@ -4,6 +4,7 @@ import cn.deepmax.redis.Constants;
 import cn.deepmax.redis.api.CommandManager;
 import cn.deepmax.redis.resp3.FullBulkValueRedisMessage;
 import cn.deepmax.redis.resp3.ListRedisMessage;
+import io.netty.handler.codec.redis.InlineCommandRedisMessage;
 import io.netty.handler.codec.redis.RedisMessage;
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,7 +54,14 @@ public class DefaultCommandManager implements CommandManager {
                     return redisCommand;
                 }
             }
+        } else if (msgo instanceof InlineCommandRedisMessage) {
+            InlineCommandRedisMessage m = (InlineCommandRedisMessage) msgo;
+            RedisCommand redisCommand = commandMap.get(m.content().toLowerCase());
+            if (redisCommand != null) {
+                return redisCommand;
+            }
         }
+        log.error("Can't find redis command {}", msgo.getClass().getName());
         return Constants.UNKNOWN_COMMAND;
     }
 
